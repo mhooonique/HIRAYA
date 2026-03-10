@@ -1,0 +1,76 @@
+name: hiraya_app
+description: Project Hiraya - Innovation Marketplace
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Navigation
+  go_router: ^13.2.0
+  
+  # State Management
+  flutter_riverpod: ^2.5.1
+  
+  # Animations & UI
+  flutter_animate: ^4.5.0
+  smooth_page_indicator: ^1.1.0
+  carousel_slider: ^4.2.1
+  
+  # HTTP & API
+  dio: ^5.9.2
+  
+  # Auth
+  firebase_core: ^2.27.1
+  firebase_auth: ^4.17.9
+  google_sign_in: ^6.2.1
+  
+  # Storage & Prefs
+  shared_preferences: ^2.5.3
+  flutter_secure_storage: ^10.0.0
+  
+  # Utils
+  cached_network_image: ^3.3.1
+  lottie: ^3.1.0
+  shimmer: ^3.0.0
+  url_launcher: ^6.2.6
+  intl: ^0.19.0
+  country_code_picker: ^3.4.1
+  image_picker: ^1.2.1
+  file_picker: ^8.0.7
+  pin_code_fields: ^9.1.0
+  flutter_pw_validator: ^1.6.0
+  fl_chart: ^0.68.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+dependency_overrides:
+  fl_chart: 0.68.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/images/categories/
+    - assets/images/logo/
+  
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-ExtraBold.ttf
+          weight: 800
