@@ -2,6 +2,11 @@
 
 A new Flutter project.
 
+by:
+
+Prosia, Mavie Mhonique G.
+Maurin, Christyn Dave E.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
