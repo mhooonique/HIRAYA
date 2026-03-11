@@ -64,6 +64,26 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
+      floatingActionButton: AnimatedOpacity(
+        opacity: _scrollOffset > 220 ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 300),
+        child: FloatingActionButton.small(
+          onPressed: () => _scrollCtrl.animateTo(
+            0,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+          ),
+          backgroundColor: AppColors.navy,
+          elevation: 6,
+          child: const Icon(Icons.keyboard_arrow_up_rounded,
+              color: Colors.white, size: 22),
+        )
+            .animate()
+            .scaleXY(
+                begin: 0.6,
+                end: 1.0,
+                curve: Curves.easeOutBack),
+      ),
       body: NestedScrollView(
         controller: _scrollCtrl,
         headerSliverBuilder: (context, innerScrolled) => [
@@ -137,6 +157,45 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                             ),
                           ),
                         ),
+
+                        // ── Hero Logo (right side) ────────
+                        Positioned(
+                          right: 28,
+                          bottom: 28,
+                          child: Opacity(
+                            opacity: 0.18 + t * 0.12,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.teal
+                                        .withValues(
+                                            alpha: 0.35 +
+                                                t * 0.25),
+                                    blurRadius:
+                                        30 + t * 20,
+                                    spreadRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: Image.asset(
+                                'assets/images/logo/final-logo.png',
+                                height: 72,
+                              ),
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(
+                                  duration: 800.ms,
+                                  delay: 200.ms)
+                              .scaleXY(
+                                  begin: 0.5,
+                                  end: 1.0,
+                                  curve: Curves.easeOutBack,
+                                  duration: 800.ms),
+                        ),
+
                         // Header text
                         Padding(
                           padding:
@@ -148,6 +207,57 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                             mainAxisAlignment:
                                 MainAxisAlignment.end,
                             children: [
+                              // Brand pill
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white
+                                      .withValues(alpha: 0.10),
+                                  borderRadius:
+                                      BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white
+                                        .withValues(
+                                            alpha: 0.18),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.storefront_rounded,
+                                      color: Colors.white70,
+                                      size: 12,
+                                    ),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'HIRAYA',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 11,
+                                        fontWeight:
+                                            FontWeight.w700,
+                                        color: Colors.white70,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(
+                                      duration: 500.ms,
+                                      delay: 50.ms)
+                                  .slideX(
+                                      begin: -0.15,
+                                      end: 0,
+                                      curve:
+                                          Curves.easeOutCubic),
+                              const SizedBox(height: 8),
                               const Text(
                                 'Marketplace',
                                 style: TextStyle(
@@ -406,31 +516,84 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                 ),
               ),
 
-              // ── Stats bar ────────────────────────────────
+              // ── Animated Stats Strip ─────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      24, 0, 24, 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.navy.withValues(alpha: 0.06),
+                          AppColors.teal.withValues(alpha: 0.04),
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.navy
+                            .withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        _StatChip(
+                          icon: Icons.lightbulb_rounded,
+                          label: '${products.length}',
+                          sublabel: 'innovations',
+                          color: AppColors.teal,
+                        ),
+                        const _StatDivider(),
+                        const _StatChip(
+                          icon: Icons.people_rounded,
+                          label: '120+',
+                          sublabel: 'innovators',
+                          color: AppColors.navy,
+                        ),
+                        const _StatDivider(),
+                        const _StatChip(
+                          icon: Icons.category_rounded,
+                          label: '6',
+                          sublabel: 'categories',
+                          color: AppColors.sky,
+                        ),
+                        const Spacer(),
+                        if (state.selectedCategory != 'All' ||
+                            state.searchQuery.isNotEmpty)
+                          _ClearFilterChip(
+                            onTap: () {
+                              _searchCtrl.clear();
+                              notifier.setSearch('');
+                              notifier.setCategory('All');
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 500.ms, delay: 150.ms)
+                    .slideY(
+                        begin: 0.1,
+                        end: 0,
+                        curve: Curves.easeOutCubic),
+              ),
+
+              // ── (legacy stats bar placeholder — kept for alignment) ──
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 24),
                   child: Row(
                     children: [
-                      Text(
-                        '${products.length} innovations found',
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 13,
-                          color: Colors.black45,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
                       const Spacer(),
-                      if (state.selectedCategory != 'All' ||
-                          state.searchQuery.isNotEmpty)
+                      if (false) // handled above
                         GestureDetector(
-                          onTap: () {
-                            _searchCtrl.clear();
-                            notifier.setSearch('');
-                            notifier.setCategory('All');
-                          },
+                          onTap: () {},
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
@@ -470,8 +633,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                 ),
               ),
 
-              const SliverToBoxAdapter(
-                  child: SizedBox(height: 16)),
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
               // ── Loading ──────────────────────────────────
               if (state.isLoading)
@@ -589,6 +751,145 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
         ],
       ),
     );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Stat Chip — used in the animated metrics strip
+// ═══════════════════════════════════════════════════════════
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String sublabel;
+  final Color color;
+
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 13, color: color),
+        ),
+        const SizedBox(width: 7),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: color,
+                height: 1.1,
+              ),
+            ),
+            Text(
+              sublabel,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 10,
+                color: Colors.black38,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
+    )
+        .animate()
+        .fadeIn(duration: 450.ms)
+        .slideY(begin: 0.15, end: 0, curve: Curves.easeOutCubic);
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  const _StatDivider();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: 1,
+      height: 28,
+      color: AppColors.lightGray,
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Clear Filter Chip — animated entrance + press effect
+// ═══════════════════════════════════════════════════════════
+class _ClearFilterChip extends StatefulWidget {
+  final VoidCallback onTap;
+  const _ClearFilterChip({required this.onTap});
+
+  @override
+  State<_ClearFilterChip> createState() =>
+      _ClearFilterChipState();
+}
+
+class _ClearFilterChipState extends State<_ClearFilterChip> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.crimson.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.crimson.withValues(alpha: 0.25),
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.close_rounded,
+                  size: 13, color: AppColors.crimson),
+              SizedBox(width: 5),
+              Text(
+                'Clear filters',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: AppColors.crimson,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn()
+        .scale(
+            begin: const Offset(0.8, 0.8),
+            curve: Curves.easeOutBack);
   }
 }
 
