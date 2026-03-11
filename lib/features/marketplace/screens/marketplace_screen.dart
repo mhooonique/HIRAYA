@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../providers/marketplace_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/category_filter_bar.dart';
+import '../widgets/marketplace_skeleton.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
   const MarketplaceScreen({super.key});
@@ -158,44 +159,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                           ),
                         ),
 
-                        // ── Hero Logo (right side) ────────
-                        Positioned(
-                          right: 28,
-                          bottom: 28,
-                          child: Opacity(
-                            opacity: 0.18 + t * 0.12,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.teal
-                                        .withValues(
-                                            alpha: 0.35 +
-                                                t * 0.25),
-                                    blurRadius:
-                                        30 + t * 20,
-                                    spreadRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              child: Image.asset(
-                                'assets/images/logo/final-logo.png',
-                                height: 72,
-                              ),
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(
-                                  duration: 800.ms,
-                                  delay: 200.ms)
-                              .scaleXY(
-                                  begin: 0.5,
-                                  end: 1.0,
-                                  curve: Curves.easeOutBack,
-                                  duration: 800.ms),
-                        ),
-
                         // Header text
                         Padding(
                           padding:
@@ -207,57 +170,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                             mainAxisAlignment:
                                 MainAxisAlignment.end,
                             children: [
-                              // Brand pill
-                              Container(
-                                padding:
-                                    const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white
-                                      .withValues(alpha: 0.10),
-                                  borderRadius:
-                                      BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.white
-                                        .withValues(
-                                            alpha: 0.18),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.storefront_rounded,
-                                      color: Colors.white70,
-                                      size: 12,
-                                    ),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'HIRAYA',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 11,
-                                        fontWeight:
-                                            FontWeight.w700,
-                                        color: Colors.white70,
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                      duration: 500.ms,
-                                      delay: 50.ms)
-                                  .slideX(
-                                      begin: -0.15,
-                                      end: 0,
-                                      curve:
-                                          Curves.easeOutCubic),
-                              const SizedBox(height: 8),
                               const Text(
                                 'Marketplace',
                                 style: TextStyle(
@@ -338,7 +250,18 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
             ],
           ),
         ],
-        body: RefreshIndicator(
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 420),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+          child: state.isLoading
+              ? const MarketplaceSkeleton()
+              : RefreshIndicator(
+          key: const ValueKey('content'),
           onRefresh: notifier.loadProducts,
           color: AppColors.teal,
           child: CustomScrollView(
@@ -508,7 +431,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
               // ── Category filter ──────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: CategoryFilterBar(
                     selected: state.selectedCategory,
                     onSelect: notifier.setCategory,
@@ -732,6 +655,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                 ),
             ],
           ),
+        ),
         ),
       ),
     );
