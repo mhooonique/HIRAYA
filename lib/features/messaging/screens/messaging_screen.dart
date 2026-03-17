@@ -19,6 +19,15 @@ class MessagingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<IncomingCall?>(
+      messagingProvider.select((s) => s.incomingCall),
+      (previous, next) {
+        if (next != null && previous?.id != next.id) {
+          _showIncomingCallDialog(context, ref, next);
+        }
+      },
+    );
+
     final mState   = ref.watch(messagingProvider);
     final user     = ref.watch(authProvider).user;
     final uid      = user?.id.toString() ?? '2';
@@ -659,18 +668,19 @@ class _ChatPanelState extends ConsumerState<_ChatPanel> {
                   overflow: TextOverflow.ellipsis)),
             ]),
           ])),
-          // Phase 2 — Jitsi Meet (disabled until implemented)
           IconButton(
             icon: const Icon(Icons.call_rounded, size: 18),
-            color: Colors.black26,
-            tooltip: 'Voice call — coming soon',
-            onPressed: null, // null = disabled
+            color: AppColors.sky,
+            tooltip: 'Voice call',
+            onPressed: () => ref.read(messagingProvider.notifier)
+                .initiateCall(conv.id, isVideo: false),
           ),
           IconButton(
             icon: const Icon(Icons.videocam_rounded, size: 18),
-            color: Colors.black26,
-            tooltip: 'Video call — coming soon',
-            onPressed: null,
+            color: AppColors.sky,
+            tooltip: 'Video call',
+            onPressed: () => ref.read(messagingProvider.notifier)
+                .initiateCall(conv.id, isVideo: true),
           ),
           TextButton.icon(
             onPressed: () => context.go('/product/${conv.originProductId}'),
@@ -1130,5 +1140,92 @@ class _EmptyState extends StatelessWidget {
       const SizedBox(height: 4),
       Text(subtitle, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38)),
     ]),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  INCOMING CALL DIALOG
+// ─────────────────────────────────────────────────────────────────────────────
+void _showIncomingCallDialog(BuildContext context, WidgetRef ref, IncomingCall call) {
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      contentPadding: const EdgeInsets.all(24),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: AppColors.sky.withValues(alpha: 0.15),
+            child: Icon(
+              call.isVideo ? Icons.videocam_rounded : Icons.call_rounded,
+              size: 32,
+              color: AppColors.sky,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Incoming ${call.isVideo ? "Video" : "Voice"} Call',
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            call.callerName,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Decline
+              Column(
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'decline_call',
+                    backgroundColor: Colors.red,
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      ref.read(messagingProvider.notifier).declineCall(call.id);
+                    },
+                    child: const Icon(Icons.call_end_rounded, color: Colors.white),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text('Decline', style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
+                ],
+              ),
+              // Accept
+              Column(
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'accept_call',
+                    backgroundColor: Colors.green,
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      ref.read(messagingProvider.notifier).acceptCall(call.id, call.roomUrl);
+                    },
+                    child: Icon(
+                      call.isVideo ? Icons.videocam_rounded : Icons.call_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text('Accept', style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
   );
 }

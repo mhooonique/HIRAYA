@@ -1,0 +1,187 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// FILE 1: lib/features/notifications/providers/notification_provider.dart
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/api_service.dart';
+
+// ── Model ─────────────────────────────────────────────────────────────────────
+
+class AppNotification {
+  final int id;
+  final String type;   // product_approved | product_rejected | new_interest
+                       // new_message | review_posted | system
+  final String title;
+  final String body;
+  final bool isRead;
+  final String? actionUrl; // e.g. /product/3  or /messages
+  final DateTime createdAt;
+
+  const AppNotification({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.body,
+    required this.isRead,
+    this.actionUrl,
+    required this.createdAt,
+  });
+
+  factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
+        id: j['id'],
+        type: j['type'] ?? 'system',
+        title: j['title'] ?? '',
+        body: j['body'] ?? j['message'] ?? '',
+        isRead: (j['is_read'] ?? j['read'] ?? 0) == 1,
+        actionUrl: j['action_url'],
+        createdAt: DateTime.tryParse(j['created_at'] ?? '') ?? DateTime.now(),
+      );
+
+  AppNotification copyWith({bool? isRead}) => AppNotification(
+        id: id,
+        type: type,
+        title: title,
+        body: body,
+        isRead: isRead ?? this.isRead,
+        actionUrl: actionUrl,
+        createdAt: createdAt,
+      );
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+class NotificationState {
+  final bool isLoading;
+  final List<AppNotification> notifications;
+  final int unreadCount;
+  final String? error;
+
+  const NotificationState({
+    this.isLoading = false,
+    this.notifications = const [],
+    this.unreadCount = 0,
+    this.error,
+  });
+
+  NotificationState copyWith({
+    bool? isLoading,
+    List<AppNotification>? notifications,
+    int? unreadCount,
+    String? error,
+  }) =>
+      NotificationState(
+        isLoading: isLoading ?? this.isLoading,
+        notifications: notifications ?? this.notifications,
+        unreadCount: unreadCount ?? this.unreadCount,
+        error: error,
+      );
+}
+
+// ── Notifier ──────────────────────────────────────────────────────────────────
+
+class NotificationNotifier extends StateNotifier<NotificationState> {
+  final ApiService _api;
+
+  NotificationNotifier(this._api) : super(const NotificationState()) {
+    load();
+  }
+
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final res = await _api.get('/notifications');
+      final list = (res['notifications'] as List? ?? [])
+          .map((e) => AppNotification.fromJson(e))
+          .toList();
+      state = state.copyWith(
+        isLoading: false,
+        notifications: list,
+        unreadCount: list.where((n) => !n.isRead).length,
+      );
+    } catch (_) {
+      // Use dummy data if API unavailable
+      final dummy = _dummy();
+      state = state.copyWith(
+        isLoading: false,
+        notifications: dummy,
+        unreadCount: dummy.where((n) => !n.isRead).length,
+      );
+    }
+  }
+
+  Future<void> markRead(int id) async {
+    // Optimistic update
+    final updated = state.notifications.map((n) {
+      return n.id == id ? n.copyWith(isRead: true) : n;
+    }).toList();
+    state = state.copyWith(
+      notifications: updated,
+      unreadCount: updated.where((n) => !n.isRead).length,
+    );
+    try {
+      await _api.put('/notifications/$id/read', {});
+    } catch (_) {}
+  }
+
+  Future<void> markAllRead() async {
+    final updated = state.notifications.map((n) => n.copyWith(isRead: true)).toList();
+    state = state.copyWith(notifications: updated, unreadCount: 0);
+    try {
+      await _api.put('/notifications/read-all', {});
+    } catch (_) {}
+  }
+
+  Future<void> deleteNotification(int id) async {
+    final updated = state.notifications.where((n) => n.id != id).toList();
+    state = state.copyWith(
+      notifications: updated,
+      unreadCount: updated.where((n) => !n.isRead).length,
+    );
+    try {
+      await _api.delete('/notifications/$id');
+    } catch (_) {}
+  }
+
+  List<AppNotification> _dummy() => [
+        AppNotification(
+          id: 1, type: 'product_approved',
+          title: 'Innovation Approved!',
+          body: 'Your innovation "AquaRice Smart Irrigation" has been approved and is now live.',
+          isRead: false, actionUrl: '/product/1',
+          createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
+        ),
+        AppNotification(
+          id: 2, type: 'new_interest',
+          title: 'New Interest Received',
+          body: 'A client expressed interest in "SolarNet Mini Grid".',
+          isRead: false, actionUrl: '/messages',
+          createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        ),
+        AppNotification(
+          id: 3, type: 'review_posted',
+          title: 'New Review',
+          body: 'Someone left a 5-star review on "CocoComposite Panel".',
+          isRead: false, actionUrl: '/product/2',
+          createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+        ),
+        AppNotification(
+          id: 4, type: 'new_message',
+          title: 'New Message',
+          body: 'You have a new message from Maria Santos.',
+          isRead: true, actionUrl: '/messages',
+          createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+        ),
+        AppNotification(
+          id: 5, type: 'system',
+          title: 'Welcome to HIRAYA!',
+          body: 'Complete your KYC verification to unlock all features.',
+          isRead: true, actionUrl: null,
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        ),
+      ];
+}
+
+final notificationProvider =
+    StateNotifierProvider<NotificationNotifier, NotificationState>((ref) {
+  return NotificationNotifier(ref.read(apiServiceProvider));
+});

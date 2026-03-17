@@ -1,35 +1,80 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
+import '../../../core/providers/theme_provider.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../client/providers/client_provider.dart';
 
-class ProductCard extends StatefulWidget {
+class ProductCard extends ConsumerStatefulWidget {
   final ProductModel product;
   final int index;
-  final VoidCallback? onLike;
 
   const ProductCard({
     super.key,
     required this.product,
     required this.index,
-    this.onLike,
   });
 
   @override
-  State<ProductCard> createState() => _ProductCardState();
+  ConsumerState<ProductCard> createState() => _ProductCardState();
 }
 
-class _ProductCardState extends State<ProductCard> {
+class _ProductCardState extends ConsumerState<ProductCard> {
   bool _hovered = false;
-  bool _liked = false;
 
   Color get _categoryColor =>
-      AppColors.categoryColors[widget.product.category] ??
-      AppColors.navy;
+      AppColors.categoryColors[widget.product.category] ?? AppColors.navy;
+
+  bool get _isClient {
+    final auth = ref.read(authProvider);
+    return auth.isLoggedIn && auth.user?.role == 'client';
+  }
+
+  void _onLikeTap() {
+    if (_isClient) {
+      ref.read(clientProvider.notifier).toggleLike(widget.product.id);
+    } else {
+      context.go('/login');
+    }
+  }
+
+  void _onWishlistTap() {
+    if (_isClient) {
+      ref.read(clientProvider.notifier).toggleWishlist(widget.product);
+    } else {
+      context.go('/login');
+    }
+  }
+
+  void _onBookmarkTap() {
+    if (_isClient) {
+      ref.read(clientProvider.notifier).toggleBookmark(widget.product);
+    } else {
+      context.go('/login');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authProvider);
+    final isClient = auth.isLoggedIn && auth.user?.role == 'client';
+    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+
+    final clientState = isClient ? ref.watch(clientProvider) : null;
+    final isLiked = clientState?.likedIds.contains(widget.product.id) ?? false;
+    final isWishlisted = clientState?.wishlistIds.contains(widget.product.id) ?? false;
+    final isBookmarked = clientState?.bookmarkIds.contains(widget.product.id) ?? false;
+
+    final cardBg = isDark ? const Color(0xFF1A2233) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF2A3448) : AppColors.lightGray;
+    final nameColor = isDark ? Colors.white : AppColors.navy;
+    final descColor = isDark ? Colors.white54 : Colors.black45;
+    final dividerColor = isDark ? const Color(0xFF2A3448) : AppColors.lightGray;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -38,21 +83,18 @@ class _ProductCardState extends State<ProductCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()
-            ..translate(0.0, _hovered ? -4.0 : 0.0),
+          transform: Matrix4.identity()..translate(0.0, _hovered ? -4.0 : 0.0),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardBg,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _hovered
-                  ? _categoryColor.withValues(alpha: 0.3)
-                  : AppColors.lightGray,
+              color: _hovered ? _categoryColor.withValues(alpha: 0.3) : borderColor,
             ),
             boxShadow: [
               BoxShadow(
                 color: _hovered
                     ? _categoryColor.withValues(alpha: 0.15)
-                    : Colors.black.withValues(alpha: 0.06),
+                    : Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
                 blurRadius: _hovered ? 20 : 8,
                 offset: const Offset(0, 6),
               ),
@@ -61,126 +103,17 @@ class _ProductCardState extends State<ProductCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image / Cover
+              // Cover image / gradient
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20)),
-                child: Container(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: SizedBox(
                   height: 180,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        _categoryColor,
-                        _categoryColor.withValues(alpha: 0.7),
-                      ],
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Background pattern
-                      Positioned(
-                        right: -20,
-                        bottom: -20,
-                        child: Icon(
-                          _categoryIcon(widget.product.category),
-                          size: 120,
-                          color: Colors.white.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      // Category badge
-                      Positioned(
-                        top: 12,
-                        left: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color:
-                                    Colors.white.withValues(alpha: 0.4)),
-                          ),
-                          child: Text(
-                            widget.product.category,
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // KYC badge
-                      if (widget.product.isVerifiedInnovator)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.teal,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.verified_rounded,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                          ),
-                        ),
-                      // Like button
-                      Positioned(
-                        bottom: 12,
-                        right: 12,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() => _liked = !_liked);
-                            widget.onLike?.call();
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _liked
-                                  ? AppColors.crimson
-                                  : Colors.white
-                                      .withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _liked
-                                      ? Icons.favorite_rounded
-                                      : Icons.favorite_border_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${widget.product.likes + (_liked ? 1 : 0)}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontFamily: 'Poppins',
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: widget.product.images.isNotEmpty
+                      ? _buildCoverImage(widget.product.images.first,
+                          isLiked: isLiked, isClient: isClient)
+                      : _buildGradientCover(_categoryColor, widget.product.category,
+                          isLiked: isLiked, isClient: isClient),
                 ),
               ),
 
@@ -192,11 +125,11 @@ class _ProductCardState extends State<ProductCard> {
                   children: [
                     Text(
                       widget.product.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                        color: nameColor,
                         height: 1.3,
                       ),
                       maxLines: 2,
@@ -205,26 +138,27 @@ class _ProductCardState extends State<ProductCard> {
                     const SizedBox(height: 6),
                     Text(
                       widget.product.description,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 12,
-                        color: Colors.black45,
+                        color: descColor,
                         height: 1.5,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
+
+                    // Clickable innovator row
+                    GestureDetector(
+                      onTap: () => context.go('/profile/${widget.product.innovatorId}'),
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(children: [
                         CircleAvatar(
                           radius: 12,
-                          backgroundColor:
-                              _categoryColor.withValues(alpha: 0.15),
+                          backgroundColor: _categoryColor.withValues(alpha: 0.15),
                           child: Text(
-                            widget.product.innovatorName
-                                .substring(0, 1)
-                                .toUpperCase(),
+                            widget.product.innovatorName.substring(0, 1).toUpperCase(),
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 11,
@@ -237,53 +171,77 @@ class _ProductCardState extends State<ProductCard> {
                         Expanded(
                           child: Text(
                             widget.product.innovatorName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: Colors.black54,
+                              color: AppColors.sky,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.sky,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ],
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppColors.sky),
+                      ]),
                     ),
+
                     const SizedBox(height: 10),
-                    const Divider(height: 1, color: AppColors.lightGray),
+                    Divider(height: 1, color: dividerColor),
                     const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _StatChip(
-                          icon: Icons.remove_red_eye_rounded,
-                          value: '${widget.product.views}',
+
+                    Row(children: [
+                      _StatChip(
+                        icon: Icons.remove_red_eye_rounded,
+                        value: '${widget.product.views}',
+                      ),
+                      const SizedBox(width: 10),
+                      _StatChip(
+                        icon: Icons.trending_up_rounded,
+                        value: '${widget.product.interestCount}',
+                        color: AppColors.teal,
+                      ),
+                      const Spacer(),
+
+                      // Wishlist + bookmark — client only
+                      if (isClient) ...[
+                        _IconAction(
+                          icon: isWishlisted
+                              ? Icons.bookmark_added_rounded
+                              : Icons.bookmark_add_outlined,
+                          color: isWishlisted ? AppColors.golden : Colors.black38,
+                          onTap: _onWishlistTap,
+                          tooltip: isWishlisted ? 'Remove from wishlist' : 'Add to wishlist',
                         ),
-                        const SizedBox(width: 12),
-                        _StatChip(
-                          icon: Icons.trending_up_rounded,
-                          value: '${widget.product.interestCount}',
-                          color: AppColors.teal,
+                        const SizedBox(width: 6),
+                        _IconAction(
+                          icon: isBookmarked
+                              ? Icons.turned_in_rounded
+                              : Icons.turned_in_not_rounded,
+                          color: isBookmarked ? AppColors.teal : Colors.black38,
+                          onTap: _onBookmarkTap,
+                          tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark',
                         ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color:
-                                _categoryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'View Details',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: _categoryColor,
-                            ),
-                          ),
-                        ),
+                        const SizedBox(width: 8),
                       ],
-                    ),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _categoryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'View Details',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _categoryColor,
+                          ),
+                        ),
+                      ),
+                    ]),
                   ],
                 ),
               ),
@@ -292,32 +250,216 @@ class _ProductCardState extends State<ProductCard> {
         ),
       ),
     )
-        .animate(
-            delay: Duration(milliseconds: 60 * widget.index))
+        .animate(delay: Duration(milliseconds: 60 * widget.index))
         .fadeIn(duration: 400.ms)
         .slideY(begin: 0.2, end: 0);
   }
 
+  Widget _buildCoverImage(String base64Img,
+      {required bool isLiked, required bool isClient}) {
+    try {
+      final bytes = base64Decode(base64Img);
+      return Stack(fit: StackFit.expand, children: [
+        Image.memory(bytes, fit: BoxFit.cover),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.3)],
+                stops: const [0.5, 1.0],
+              ),
+            ),
+          ),
+        ),
+        // Category badge
+        Positioned(
+          top: 12, left: 12,
+          child: _CategoryBadge(label: widget.product.category),
+        ),
+        // KYC verified badge
+        if (widget.product.isVerifiedInnovator)
+          Positioned(
+            top: 12, right: 12,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.verified_rounded, color: Colors.white, size: 14),
+            ),
+          ),
+        // Like button — clients only
+        Positioned(
+          bottom: 12, right: 12,
+          child: _LikeButton(
+            liked: isLiked,
+            count: widget.product.likes,
+            isClient: isClient,
+            onTap: _onLikeTap,
+          ),
+        ),
+      ]);
+    } catch (_) {
+      return _buildGradientCover(_categoryColor, widget.product.category,
+          isLiked: isLiked, isClient: isClient);
+    }
+  }
+
+  Widget _buildGradientCover(Color color, String category,
+      {required bool isLiked, required bool isClient}) {
+    return Stack(children: [
+      Positioned.fill(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color, color.withValues(alpha: 0.7)],
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        right: -20, bottom: -20,
+        child: Icon(_categoryIcon(category), size: 120, color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      Positioned(
+        top: 12, left: 12,
+        child: _CategoryBadge(label: category),
+      ),
+      if (widget.product.isVerifiedInnovator)
+        Positioned(
+          top: 12, right: 12,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Icons.verified_rounded, color: Colors.white, size: 14),
+          ),
+        ),
+      Positioned(
+        bottom: 12, right: 12,
+        child: _LikeButton(
+          liked: isLiked,
+          count: widget.product.likes,
+          isClient: isClient,
+          onTap: _onLikeTap,
+        ),
+      ),
+    ]);
+  }
+
   IconData _categoryIcon(String category) {
     switch (category) {
-      case 'Agriculture':
-        return Icons.grass_rounded;
-      case 'Healthcare':
-        return Icons.medical_services_rounded;
-      case 'Energy':
-        return Icons.bolt_rounded;
-      case 'Construction':
-        return Icons.foundation_rounded;
-      case 'Product Design':
-        return Icons.design_services_rounded;
-      case 'Information Technology':
-        return Icons.computer_rounded;
-      default:
-        return Icons.lightbulb_rounded;
+      case 'Agriculture':        return Icons.grass_rounded;
+      case 'Healthcare':         return Icons.medical_services_rounded;
+      case 'Energy':             return Icons.bolt_rounded;
+      case 'Construction':       return Icons.foundation_rounded;
+      case 'Product Design':     return Icons.design_services_rounded;
+      case 'Information Technology': return Icons.computer_rounded;
+      default:                   return Icons.lightbulb_rounded;
     }
   }
 }
 
+// ─── LIKE BUTTON ──────────────────────────────────────────────────────────────
+class _LikeButton extends StatelessWidget {
+  final bool liked;
+  final int count;
+  final bool isClient;
+  final VoidCallback onTap;
+
+  const _LikeButton({
+    required this.liked,
+    required this.count,
+    required this.isClient,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: liked
+              ? AppColors.crimson
+              : isClient
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(
+            liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            color: isClient ? Colors.white : Colors.white60,
+            size: 14,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: isClient ? Colors.white : Colors.white60,
+              fontFamily: 'Poppins',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ─── CATEGORY BADGE ───────────────────────────────────────────────────────────
+class _CategoryBadge extends StatelessWidget {
+  final String label;
+  const _CategoryBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontFamily: 'Poppins', fontSize: 11,
+        fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: 0.5,
+      ),
+    ),
+  );
+}
+
+// ─── ICON ACTION BUTTON ───────────────────────────────────────────────────────
+class _IconAction extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  const _IconAction({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    child: GestureDetector(
+      onTap: onTap,
+      child: Icon(icon, size: 18, color: color),
+    ),
+  );
+}
+
+// ─── STAT CHIP ────────────────────────────────────────────────────────────────
 class _StatChip extends StatelessWidget {
   final IconData icon;
   final String value;
@@ -330,22 +472,18 @@ class _StatChip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: color),
-        const SizedBox(width: 3),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 13, color: color),
+      const SizedBox(width: 3),
+      Text(
+        value,
+        style: TextStyle(
+          fontFamily: 'Poppins', fontSize: 12,
+          color: color, fontWeight: FontWeight.w500,
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }

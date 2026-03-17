@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/api_service.dart';
 import '../widgets/auth_text_field.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -20,11 +21,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _send() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 2)); // Replace with API call
-    setState(() {
-      _loading = false;
-      _sent = true;
-    });
+    try {
+      final res = await ApiService().post('auth/forgot-password', {
+        'email': _emailCtrl.text.trim(),
+      });
+      if (!mounted) return;
+      if (res['error'] != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['error'], style: const TextStyle(fontFamily: 'Poppins')), backgroundColor: Colors.red),
+        );
+      } else {
+        setState(() => _sent = true);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Connection error. Is XAMPP running?'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override

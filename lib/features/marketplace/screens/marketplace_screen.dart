@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../providers/marketplace_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/category_filter_bar.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
   const MarketplaceScreen({super.key});
@@ -61,6 +62,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     final state = ref.watch(marketplaceProvider);
     final notifier = ref.read(marketplaceProvider.notifier);
     final products = state.filtered;
+    final auth = ref.watch(authProvider);
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
@@ -332,9 +334,10 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
             actions: [
               _AnimatedNotificationBell(onTap: () {}),
               const SizedBox(width: 8),
-              _AnimatedSignInButton(
-                  onTap: () => context.go('/login')),
-              const SizedBox(width: 12),
+              if (!auth.isLoggedIn)
+                _AnimatedSignInButton(
+                    onTap: () => context.go('/login')),
+              if (!auth.isLoggedIn) const SizedBox(width: 12),
             ],
           ),
         ],
@@ -703,8 +706,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                       (context, index) => ProductCard(
                         product: products[index],
                         index: index,
-                        onLike: () => notifier
-                            .likeProduct(products[index].id),
                       ),
                       childCount: products.length,
                     ),
