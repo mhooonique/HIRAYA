@@ -1,0 +1,9 @@
+@echo off
+echo Building Flutter web...
+call flutter build web
+echo Copying files to XAMPP...
+xcopy /E /Y /I build\web\* C:\xampp\htdocs\hiraya\
+echo Fixing base href...
+powershell -Command "(Get-Content 'C:\xampp\htdocs\hiraya\index.html') -replace '<base href=\"/\">', '<base href=\"/hiraya/\">' | Set-Content 'C:\xampp\htdocs\hiraya\index.html'"
+echo Done! Refresh the browser.
+pause

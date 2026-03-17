@@ -45,6 +45,9 @@ dependencies:
   pin_code_fields: ^9.1.0
   flutter_pw_validator: ^1.6.0
   fl_chart: ^0.68.0
+  qr_flutter: ^4.1.0
+  share_plus: ^10.0.0
+  device_info_plus: ^9.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,7 +10,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../providers/innovator_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../notifications/widgets/notification_bell.dart';
 import 'dart:typed_data';
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  DRAFT KEY
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,12 +101,12 @@ class _InnovatorDashboardState
         return _MyInnovations(state: state);
       case 2:
         return _PostInnovation(
-          onSubmit: (name, desc, cat) =>
+          onSubmit: (name, desc, cat, images, videoB64, videoFn, link, qr) =>
               ref.read(innovatorProvider.notifier).submitProduct(
-                    name: name,
-                    description: desc,
-                    category: cat,
-                  ),
+                name: name, description: desc, category: cat,
+                images: images, videoBase64: videoB64,
+                videoFilename: videoFn, externalLink: link, qrImage: qr,
+              ),
           isLoading: state.isLoading,
         );
       case 3:
@@ -226,6 +229,26 @@ class _InnovatorSidebar extends ConsumerWidget {
           _SideTab(icon: Icons.add_circle_rounded, label: 'Post Innovation', index: 2, selected: selectedTab, onTap: onTabChange),
           _SideTab(icon: Icons.person_rounded, label: 'Profile', index: 3, selected: selectedTab, onTap: onTabChange),
           const Spacer(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+            child: GestureDetector(
+              onTap: () => context.push('/search'),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.offWhite,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.lightGray),
+                ),
+                child: const Row(children: [
+                  Icon(Icons.search_rounded, color: Colors.black45, size: 18),
+                  SizedBox(width: 10),
+                  Text('Search', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black54)),
+                ]),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.all(12),
             child: GestureDetector(
@@ -352,7 +375,7 @@ class _InnovatorTopBar extends StatelessWidget {
         Text('Welcome back, ${user?.firstName ?? 'Innovator'}! 👋',
             style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.navy)),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.navy), onPressed: () {}),
+        const NotificationBell(),
       ]),
     );
   }
@@ -515,7 +538,7 @@ class _MiniStat extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  MY INNOVATIONS — with search + filter (Section 6.5)
+//  MY INNOVATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 class _MyInnovations extends StatefulWidget {
   final InnovatorState state;
@@ -566,7 +589,6 @@ class _MyInnovationsState extends State<_MyInnovations> {
     final filtered = _filtered;
     return Column(
       children: [
-        // ── Toolbar ────────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
           color: Colors.white,
@@ -581,7 +603,6 @@ class _MyInnovationsState extends State<_MyInnovations> {
               ),
             ]),
             const SizedBox(height: 14),
-            // Search
             SizedBox(
               height: 42,
               child: TextField(
@@ -605,36 +626,16 @@ class _MyInnovationsState extends State<_MyInnovations> {
               ),
             ),
             const SizedBox(height: 12),
-            // Filters row
             Row(children: [
-              _FilterChip(
-                label: 'Status',
-                value: _statusFilter,
-                options: _statuses,
-                onChanged: (v) => setState(() => _statusFilter = v),
-              ),
+              _FilterChip(label: 'Status',   value: _statusFilter,   options: _statuses,     onChanged: (v) => setState(() => _statusFilter = v)),
               const SizedBox(width: 10),
-              _FilterChip(
-                label: 'Category',
-                value: _categoryFilter,
-                options: _categories,
-                onChanged: (v) => setState(() => _categoryFilter = v),
-              ),
+              _FilterChip(label: 'Category', value: _categoryFilter, options: _categories,   onChanged: (v) => setState(() => _categoryFilter = v)),
               const SizedBox(width: 10),
-              _FilterChip(
-                label: 'Sort',
-                value: _sortBy,
-                options: _sortOptions,
-                onChanged: (v) => setState(() => _sortBy = v),
-                icon: Icons.sort_rounded,
-              ),
+              _FilterChip(label: 'Sort',     value: _sortBy,         options: _sortOptions,  onChanged: (v) => setState(() => _sortBy = v), icon: Icons.sort_rounded),
             ]),
           ]),
         ),
-
         const Divider(height: 1, color: AppColors.lightGray),
-
-        // ── List ───────────────────────────────────────────────────────────
         Expanded(
           child: filtered.isEmpty
               ? const _EmptyState(
@@ -772,85 +773,93 @@ class _ProductDetailRow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  POST INNOVATION — full spec 6.1 + 6.2
+//  POST INNOVATION — updated with images/video/link/qr support
 // ─────────────────────────────────────────────────────────────────────────────
-class _PostInnovation extends StatefulWidget {
-  final Future<bool> Function(String, String, String) onSubmit;
+class _PostInnovation extends ConsumerStatefulWidget {
+  final Future<bool> Function(
+    String name,
+    String desc,
+    String cat,
+    List<String> images,
+    String? videoBase64,
+    String? videoFilename,
+    String? externalLink,
+    String? qrImage,
+  ) onSubmit;
   final bool isLoading;
+
   const _PostInnovation({required this.onSubmit, required this.isLoading});
 
   @override
-  State<_PostInnovation> createState() => _PostInnovationState();
+  ConsumerState<_PostInnovation> createState() => _PostInnovationState();
 }
 
-class _PostInnovationState extends State<_PostInnovation> {
-  final _nameCtrl   = TextEditingController();
-  final _descCtrl   = TextEditingController();
-  final _linkCtrl   = TextEditingController();
-  final _formKey    = GlobalKey<FormState>();
+class _PostInnovationState extends ConsumerState<_PostInnovation> {
+  final _nameCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _linkCtrl = TextEditingController();
+  final _formKey  = GlobalKey<FormState>();
+
   String _selectedCategory = 'Agriculture';
 
-  // Media state
-  final List<_PickedFile> _images = [];  // max 10
+  final List<_PickedFile> _images = [];
   _PickedFile? _video;
-  bool _hasDraft = false;
+  bool _draftRestored = false;
+
+  Timer? _debounce;
 
   static const _categories = [
     'Agriculture', 'Healthcare', 'Energy',
-    'Construction', 'Product Design', 'Information Technology'
+    'Construction', 'Product Design', 'Information Technology',
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadDraft();
-    _nameCtrl.addListener(_saveDraft);
-    _descCtrl.addListener(_saveDraft);
-    _linkCtrl.addListener(_saveDraft);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _restoreDraft());
+    _nameCtrl.addListener(_onFieldChanged);
+    _descCtrl.addListener(_onFieldChanged);
+    _linkCtrl.addListener(_onFieldChanged);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _linkCtrl.dispose();
     super.dispose();
   }
 
-  // ── Draft ─────────────────────────────────────────────────────────────────
-  Future<void> _loadDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kDraftKey);
-    if (raw == null) return;
-    try {
-      final m = jsonDecode(raw) as Map<String, dynamic>;
-      setState(() {
-        _nameCtrl.text = m['name'] ?? '';
-        _descCtrl.text = m['desc'] ?? '';
-        _linkCtrl.text = m['link'] ?? '';
-        _selectedCategory = m['category'] ?? 'Agriculture';
-        _hasDraft = _nameCtrl.text.isNotEmpty || _descCtrl.text.isNotEmpty;
-      });
-    } catch (_) {}
+  void _restoreDraft() {
+    final draft = ref.read(innovatorProvider).draft;
+    if (draft == null) return;
+    setState(() {
+      _nameCtrl.text    = draft.name;
+      _descCtrl.text    = draft.description;
+      _linkCtrl.text    = draft.externalLink ?? '';
+      _selectedCategory = draft.category;
+      _draftRestored    = true;
+    });
+  }
+
+  void _onFieldChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(seconds: 2), _saveDraft);
   }
 
   Future<void> _saveDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kDraftKey, jsonEncode({
-      'name': _nameCtrl.text,
-      'desc': _descCtrl.text,
-      'link': _linkCtrl.text,
-      'category': _selectedCategory,
-    }));
+    await ref.read(innovatorProvider.notifier).saveDraft(
+      name:          _nameCtrl.text.trim(),
+      description:   _descCtrl.text.trim(),
+      category:      _selectedCategory,
+      images:        _images.map((f) => base64Encode(f.bytes)).toList(),
+      externalLink:  _linkCtrl.text.trim().isNotEmpty ? _linkCtrl.text.trim() : null,
+      videoBase64:   _video != null ? base64Encode(_video!.bytes) : null,
+      videoFilename: _video?.name,
+    );
   }
 
-  Future<void> _clearDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kDraftKey);
-    setState(() => _hasDraft = false);
-  }
-
-  // ── Image picker ──────────────────────────────────────────────────────────
   Future<void> _pickImages() async {
     if (_images.length >= 10) return;
     final result = await FilePicker.platform.pickFiles(
@@ -861,24 +870,19 @@ class _PostInnovationState extends State<_PostInnovation> {
     );
     if (result == null) return;
     final remaining = 10 - _images.length;
-    final toAdd = result.files.take(remaining);
-    for (final f in toAdd) {
+    for (final f in result.files.take(remaining)) {
       if ((f.size / 1024 / 1024) > 5) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${f.name} exceeds 5MB limit — skipped.', style: const TextStyle(fontFamily: 'Poppins')),
-            backgroundColor: AppColors.crimson,
-          ));
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${f.name} exceeds 5 MB — skipped.', style: const TextStyle(fontFamily: 'Poppins')),
+          backgroundColor: AppColors.crimson,
+        ));
         continue;
       }
-      if (f.bytes != null) {
-        setState(() => _images.add(_PickedFile(name: f.name, bytes: f.bytes!, sizeKb: f.size ~/ 1024)));
-      }
+      if (f.bytes != null) setState(() => _images.add(_PickedFile(name: f.name, bytes: f.bytes!, sizeKb: f.size ~/ 1024)));
     }
+    _onFieldChanged();
   }
 
-  // ── Video picker ──────────────────────────────────────────────────────────
   Future<void> _pickVideo() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -887,15 +891,19 @@ class _PostInnovationState extends State<_PostInnovation> {
     );
     if (result == null || result.files.isEmpty) return;
     final f = result.files.first;
-    final sizeMb = f.size / 1024 / 1024;
-    if (sizeMb > 100) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video too large. Max ~100MB.'), backgroundColor: AppColors.crimson));
+    if ((f.size / 1024 / 1024) > 100) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Video too large. Max 100 MB.'),
+        backgroundColor: AppColors.crimson,
+      ));
       return;
     }
-    if (f.bytes != null) setState(() => _video = _PickedFile(name: f.name, bytes: f.bytes!, sizeKb: f.size ~/ 1024));
+    if (f.bytes != null) {
+      setState(() => _video = _PickedFile(name: f.name, bytes: f.bytes!, sizeKb: f.size ~/ 1024));
+      _onFieldChanged();
+    }
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_images.length < 5) {
@@ -909,13 +917,17 @@ class _PostInnovationState extends State<_PostInnovation> {
       _nameCtrl.text.trim(),
       _descCtrl.text.trim(),
       _selectedCategory,
+      _images.map((f) => base64Encode(f.bytes)).toList(),
+      _video != null ? base64Encode(_video!.bytes) : null,
+      _video?.name,
+      _linkCtrl.text.trim().isNotEmpty ? _linkCtrl.text.trim() : null,
+      null,
     );
     if (success && mounted) {
       _nameCtrl.clear();
       _descCtrl.clear();
       _linkCtrl.clear();
-      setState(() { _images.clear(); _video = null; _selectedCategory = 'Agriculture'; });
-      await _clearDraft();
+      setState(() { _images.clear(); _video = null; _selectedCategory = 'Agriculture'; _draftRestored = false; });
     }
   }
 
@@ -923,19 +935,20 @@ class _PostInnovationState extends State<_PostInnovation> {
     hintText: hint,
     hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black26),
     suffixIcon: suffix,
-    filled: true,
-    fillColor: Colors.white,
+    filled: true, fillColor: Colors.white,
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightGray)),
+    border:        OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightGray)),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightGray)),
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.teal, width: 2)),
-    errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.crimson)),
+    errorBorder:   OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.crimson)),
     focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.crimson, width: 2)),
   );
 
   @override
   Widget build(BuildContext context) {
+    final isSaving = ref.watch(innovatorProvider).isSavingDraft;
     final catColor = AppColors.categoryColors[_selectedCategory] ?? AppColors.navy;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: ConstrainedBox(
@@ -946,16 +959,14 @@ class _PostInnovationState extends State<_PostInnovation> {
 
             // Header
             Row(children: [
-              const Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Post an Innovation', style: TextStyle(fontFamily: 'Poppins', fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.navy)),
-                  SizedBox(height: 4),
-                  Text('Submit your innovation for admin review.', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
-                ]),
-              ),
-              // Draft indicator
-              if (_hasDraft)
-                Container(
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Post an Innovation', style: TextStyle(fontFamily: 'Poppins', fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.navy)),
+                SizedBox(height: 4),
+                Text('Submit your innovation for admin review.', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+              ])),
+              if (_draftRestored || isSaving)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.golden.withValues(alpha: 0.1),
@@ -963,21 +974,29 @@ class _PostInnovationState extends State<_PostInnovation> {
                     border: Border.all(color: AppColors.golden.withValues(alpha: 0.4)),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.edit_note_rounded, size: 16, color: AppColors.golden),
+                    isSaving
+                        ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.golden))
+                        : const Icon(Icons.edit_note_rounded, size: 14, color: AppColors.golden),
                     const SizedBox(width: 6),
-                    const Text('Draft restored', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden, fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () { _nameCtrl.clear(); _descCtrl.clear(); _linkCtrl.clear(); _clearDraft(); },
-                      child: const Icon(Icons.close, size: 14, color: AppColors.golden),
-                    ),
+                    Text(isSaving ? 'Saving draft...' : 'Draft restored',
+                        style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden, fontWeight: FontWeight.w600)),
+                    if (!isSaving && _draftRestored) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          _nameCtrl.clear(); _descCtrl.clear(); _linkCtrl.clear();
+                          setState(() { _images.clear(); _video = null; _draftRestored = false; });
+                          ref.read(innovatorProvider.notifier).discardDraft();
+                        },
+                        child: const Icon(Icons.close, size: 13, color: AppColors.golden),
+                      ),
+                    ],
                   ]),
                 ),
             ]),
 
             const SizedBox(height: 28),
 
-            // ── BASIC INFO ─────────────────────────────────────────────────
             const _SectionHeader('Basic Information', Icons.info_outline_rounded),
             const SizedBox(height: 16),
 
@@ -997,17 +1016,13 @@ class _PostInnovationState extends State<_PostInnovation> {
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.lightGray),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.lightGray)),
               child: DropdownButton<String>(
                 value: _selectedCategory,
                 isExpanded: true,
                 underline: const SizedBox(),
                 style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.darkGray),
-                onChanged: (v) => setState(() { _selectedCategory = v ?? _selectedCategory; _saveDraft(); }),
+                onChanged: (v) { setState(() => _selectedCategory = v ?? _selectedCategory); _onFieldChanged(); },
                 items: _categories.map((c) {
                   final cc = AppColors.categoryColors[c] ?? AppColors.navy;
                   return DropdownMenuItem(value: c, child: Row(children: [
@@ -1034,7 +1049,6 @@ class _PostInnovationState extends State<_PostInnovation> {
 
             const SizedBox(height: 28),
 
-            // ── IMAGES ─────────────────────────────────────────────────────
             _SectionHeader('Images', Icons.photo_library_rounded,
                 badge: '${_images.length}/10 · Min 5 required'),
             const SizedBox(height: 8),
@@ -1044,32 +1058,28 @@ class _PostInnovationState extends State<_PostInnovation> {
             ),
             const SizedBox(height: 12),
 
-            // Image slots — drag-to-reorder
             if (_images.isNotEmpty)
               ReorderableListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _images.length,
-                onReorder: (oldIndex, newIndex) {
+                onReorder: (oldIdx, newIdx) {
                   setState(() {
-                    if (newIndex > oldIndex) newIndex--;
-                    final item = _images.removeAt(oldIndex);
-                    _images.insert(newIndex, item);
+                    if (newIdx > oldIdx) newIdx--;
+                    final item = _images.removeAt(oldIdx);
+                    _images.insert(newIdx, item);
                   });
+                  _onFieldChanged();
                 },
-                itemBuilder: (ctx, i) {
-                  final f = _images[i];
-                  return _ImageSlotTile(
-                    key: ValueKey(f.name + i.toString()),
-                    file: f,
-                    index: i,
-                    isCover: i == 0,
-                    onRemove: () => setState(() => _images.removeAt(i)),
-                  );
-                },
+                itemBuilder: (ctx, i) => _ImageSlotTile(
+                  key: ValueKey('${_images[i].name}$i'),
+                  file: _images[i],
+                  index: i,
+                  isCover: i == 0,
+                  onRemove: () { setState(() => _images.removeAt(i)); _onFieldChanged(); },
+                ),
               ),
 
-            // Add image button
             if (_images.length < 10)
               GestureDetector(
                 onTap: _pickImages,
@@ -1080,13 +1090,13 @@ class _PostInnovationState extends State<_PostInnovation> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.teal.withValues(alpha: 0.4), style: BorderStyle.solid, width: 1.5),
+                    border: Border.all(color: AppColors.teal.withValues(alpha: 0.4), width: 1.5),
                   ),
                   child: Column(children: [
                     Icon(Icons.add_photo_alternate_rounded, size: 28, color: AppColors.teal.withValues(alpha: 0.6)),
                     const SizedBox(height: 6),
                     Text(
-                      _images.isEmpty ? 'Click to add images (5–10 required)' : 'Add more images (${10 - _images.length} remaining)',
+                      _images.isEmpty ? 'Click to add images (5–10 required)' : 'Add more (${10 - _images.length} remaining)',
                       style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppColors.teal.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
                     ),
                   ]),
@@ -1095,7 +1105,6 @@ class _PostInnovationState extends State<_PostInnovation> {
 
             const SizedBox(height: 28),
 
-            // ── VIDEO ──────────────────────────────────────────────────────
             const _SectionHeader('Short Video', Icons.videocam_rounded, badge: 'Optional · 30–60 sec · MP4/MOV'),
             const SizedBox(height: 12),
 
@@ -1114,7 +1123,10 @@ class _PostInnovationState extends State<_PostInnovation> {
                     Text(_video!.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
                     Text('${_video!.sizeKb} KB', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black38)),
                   ])),
-                  IconButton(icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.crimson), onPressed: () => setState(() => _video = null)),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.crimson),
+                    onPressed: () { setState(() => _video = null); _onFieldChanged(); },
+                  ),
                 ]),
               )
             else
@@ -1140,39 +1152,33 @@ class _PostInnovationState extends State<_PostInnovation> {
 
             const SizedBox(height: 28),
 
-            // ── QR / EXTERNAL LINK ─────────────────────────────────────────
             const _SectionHeader('QR Code / External Link', Icons.link_rounded, badge: 'Optional'),
             const SizedBox(height: 8),
             const Text(
-              'Paste a URL pointing to a full demo, pitch deck, or presentation hosted externally (YouTube, Google Drive, Canva, etc.)',
+              'Paste a URL to a full demo, pitch deck, or presentation (YouTube, Google Drive, Canva, etc.)\nA QR code will be auto-generated from this link.',
               style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38, height: 1.5),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _linkCtrl,
               style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
-              decoration: _inputDec(
-                'https://drive.google.com/... or https://youtu.be/...',
-                suffix: _linkCtrl.text.isNotEmpty
+              decoration: _inputDec('https://drive.google.com/... or https://youtu.be/...').copyWith(
+                suffixIcon: _linkCtrl.text.isNotEmpty
                     ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _linkCtrl.clear()))
                     : const Icon(Icons.open_in_new_rounded, size: 16, color: Colors.black26),
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return null;
                 final uri = Uri.tryParse(v.trim());
-                if (uri == null || !uri.hasAbsolutePath || (!uri.scheme.startsWith('http'))) {
-                  return 'Enter a valid URL (https://...)';
-                }
+                if (uri == null || !uri.scheme.startsWith('http')) return 'Enter a valid URL (https://...)';
                 return null;
               },
             ),
 
             const SizedBox(height: 32),
 
-            // ── SUBMIT ─────────────────────────────────────────────────────
-            // Progress indicator
             _ProgressBar(
-              images: _images.length,
+              images:  _images.length,
               hasName: _nameCtrl.text.trim().length >= 5,
               hasDesc: _descCtrl.text.trim().length >= 30,
             ),
@@ -1203,171 +1209,6 @@ class _PostInnovationState extends State<_PostInnovation> {
       ),
     );
   }
-}
-
-// ── Image slot tile ───────────────────────────────────────────────────────────
-class _ImageSlotTile extends StatelessWidget {
-  final _PickedFile file;
-  final int index;
-  final bool isCover;
-  final VoidCallback onRemove;
-
-  const _ImageSlotTile({
-    super.key,
-    required this.file,
-    required this.index,
-    required this.isCover,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCover ? AppColors.teal.withValues(alpha: 0.5) : AppColors.lightGray,
-          width: isCover ? 1.5 : 1,
-        ),
-      ),
-      child: Row(children: [
-        // Drag handle
-        const Icon(Icons.drag_handle_rounded, color: Colors.black26, size: 20),
-        const SizedBox(width: 10),
-        // Thumbnail preview
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.memory(file.bytes, width: 52, height: 42, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              width: 52, height: 42, color: AppColors.lightGray,
-              child: const Icon(Icons.broken_image, size: 20, color: Colors.black26),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(file.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy),
-              overflow: TextOverflow.ellipsis),
-          Text('${file.sizeKb} KB', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black38)),
-        ])),
-        if (isCover)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-            child: const Text('Cover', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.teal)),
-          ),
-        const SizedBox(width: 8),
-        IconButton(icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.crimson), onPressed: onRemove),
-      ]),
-    );
-  }
-}
-
-// ── Progress bar ─────────────────────────────────────────────────────────────
-class _ProgressBar extends StatelessWidget {
-  final int images;
-  final bool hasName;
-  final bool hasDesc;
-
-  const _ProgressBar({required this.images, required this.hasName, required this.hasDesc});
-
-  @override
-  Widget build(BuildContext context) {
-    final steps = [
-      _Step('Name', hasName),
-      _Step('Description', hasDesc),
-      _Step('5+ Images', images >= 5),
-    ];
-    final done = steps.where((s) => s.done).length;
-    final progress = done / steps.length;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGray),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Text('Submission readiness',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
-          const Spacer(),
-          Text('$done/${steps.length}',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700,
-                  color: done == steps.length ? AppColors.teal : AppColors.golden)),
-        ]),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: AppColors.lightGray,
-            color: done == steps.length ? AppColors.teal : AppColors.golden,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(children: steps.map((s) => Expanded(child: Row(children: [
-          Icon(s.done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-              size: 14, color: s.done ? AppColors.teal : Colors.black26),
-          const SizedBox(width: 4),
-          Text(s.label, style: TextStyle(fontFamily: 'Poppins', fontSize: 11,
-              color: s.done ? AppColors.teal : Colors.black38,
-              fontWeight: s.done ? FontWeight.w600 : FontWeight.w400)),
-        ]))).toList()),
-      ]),
-    );
-  }
-}
-
-class _Step { final String label; final bool done; const _Step(this.label, this.done); }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-class _PickedFile {
-  final String name;
-  final Uint8List bytes;
-  final int sizeKb;
-  const _PickedFile({required this.name, required this.bytes, required this.sizeKb});
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final String? badge;
-  const _SectionHeader(this.title, this.icon, {this.badge});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(children: [
-      Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(color: AppColors.navy.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 16, color: AppColors.navy),
-      ),
-      const SizedBox(width: 10),
-      Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navy)),
-      if (badge != null) ...[
-        const SizedBox(width: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(color: AppColors.offWhite, borderRadius: BorderRadius.circular(6), border: Border.all(color: AppColors.lightGray)),
-          child: Text(badge!, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black45)),
-        ),
-      ],
-    ]);
-  }
-}
-
-class _FormLabel extends StatelessWidget {
-  final String text;
-  const _FormLabel(this.text);
-  @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1441,6 +1282,137 @@ class _ProfileRow extends StatelessWidget {
       Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
     ]),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  SHARED HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+class _ImageSlotTile extends StatelessWidget {
+  final _PickedFile file;
+  final int         index;
+  final bool        isCover;
+  final VoidCallback onRemove;
+  const _ImageSlotTile({super.key, required this.file, required this.index, required this.isCover, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isCover ? AppColors.teal.withValues(alpha: 0.5) : AppColors.lightGray,
+          width: isCover ? 1.5 : 1,
+        ),
+      ),
+      child: Row(children: [
+        const Icon(Icons.drag_handle_rounded, color: Colors.black26, size: 20),
+        const SizedBox(width: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(file.bytes, width: 52, height: 42, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(width: 52, height: 42, color: AppColors.lightGray,
+              child: const Icon(Icons.broken_image, size: 20, color: Colors.black26)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(file.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy), overflow: TextOverflow.ellipsis),
+          Text('${file.sizeKb} KB', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black38)),
+        ])),
+        if (isCover)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+            child: const Text('Cover', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.teal)),
+          ),
+        const SizedBox(width: 8),
+        IconButton(icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.crimson), onPressed: onRemove),
+      ]),
+    );
+  }
+}
+
+class _ProgressBar extends StatelessWidget {
+  final int  images;
+  final bool hasName;
+  final bool hasDesc;
+  const _ProgressBar({required this.images, required this.hasName, required this.hasDesc});
+
+  @override
+  Widget build(BuildContext context) {
+    final steps    = [_Step('Name', hasName), _Step('Description', hasDesc), _Step('5+ Images', images >= 5)];
+    final done     = steps.where((s) => s.done).length;
+    final progress = done / steps.length;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.lightGray)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Text('Submission readiness', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
+          const Spacer(),
+          Text('$done/${steps.length}', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700,
+              color: done == steps.length ? AppColors.teal : AppColors.golden)),
+        ]),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(value: progress, minHeight: 6, backgroundColor: AppColors.lightGray,
+              color: done == steps.length ? AppColors.teal : AppColors.golden),
+        ),
+        const SizedBox(height: 12),
+        Row(children: steps.map((s) => Expanded(child: Row(children: [
+          Icon(s.done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+              size: 14, color: s.done ? AppColors.teal : Colors.black26),
+          const SizedBox(width: 4),
+          Text(s.label, style: TextStyle(fontFamily: 'Poppins', fontSize: 11,
+              color: s.done ? AppColors.teal : Colors.black38,
+              fontWeight: s.done ? FontWeight.w600 : FontWeight.w400)),
+        ]))).toList()),
+      ]),
+    );
+  }
+}
+
+class _Step { final String label; final bool done; const _Step(this.label, this.done); }
+
+class _PickedFile {
+  final String    name;
+  final Uint8List bytes;
+  final int       sizeKb;
+  const _PickedFile({required this.name, required this.bytes, required this.sizeKb});
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String  title;
+  final IconData icon;
+  final String? badge;
+  const _SectionHeader(this.title, this.icon, {this.badge});
+
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    Container(padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(color: AppColors.navy.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, size: 16, color: AppColors.navy)),
+    const SizedBox(width: 10),
+    Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navy)),
+    if (badge != null) ...[
+      const SizedBox(width: 10),
+      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(color: AppColors.offWhite, borderRadius: BorderRadius.circular(6), border: Border.all(color: AppColors.lightGray)),
+          child: Text(badge!, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black45))),
+    ],
+  ]);
+}
+
+class _FormLabel extends StatelessWidget {
+  final String text;
+  const _FormLabel(this.text);
+  @override
+  Widget build(BuildContext context) =>
+      Text(text, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "31131385571",
+    "firebase_url": "https://hiraya-dev-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "hiraya-dev",
+    "storage_bucket": "hiraya-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:31131385571:android:c4c93e56619ef4d1450fd6",
+        "android_client_info": {
+          "package_name": "com.example.hiraya_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "31131385571-cmu537hbggdr9t3dh7fa69ijbeqhcu7k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hiraya_app",
+            "certificate_hash": "33fe346b36bf85bac3339cee89794de7d7bd7422"
+          }
+        },
+        {
+          "client_id": "31131385571-binnkumf3vkg98q12u222qkh4kni6sn3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDd2bKF9Diz_PZJL_3FbUTisWPQvECIXOo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "31131385571-binnkumf3vkg98q12u222qkh4kni6sn3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

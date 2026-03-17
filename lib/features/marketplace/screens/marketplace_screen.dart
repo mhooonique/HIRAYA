@@ -188,7 +188,8 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                           ),
                           child: TextField(
                             controller: _searchCtrl,
-                            onChanged: notifier.setSearch,
+                            onTap: () => context.push('/search'),
+                            readOnly: true,
                             style: const TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 14,

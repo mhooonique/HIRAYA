@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../notifications/widgets/notification_bell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  MOCK DATA MODELS
@@ -205,10 +206,7 @@ class _ClientTopBar extends StatelessWidget {
               onPressed: () => context.go('/marketplace'),
               tooltip: 'Browse Marketplace',
             ),
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AppColors.navy),
-              onPressed: () {},
-            ),
+            const NotificationBell(),
             const SizedBox(width: 4),
             GestureDetector(
               onTap: () => tabController.animateTo(4),
@@ -260,7 +258,6 @@ class _DiscoverTab extends StatefulWidget {
 }
 
 class _DiscoverTabState extends State<_DiscoverTab> {
-  final _searchCtrl = TextEditingController();
   String _categoryFilter = 'All';
 
   static const _categories = [
@@ -268,18 +265,8 @@ class _DiscoverTabState extends State<_DiscoverTab> {
     'Construction', 'Product Design', 'Information Technology'
   ];
 
-  @override
-  void dispose() { _searchCtrl.dispose(); super.dispose(); }
-
   List<ProductModel> get _filtered {
     var list = List<ProductModel>.from(_dummyProducts);
-    final q = _searchCtrl.text.trim().toLowerCase();
-    if (q.isNotEmpty) {
-      list = list.where((p) =>
-          p.name.toLowerCase().contains(q) ||
-          p.description.toLowerCase().contains(q) ||
-          p.innovatorName.toLowerCase().contains(q)).toList();
-    }
     if (_categoryFilter != 'All') {
       list = list.where((p) => p.category == _categoryFilter).toList();
     }
@@ -297,19 +284,17 @@ class _DiscoverTabState extends State<_DiscoverTab> {
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             child: Column(children: [
+              // ── Search field — read-only, navigates to /search on tap ──
               SizedBox(
                 height: 44,
                 child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: (_) => setState(() {}),
+                  readOnly: true,
+                  onTap: () => context.push('/search'),
                   style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Search innovations, innovators...',
                     hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
                     prefixIcon: const Icon(Icons.search, size: 20, color: Colors.black38),
-                    suffixIcon: _searchCtrl.text.isNotEmpty
-                        ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () { _searchCtrl.clear(); setState(() {}); })
-                        : null,
                     filled: true,
                     fillColor: AppColors.offWhite,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),

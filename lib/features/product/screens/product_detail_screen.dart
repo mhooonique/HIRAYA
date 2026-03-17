@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../marketplace/providers/marketplace_provider.dart';
+import '../widgets/share_qr_section.dart';
+import '../../reviews/widgets/reviews_widget.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final int productId;
@@ -418,7 +420,11 @@ class _ProductDetailScreenState
                     ],
                   ).animate(delay: 200.ms).fadeIn(),
 
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 32),
+                  ReviewsSection(productId: product.id),
+                  const SizedBox(height: 32),
+                  ShareQrSection(product: product),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
