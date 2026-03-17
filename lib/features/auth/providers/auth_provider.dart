@@ -26,6 +26,9 @@ class SignupData {
   String? selfieFileName;
   bool   isGoogleSignup;
   String googleId;
+  String dateOfBirth;
+  String city;
+  String province;
 
   SignupData({
     this.role                = 'client',
@@ -46,6 +49,9 @@ class SignupData {
     this.selfieFileName,
     this.isGoogleSignup      = false,
     this.googleId            = '',
+    this.dateOfBirth         = '',
+    this.city                = '',
+    this.province            = '',
   });
 }
 
@@ -154,8 +160,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final token = await _api.getStoredToken();
       if (token == null) { state = state.copyWith(isRehydrating: false); return; }
       final res = await _api.get('users/me', auth: true);
-      if (res['id'] != null) {
-        state = state.copyWith(isRehydrating: false, user: UserModel.fromJson(res), token: token);
+      final userData = res['user'] as Map<String, dynamic>?;
+      if (userData != null && userData['id'] != null) {
+        state = state.copyWith(isRehydrating: false, user: UserModel.fromJson(userData), token: token);
         return;
       }
     } catch (_) { await _api.clearToken(); }
@@ -187,6 +194,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           pendingUserId: res['user_id'] as int,
           pendingToken:  res['token']   as String,
           otpType:       res['otp_type'] as String? ?? 'email',
+          pendingPhone:  res['masked_phone'] as String?,
         );
         return;
       }
@@ -207,9 +215,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _api.saveToken(token);
       final res = await _api.get('users/me', auth: true);
+      final userData = (res['user'] as Map<String, dynamic>?) ?? res;
       state = state.copyWith(
         isLoading: false, requires2fa: false,
-        user: UserModel.fromJson(res), token: token,
+        user: UserModel.fromJson(userData), token: token,
       );
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Failed to load profile');
@@ -275,6 +284,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           pendingUserId: res['user_id'] as int,
           pendingToken:  res['token']   as String,
           otpType:       res['otp_type'] as String? ?? 'email',
+          pendingPhone:  res['masked_phone'] as String?,
         );
         return;
       }
@@ -304,6 +314,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'role':             data.role,
         'phone':            data.phone,
         'country_code':     data.countryCode,
+        'date_of_birth':    data.dateOfBirth,
+        'city':             data.city,
+        'province':         data.province,
         'gov_id':           data.govIdBase64,
         'gov_id_name':      data.govIdFileName,
         'selfie':           data.selfieBase64,

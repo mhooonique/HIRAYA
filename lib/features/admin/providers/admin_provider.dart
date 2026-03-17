@@ -180,15 +180,18 @@ class AdminNotifier extends StateNotifier<AdminState> {
   // ── Helper ───────────────────────────────────────────────────────────────────
   UserModel _patchUser(UserModel u, {required String kycStatus, required int userStatus}) =>
       UserModel(
-        id:         u.id,
-        firstName:  u.firstName,
-        lastName:   u.lastName,
-        username:   u.username,
-        email:      u.email,
-        role:       u.role,
-        phone:      u.phone,
-        kycStatus:  kycStatus,
-        userStatus: userStatus,
+        id:          u.id,
+        firstName:   u.firstName,
+        lastName:    u.lastName,
+        username:    u.username,
+        email:       u.email,
+        role:        u.role,
+        phone:       u.phone,
+        dateOfBirth: u.dateOfBirth,
+        city:        u.city,
+        province:    u.province,
+        kycStatus:   kycStatus,
+        userStatus:  userStatus,
       );
 }
 

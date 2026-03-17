@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../../../core/constants/ph_address_data.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -45,6 +46,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   // KYC
   String? _govIdBase64, _govIdFileName, _selfieBase64, _selfieFileName;
+  String? _selectedProvince;
+  String? _selectedCity;
+  DateTime? _dateOfBirth;
 
   @override
   void initState() {
@@ -135,11 +139,26 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         break;
 
       case 5:
+        if (_dateOfBirth == null) {
+          setState(() => _stepError = 'Date of birth is required');
+          return;
+        }
+        if (_selectedProvince == null) {
+          setState(() => _stepError = 'Province / Region is required');
+          return;
+        }
+        if (_selectedCity == null) {
+          setState(() => _stepError = 'City / Municipality is required');
+          return;
+        }
         if (_govIdBase64 == null || _selfieBase64 == null) {
           setState(() => _stepError = 'Both Government ID and Selfie are required');
           return;
         }
         _data
+          ..dateOfBirth  = '${_dateOfBirth!.year}-${_dateOfBirth!.month.toString().padLeft(2,'0')}-${_dateOfBirth!.day.toString().padLeft(2,'0')}'
+          ..city         = _selectedCity!
+          ..province     = _selectedProvince!
           ..govIdBase64    = _govIdBase64
           ..govIdFileName  = _govIdFileName
           ..selfieBase64   = _selfieBase64
@@ -769,10 +788,80 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     children: [
       const Text('Identity Verification', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _dark)),
       const SizedBox(height: 8),
-      const Text('Upload your documents to verify your identity.', style: TextStyle(color: Colors.black54)),
-      const SizedBox(height: 8),
+      const Text('Upload your documents and provide your personal details.', style: TextStyle(color: Colors.black54)),
+      const SizedBox(height: 20),
+
+      // Date of Birth
+      const Text('Date of Birth *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _dark)),
+      const SizedBox(height: 6),
+      GestureDetector(
+        onTap: () async {
+          final now = DateTime.now();
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: _dateOfBirth ?? DateTime(now.year - 18, now.month, now.day),
+            firstDate: DateTime(1900),
+            lastDate: DateTime(now.year - 13, now.month, now.day),
+          );
+          if (picked != null) setState(() => _dateOfBirth = picked);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black26),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(children: [
+            const Icon(Icons.calendar_today_outlined, size: 18, color: Colors.black45),
+            const SizedBox(width: 10),
+            Text(
+              _dateOfBirth != null
+                  ? '${_dateOfBirth!.month.toString().padLeft(2,'0')}/${_dateOfBirth!.day.toString().padLeft(2,'0')}/${_dateOfBirth!.year}'
+                  : 'Select date of birth',
+              style: TextStyle(color: _dateOfBirth != null ? _dark : Colors.black38, fontSize: 14),
+            ),
+          ]),
+        ),
+      ),
+      const SizedBox(height: 16),
+
+      // Province dropdown
+      DropdownButtonFormField<String>(
+        value: _selectedProvince,
+        decoration: InputDecoration(
+          labelText: 'Province / Region *',
+          prefixIcon: const Icon(Icons.map_outlined),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        isExpanded: true,
+        items: phProvinces.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+        onChanged: (val) => setState(() {
+          _selectedProvince = val;
+          _selectedCity = null; // reset city when province changes
+        }),
+      ),
+      const SizedBox(height: 16),
+
+      // City dropdown (filtered by selected province)
+      DropdownButtonFormField<String>(
+        value: _selectedCity,
+        decoration: InputDecoration(
+          labelText: 'City / Municipality *',
+          prefixIcon: const Icon(Icons.location_city_outlined),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        isExpanded: true,
+        disabledHint: const Text('Select a province first', style: TextStyle(color: Colors.black38)),
+        items: _selectedProvince == null
+            ? null
+            : citiesFor(_selectedProvince!).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+        onChanged: _selectedProvince == null ? null : (val) => setState(() => _selectedCity = val),
+      ),
+      const SizedBox(height: 24),
+
+      // Documents
       Container(
-        padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.red.shade200)),
         child: const Row(children: [
           Icon(Icons.info_outline, color: Colors.red, size: 16),
@@ -815,14 +904,41 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       ]),
       const SizedBox(height: 16),
       _ReviewSection('Personal Info', [
-        _ReviewRow('Name',     '${_data.firstName} ${_data.middleName.isNotEmpty ? '${_data.middleName} ' : ''}${_data.lastName}${_data.suffix.isNotEmpty ? ', ${_data.suffix}' : ''}'.trim()),
-        _ReviewRow('Username', '@${_data.username}'),
-        _ReviewRow('Phone',    '${_data.countryCode}${_data.phone} ✓'),
+        _ReviewRow('Name',          '${_data.firstName} ${_data.middleName.isNotEmpty ? '${_data.middleName} ' : ''}${_data.lastName}${_data.suffix.isNotEmpty ? ', ${_data.suffix}' : ''}'.trim()),
+        _ReviewRow('Username',      '@${_data.username}'),
+        _ReviewRow('Phone',         '${_data.countryCode}${_data.phone} ✓'),
+        _ReviewRow('Date of Birth', _data.dateOfBirth),
+        _ReviewRow('Address',       '${_data.city}, ${_data.province}'),
       ]),
       const SizedBox(height: 16),
       _ReviewSection('KYC Documents', [
         _ReviewRow('Government ID',  _govIdFileName  ?? '—'),
+        if (_govIdBase64 != null) ...[
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.memory(
+              base64Decode(_govIdBase64!),
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         _ReviewRow('Selfie with ID', _selfieFileName ?? '—'),
+        if (_selfieBase64 != null) ...[
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.memory(
+              base64Decode(_selfieBase64!),
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ],
       ]),
       const SizedBox(height: 24),
       Container(

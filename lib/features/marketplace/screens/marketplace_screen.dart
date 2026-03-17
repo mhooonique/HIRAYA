@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../providers/marketplace_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/category_filter_bar.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
   const MarketplaceScreen({super.key});
@@ -39,6 +40,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
     final state = ref.watch(marketplaceProvider);
     final notifier = ref.read(marketplaceProvider.notifier);
     final products = state.filtered;
+    final auth = ref.watch(authProvider);
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
@@ -131,29 +133,30 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                     color: Colors.white),
                 onPressed: () {},
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
-                  onTap: () => context.go('/login'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.teal,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        fontSize: 13,
+              if (!auth.isLoggedIn)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: () => context.go('/login'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.teal,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -365,8 +368,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                       (context, index) => ProductCard(
                         product: products[index],
                         index: index,
-                        onLike: () => notifier
-                            .likeProduct(products[index].id),
                       ),
                       childCount: products.length,
                     ),

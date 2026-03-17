@@ -10,6 +10,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/providers/theme_provider.dart';
 import 'analytics_screen.dart';
 import '../providers/admin_provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -141,6 +142,7 @@ class _AdminSidebar extends ConsumerWidget {
               ),
             ),
           ),
+          _AdminThemeToggle(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: GestureDetector(
@@ -202,6 +204,61 @@ class _SidebarItem extends StatelessWidget {
               child: Text('$badge', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
         ]),
+      ),
+    );
+  }
+}
+
+// ─── SIDEBAR THEME TOGGLE ─────────────────────────────────────────────────────
+class _AdminThemeToggle extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: GestureDetector(
+        onTap: () => ref.read(themeProvider.notifier).toggle(),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.golden.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isDark
+                  ? AppColors.golden.withValues(alpha: 0.3)
+                  : Colors.white12,
+            ),
+          ),
+          child: Row(children: [
+            Icon(
+              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              color: isDark ? AppColors.golden : Colors.white54,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isDark ? 'Dark Mode' : 'Light Mode',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  color: isDark ? AppColors.golden : Colors.white54,
+                ),
+              ),
+            ),
+            Switch(
+              value: isDark,
+              onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              activeColor: AppColors.golden,
+              inactiveThumbColor: Colors.white38,
+              inactiveTrackColor: Colors.white12,
+            ),
+          ]),
+        ),
       ),
     );
   }
@@ -639,6 +696,8 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     _DetailRow(icon: Icons.email_rounded,    label: 'Email',   value: user.email),
                     _DetailRow(icon: Icons.phone_rounded,    label: 'Phone',   value: user.phone.isNotEmpty ? user.phone : '—'),
+                    _DetailRow(icon: Icons.cake_rounded,     label: 'Date of Birth', value: user.dateOfBirth ?? '—'),
+                    _DetailRow(icon: Icons.location_on_rounded, label: 'Address', value: (user.city != null && user.province != null) ? '${user.city}, ${user.province}' : (user.city ?? user.province ?? '—')),
                     _DetailRow(icon: Icons.badge_rounded,    label: 'Role',    value: user.role.toUpperCase()),
                     _DetailRow(icon: Icons.verified_rounded, label: 'KYC',     value: user.kycStatus.toUpperCase()),
                     _DetailRow(icon: Icons.toggle_on_rounded, label: 'Status', value: user.userStatus == 1 ? 'ACTIVE' : user.userStatus == 2 ? 'REJECTED' : 'PENDING APPROVAL'),

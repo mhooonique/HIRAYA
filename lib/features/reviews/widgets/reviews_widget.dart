@@ -2,9 +2,11 @@
 // ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/review_provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ReviewsSection extends ConsumerWidget {
   final int productId;
@@ -12,7 +14,9 @@ class ReviewsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(reviewProvider(productId));
+    final state    = ref.watch(reviewProvider(productId));
+    final auth     = ref.watch(authProvider);
+    final isClient = auth.isLoggedIn && auth.user?.role == 'client';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +35,11 @@ class ReviewsSection extends ConsumerWidget {
         ),
         if (state.stats != null) _RatingStats(stats: state.stats!),
         const SizedBox(height: 16),
-        if (state.userReview == null)
+        if (!auth.isLoggedIn)
+          _SignInToReviewNudge()
+        else if (!isClient)
+          const SizedBox.shrink()   // innovators/admins see nothing
+        else if (state.userReview == null)
           _WriteReviewCard(productId: productId)
         else
           _UserReviewCard(review: state.userReview!, productId: productId),
@@ -182,6 +190,38 @@ class _RatingStats extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Sign-in nudge ─────────────────────────────────────────────────────────────
+
+class _SignInToReviewNudge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.navy.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.12)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.rate_review_outlined, color: AppColors.navy, size: 20),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Text(
+            'Sign in as a Client to leave a review.',
+            style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppColors.navy),
+          ),
+        ),
+        TextButton(
+          onPressed: () => context.go('/login'),
+          child: const Text('Sign In',
+              style: TextStyle(fontFamily: 'Poppins', fontSize: 13,
+                  fontWeight: FontWeight.w600, color: AppColors.crimson)),
+        ),
+      ]),
     );
   }
 }
@@ -383,62 +423,143 @@ class _WriteReviewCardState extends ConsumerState<_WriteReviewCard> {
 
 // ── User's own review ─────────────────────────────────────────────────────────
 
-class _UserReviewCard extends ConsumerWidget {
+class _UserReviewCard extends ConsumerStatefulWidget {
   final Review review;
   final int productId;
   const _UserReviewCard({required this.review, required this.productId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_UserReviewCard> createState() => _UserReviewCardState();
+}
+
+class _UserReviewCardState extends ConsumerState<_UserReviewCard> {
+  bool _editing = false;
+  late int _rating;
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _bodyCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _rating   = widget.review.rating;
+    _titleCtrl = TextEditingController(text: widget.review.title ?? '');
+    _bodyCtrl  = TextEditingController(text: widget.review.body);
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _bodyCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_rating == 0 || _bodyCtrl.text.trim().isEmpty) return;
+    final ok = await ref.read(reviewProvider(widget.productId).notifier).updateReview(
+      reviewId: widget.review.id,
+      rating:   _rating,
+      title:    _titleCtrl.text.trim().isEmpty ? null : _titleCtrl.text.trim(),
+      body:     _bodyCtrl.text.trim(),
+    );
+    if (ok && mounted) setState(() => _editing = false);
+  }
+
+  InputDecoration _dec(String hint) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'Poppins'),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    border:        OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.lightGray)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.lightGray)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.navy)),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final isSubmitting = ref.watch(reviewProvider(widget.productId)).isSubmitting;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.navy.withOpacity(0.04),
+        color: AppColors.navy.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.navy.withOpacity(0.2)),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.2)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _StarRow(rating: review.rating, size: 16),
-              const Spacer(),
-              const Text(
-                'Your Review',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.navy,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline,
-                    color: Colors.red, size: 18),
-                onPressed: () => ref
-                    .read(reviewProvider(productId).notifier)
-                    .deleteReview(review.id),
-              ),
-            ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          if (!_editing) _StarRow(rating: widget.review.rating, size: 16),
+          const Spacer(),
+          const Text('Your Review',
+              style: TextStyle(fontSize: 12, color: AppColors.navy,
+                  fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+          IconButton(
+            icon: Icon(_editing ? Icons.close_rounded : Icons.edit_outlined,
+                color: AppColors.navy, size: 18),
+            tooltip: _editing ? 'Cancel edit' : 'Edit review',
+            onPressed: () => setState(() {
+              if (_editing) {
+                // reset
+                _rating = widget.review.rating;
+                _titleCtrl.text = widget.review.title ?? '';
+                _bodyCtrl.text  = widget.review.body;
+              }
+              _editing = !_editing;
+            }),
           ),
-          if (review.title != null)
-            Text(
-              review.title!,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins'),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+            tooltip: 'Delete review',
+            onPressed: () => ref.read(reviewProvider(widget.productId).notifier)
+                .deleteReview(widget.review.id),
+          ),
+        ]),
+
+        if (_editing) ...[
+          const SizedBox(height: 8),
+          Row(children: List.generate(5, (i) {
+            final star = i + 1;
+            return GestureDetector(
+              onTap: () => setState(() => _rating = star),
+              child: Icon(
+                star <= _rating ? Icons.star : Icons.star_border,
+                color: AppColors.golden, size: 28,
+              ),
+            );
+          })),
+          const SizedBox(height: 10),
+          TextField(controller: _titleCtrl,
+              style: const TextStyle(fontSize: 13, fontFamily: 'Poppins'),
+              decoration: _dec('Title (optional)')),
+          const SizedBox(height: 8),
+          TextField(controller: _bodyCtrl, maxLines: 3,
+              style: const TextStyle(fontSize: 13, fontFamily: 'Poppins'),
+              decoration: _dec('Update your review...')),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: isSubmitting ? null : _save,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: isSubmitting
+                  ? const SizedBox(width: 16, height: 16,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Save Changes',
+                      style: TextStyle(fontFamily: 'Poppins', fontSize: 13,
+                          fontWeight: FontWeight.w600, color: Colors.white)),
             ),
-          Text(
-            review.body,
-            style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade700,
-                fontFamily: 'Poppins'),
           ),
+        ] else ...[
+          if (widget.review.title != null)
+            Text(widget.review.title!,
+                style: const TextStyle(fontSize: 13,
+                    fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+          Text(widget.review.body,
+              style: TextStyle(fontSize: 13,
+                  color: Colors.grey.shade700, fontFamily: 'Poppins')),
         ],
-      ),
+      ]),
     );
   }
 }

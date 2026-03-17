@@ -4,8 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/providers/theme_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
+import '../../marketplace/providers/marketplace_provider.dart';
+import '../../marketplace/widgets/category_filter_bar.dart';
+import '../../marketplace/widgets/product_card.dart';
+import '../providers/client_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  MOCK DATA MODELS
@@ -29,27 +35,11 @@ class _InterestItem {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  PROVIDERS (local state — to be wired to API later)
+//  PROVIDERS
 // ─────────────────────────────────────────────────────────────────────────────
-final _wishlistProvider = StateProvider<List<ProductModel>>((ref) => _dummyProducts.take(3).toList());
-final _bookmarksProvider = StateProvider<List<ProductModel>>((ref) => [_dummyProducts[1], _dummyProducts[3]]);
-final _interestsProvider = StateProvider<List<_InterestItem>>((ref) => _dummyInterests);
-
-// ── Dummy data ────────────────────────────────────────────────────────────────
-final _dummyProducts = [
-  ProductModel(id: 1, name: 'Smart Rice Monitoring System', description: 'IoT-based soil and water monitoring for rice yield optimization using low-cost sensors.', category: 'Agriculture', images: [], likes: 142, views: 890, interestCount: 23, status: 'approved', innovatorName: 'Juan dela Cruz', innovatorUsername: 'juandc', innovatorId: 2, kycStatus: 'verified', createdAt: DateTime.now().subtract(const Duration(days: 5))),
-  ProductModel(id: 2, name: 'AI-Assisted Diabetic Retinopathy Screener', description: 'Machine learning model trained on 50,000+ fundus images for early-stage diabetic retinopathy detection.', category: 'Healthcare', images: [], likes: 98, views: 1240, interestCount: 31, status: 'approved', innovatorName: 'Maria Santos', innovatorUsername: 'mariasantos', innovatorId: 3, kycStatus: 'verified', createdAt: DateTime.now().subtract(const Duration(days: 12))),
-  ProductModel(id: 3, name: 'Modular Solar Microgrids', description: 'Plug-and-play solar microgrid kits for off-grid Barangay electrification in Mindanao.', category: 'Energy', images: [], likes: 204, views: 3100, interestCount: 67, status: 'approved', innovatorName: 'Carlo Reyes', innovatorUsername: 'carloreyes', innovatorId: 4, kycStatus: 'verified', createdAt: DateTime.now().subtract(const Duration(days: 3))),
-  ProductModel(id: 4, name: 'BambooCrete — Bamboo-Reinforced Concrete', description: 'Sustainable structural concrete using bamboo fiber reinforcement for low-cost rural housing.', category: 'Construction', images: [], likes: 76, views: 510, interestCount: 14, status: 'approved', innovatorName: 'Ana Villanueva', innovatorUsername: 'anavillanueva', innovatorId: 5, kycStatus: 'unverified', createdAt: DateTime.now().subtract(const Duration(days: 20))),
-  ProductModel(id: 5, name: 'HydroFarm Sensor Array', description: 'Automated nutrient and pH monitoring for hydroponic farms with mobile dashboard integration.', category: 'Agriculture', images: [], likes: 55, views: 320, interestCount: 9, status: 'approved', innovatorName: 'Juan dela Cruz', innovatorUsername: 'juandc', innovatorId: 2, kycStatus: 'verified', createdAt: DateTime.now().subtract(const Duration(days: 8))),
-  ProductModel(id: 6, name: 'TeleRehab Platform', description: 'Remote physical therapy platform connecting patients with licensed therapists via video and motion tracking.', category: 'Healthcare', images: [], likes: 133, views: 870, interestCount: 28, status: 'approved', innovatorName: 'Dr. Liza Cruz', innovatorUsername: 'lizacruz', innovatorId: 6, kycStatus: 'verified', createdAt: DateTime.now().subtract(const Duration(days: 1))),
-];
-
-final _dummyInterests = [
-  _InterestItem(productId: 3, productName: 'Modular Solar Microgrids', category: 'Energy', innovatorName: 'Carlo Reyes', status: 'accepted', sentAt: DateTime.now().subtract(const Duration(days: 2))),
-  _InterestItem(productId: 1, productName: 'Smart Rice Monitoring System', category: 'Agriculture', innovatorName: 'Juan dela Cruz', status: 'pending', sentAt: DateTime.now().subtract(const Duration(days: 4))),
-  _InterestItem(productId: 4, productName: 'BambooCrete', category: 'Construction', innovatorName: 'Ana Villanueva', status: 'declined', sentAt: DateTime.now().subtract(const Duration(days: 10))),
-];
+// Wishlist and bookmarks are now handled by clientProvider (real API).
+// Interests remain a local empty list until wired to the API.
+final _interestsProvider = StateProvider<List<_InterestItem>>((ref) => const []);
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  MAIN SCREEN
@@ -88,8 +78,9 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final wishlist = ref.watch(_wishlistProvider);
-    final bookmarks = ref.watch(_bookmarksProvider);
+    final cState = ref.watch(clientProvider);
+    final wishlist = cState.wishlist;
+    final bookmarks = cState.bookmarks;
     final interests = ref.watch(_interestsProvider);
 
     return Scaffold(
@@ -101,41 +92,18 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _DiscoverTab(
-                  onWishlist: (p) {
-                    final list = ref.read(_wishlistProvider);
-                    final exists = list.any((x) => x.id == p.id);
-                    ref.read(_wishlistProvider.notifier).state = exists
-                        ? list.where((x) => x.id != p.id).toList()
-                        : [...list, p];
-                    _showSnack(exists ? 'Removed from wishlist' : 'Added to wishlist',
-                        exists ? AppColors.crimson : AppColors.teal);
-                  },
-                  onBookmark: (p) {
-                    final list = ref.read(_bookmarksProvider);
-                    final exists = list.any((x) => x.id == p.id);
-                    ref.read(_bookmarksProvider.notifier).state = exists
-                        ? list.where((x) => x.id != p.id).toList()
-                        : [...list, p];
-                    _showSnack(exists ? 'Bookmark removed' : 'Bookmarked privately',
-                        exists ? AppColors.crimson : AppColors.navy);
-                  },
-                  wishlistIds: wishlist.map((p) => p.id).toSet(),
-                  bookmarkIds: bookmarks.map((p) => p.id).toSet(),
-                ),
+                const _DiscoverTab(),
                 _WishlistTab(
                   items: wishlist,
                   onRemove: (p) {
-                    ref.read(_wishlistProvider.notifier).state =
-                        ref.read(_wishlistProvider).where((x) => x.id != p.id).toList();
+                    ref.read(clientProvider.notifier).toggleWishlist(p);
                     _showSnack('Removed from wishlist', AppColors.crimson);
                   },
                 ),
                 _BookmarksTab(
                   items: bookmarks,
                   onRemove: (p) {
-                    ref.read(_bookmarksProvider.notifier).state =
-                        ref.read(_bookmarksProvider).where((x) => x.id != p.id).toList();
+                    ref.read(clientProvider.notifier).toggleBookmark(p);
                     _showSnack('Bookmark removed', AppColors.crimson);
                   },
                 ),
@@ -242,268 +210,117 @@ class _ClientTopBar extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 //  TAB 1 — DISCOVER
 // ─────────────────────────────────────────────────────────────────────────────
-class _DiscoverTab extends StatefulWidget {
-  final void Function(ProductModel) onWishlist;
-  final void Function(ProductModel) onBookmark;
-  final Set<int> wishlistIds;
-  final Set<int> bookmarkIds;
-
-  const _DiscoverTab({
-    required this.onWishlist, required this.onBookmark,
-    required this.wishlistIds, required this.bookmarkIds,
-  });
-
+class _DiscoverTab extends ConsumerStatefulWidget {
+  const _DiscoverTab();
   @override
-  State<_DiscoverTab> createState() => _DiscoverTabState();
+  ConsumerState<_DiscoverTab> createState() => _DiscoverTabState();
 }
 
-class _DiscoverTabState extends State<_DiscoverTab> {
-  String _categoryFilter = 'All';
-
-  static const _categories = [
-    'All', 'Agriculture', 'Healthcare', 'Energy',
-    'Construction', 'Product Design', 'Information Technology'
-  ];
-
-  List<ProductModel> get _filtered {
-    var list = List<ProductModel>.from(_dummyProducts);
-    if (_categoryFilter != 'All') {
-      list = list.where((p) => p.category == _categoryFilter).toList();
-    }
-    list.sort((a, b) => (b.likes * 2 + b.views).compareTo(a.likes * 2 + a.views));
-    return list;
+class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(marketplaceProvider.notifier).loadProducts());
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filtered;
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
+    final state    = ref.watch(marketplaceProvider);
+    final notifier = ref.read(marketplaceProvider.notifier);
+    final products = state.filtered;
+
+    return Column(children: [
+      // Search bar
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+        child: GestureDetector(
+          onTap: () => context.push('/search'),
           child: Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-            child: Column(children: [
-              // ── Search field — read-only, navigates to /search on tap ──
-              SizedBox(
-                height: 44,
-                child: TextField(
-                  readOnly: true,
-                  onTap: () => context.push('/search'),
-                  style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Search innovations, innovators...',
-                    hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
-                    prefixIcon: const Icon(Icons.search, size: 20, color: Colors.black38),
-                    filled: true,
-                    fillColor: AppColors.offWhite,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightGray)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.lightGray)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.sky, width: 1.5)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 34,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _categories.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (ctx, i) {
-                    final c = _categories[i];
-                    final isActive = _categoryFilter == c;
-                    final color = c == 'All' ? AppColors.navy : (AppColors.categoryColors[c] ?? AppColors.navy);
-                    return GestureDetector(
-                      onTap: () => setState(() => _categoryFilter = c),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isActive ? color : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isActive ? color : AppColors.lightGray),
-                        ),
-                        child: Text(c, style: TextStyle(
-                            fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w600,
-                            color: isActive ? Colors.white : Colors.black54)),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ]),
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-            child: Row(children: [
-              const Icon(Icons.local_fire_department_rounded, color: AppColors.crimson, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                _categoryFilter == 'All' ? 'Trending Now' : 'Top in $_categoryFilter',
-                style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.navy),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: AppColors.crimson.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
-                child: Text('${filtered.length}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.crimson)),
-              ),
-            ]),
-          ),
-        ),
-
-        filtered.isEmpty
-            ? const SliverFillRemaining(
-                child: _EmptyState(icon: Icons.search_off_rounded, title: 'No results', subtitle: 'Try a different search or category.'),
-              )
-            : SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                sliver: SliverGrid(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _DiscoverCard(
-                      product: filtered[i],
-                      index: i,
-                      isWishlisted: widget.wishlistIds.contains(filtered[i].id),
-                      isBookmarked: widget.bookmarkIds.contains(filtered[i].id),
-                      onWishlist: () => widget.onWishlist(filtered[i]),
-                      onBookmark: () => widget.onBookmark(filtered[i]),
-                    ),
-                    childCount: filtered.length,
-                  ),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 360,
-                    mainAxisExtent: 260,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                ),
-              ),
-      ],
-    );
-  }
-}
-
-class _DiscoverCard extends StatelessWidget {
-  final ProductModel product;
-  final int index;
-  final bool isWishlisted;
-  final bool isBookmarked;
-  final VoidCallback onWishlist;
-  final VoidCallback onBookmark;
-
-  const _DiscoverCard({
-    required this.product, required this.index,
-    required this.isWishlisted, required this.isBookmarked,
-    required this.onWishlist, required this.onBookmark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final catColor = AppColors.categoryColors[product.category] ?? AppColors.navy;
-    return GestureDetector(
-      onTap: () => context.go('/product/${product.id}'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.lightGray),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))],
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            height: 110,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: catColor.withValues(alpha: 0.08),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.lightGray),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
             ),
-            child: Stack(children: [
-              Center(child: Icon(Icons.lightbulb_rounded, size: 40, color: catColor.withValues(alpha: 0.3))),
-              Positioned(top: 10, left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: catColor, borderRadius: BorderRadius.circular(6)),
-                  child: Text(product.category, style: const TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
-                ),
-              ),
-              Positioned(top: 6, right: 6,
-                child: Row(children: [
-                  _ActionBtn(
-                    icon: isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
-                    color: isBookmarked ? AppColors.navy : Colors.black45,
-                    onTap: onBookmark,
-                  ),
-                  const SizedBox(width: 4),
-                  _ActionBtn(
-                    icon: isWishlisted ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                    color: isWishlisted ? AppColors.crimson : Colors.black45,
-                    onTap: onWishlist,
-                  ),
-                ]),
-              ),
+            child: const Row(children: [
+              Icon(Icons.search_rounded, color: Colors.black38, size: 20),
+              SizedBox(width: 12),
+              Text('Search innovations, innovators...', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.black38)),
             ]),
           ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(product.name,
-                  style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.navy),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 3),
-              Row(children: [
-                if (product.kycStatus == 'verified') const Icon(Icons.verified_rounded, size: 12, color: AppColors.teal),
-                if (product.kycStatus == 'verified') const SizedBox(width: 3),
-                Expanded(child: Text(product.innovatorName,
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black45),
-                    overflow: TextOverflow.ellipsis)),
+        ),
+      ),
+
+      // Category filter
+      CategoryFilterBar(
+        selected: state.selectedCategory,
+        onSelect: notifier.setCategory,
+      ),
+
+      const SizedBox(height: 8),
+
+      // Count + sort
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(children: [
+          Text('${products.length} innovations', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+          const Spacer(),
+          PopupMenuButton<String>(
+            onSelected: notifier.setSort,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.navy.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.sort_rounded, size: 16, color: AppColors.navy),
+                SizedBox(width: 6),
+                Text('Sort', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.navy)),
               ]),
-              const SizedBox(height: 8),
-              const Divider(height: 1, color: AppColors.lightGray),
-              const SizedBox(height: 8),
-              Row(children: [
-                _MiniStat(icon: Icons.favorite_rounded, value: '${product.likes}', color: AppColors.crimson),
-                const SizedBox(width: 10),
-                _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views}', color: Colors.black38),
-                const SizedBox(width: 10),
-                _MiniStat(icon: Icons.handshake_rounded, value: '${product.interestCount}', color: AppColors.teal),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: AppColors.sky.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                  child: const Text('View', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.sky)),
-                ),
-              ]),
-            ]),
+            ),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'newest',        child: Text('Newest First',  style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+              const PopupMenuItem(value: 'most_liked',    child: Text('Most Liked',    style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+              const PopupMenuItem(value: 'most_viewed',   child: Text('Most Viewed',   style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+              const PopupMenuItem(value: 'most_interest', child: Text('Most Interest', style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+            ],
           ),
         ]),
-      ).animate(delay: Duration(milliseconds: 50 * index)).fadeIn(duration: 350.ms).slideY(begin: 0.05, end: 0),
-    );
-  }
-}
-
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  const _ActionBtn({required this.icon, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4)],
       ),
-      child: Icon(icon, size: 16, color: color),
-    ),
-  );
+
+      const SizedBox(height: 12),
+
+      // Grid
+      Expanded(
+        child: state.isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppColors.teal))
+            : products.isEmpty
+                ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.search_off_rounded, size: 56, color: AppColors.lightGray),
+                    SizedBox(height: 12),
+                    Text('No innovations found', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navy)),
+                  ]))
+                : RefreshIndicator(
+                    onRefresh: notifier.loadProducts,
+                    color: AppColors.teal,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width > 1000 ? 3 : MediaQuery.of(context).size.width > 600 ? 2 : 1,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.72,
+                      ),
+                      itemCount: products.length,
+                      itemBuilder: (_, i) => ProductCard(product: products[i], index: i),
+                    ),
+                  ),
+      ),
+    ]);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -825,6 +642,10 @@ class _ClientProfile extends ConsumerWidget {
             ]),
           ),
           const SizedBox(height: 20),
+          _SocialLinksCard(socialLinks: u?.socialLinks ?? {}),
+          const SizedBox(height: 20),
+          const _ThemeToggleCard(),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -861,6 +682,211 @@ class _ProfileRow extends StatelessWidget {
       Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
     ]),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  THEME TOGGLE CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _ThemeToggleCard extends ConsumerWidget {
+  const _ThemeToggleCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+    final bg     = isDark ? Colors.white.withValues(alpha: 0.06) : AppColors.navy.withValues(alpha: 0.04);
+    final border = isDark ? Colors.white12 : AppColors.lightGray;
+    final label  = isDark ? 'Dark Mode' : 'Light Mode';
+    final sub    = isDark ? 'Switch to light' : 'Switch to dark';
+    final icon   = isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded;
+    final color  = isDark ? AppColors.golden : AppColors.sky;
+    final textPrimary   = isDark ? Colors.white : AppColors.navy;
+    final textSecondary = isDark ? Colors.white38 : Colors.black38;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Row(children: [
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 14),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: textPrimary)),
+          Text(sub,   style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: textSecondary)),
+        ]),
+        const Spacer(),
+        Switch(
+          value: isDark,
+          onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
+          activeColor: AppColors.sky,
+          inactiveThumbColor: AppColors.navy.withValues(alpha: 0.5),
+          inactiveTrackColor: AppColors.lightGray,
+        ),
+      ]),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  SOCIAL LINKS CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _SocialLinksCard extends ConsumerStatefulWidget {
+  final Map<String, String> socialLinks;
+  const _SocialLinksCard({required this.socialLinks});
+
+  @override
+  ConsumerState<_SocialLinksCard> createState() => _SocialLinksCardState();
+}
+
+class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
+  bool _editing = false;
+  bool _saving = false;
+  late final Map<String, TextEditingController> _ctrls;
+
+  static const _fields = [
+    ('facebook',  'Facebook',  Icons.facebook_rounded),
+    ('instagram', 'Instagram', Icons.camera_alt_rounded),
+    ('linkedin',  'LinkedIn',  Icons.work_rounded),
+    ('x',         'X / Twitter', Icons.close_rounded),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrls = {
+      for (final f in _fields)
+        f.$1: TextEditingController(text: widget.socialLinks[f.$1] ?? ''),
+    };
+  }
+
+  @override
+  void dispose() {
+    for (final c in _ctrls.values) c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final body = {for (final f in _fields) f.$1: _ctrls[f.$1]!.text.trim()};
+      await ref.read(apiServiceProvider).put('users/me/social', body, auth: true);
+      setState(() { _editing = false; _saving = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Social links updated', style: TextStyle(fontFamily: 'Poppins')),
+          backgroundColor: AppColors.teal,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (_) {
+      setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.lightGray),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.share_rounded, size: 16, color: AppColors.navy),
+          const SizedBox(width: 8),
+          const Text('Social Links', style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navy)),
+          const Spacer(),
+          if (!_editing)
+            TextButton.icon(
+              onPressed: () => setState(() => _editing = true),
+              icon: const Icon(Icons.edit_rounded, size: 14),
+              label: const Text('Edit', style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+            ),
+        ]),
+        const SizedBox(height: 12),
+        for (final f in _fields) ...[
+          if (_editing)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: TextFormField(
+                controller: _ctrls[f.$1],
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
+                decoration: InputDecoration(
+                  labelText: f.$2,
+                  labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
+                  prefixIcon: Icon(f.$3, size: 18, color: AppColors.navy),
+                  hintText: 'https://...',
+                  hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
+                  filled: true, fillColor: AppColors.offWhite,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.teal, width: 1.5)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(children: [
+                Icon(f.$3, size: 16, color: (_ctrls[f.$1]!.text.isEmpty) ? Colors.black26 : AppColors.navy),
+                const SizedBox(width: 10),
+                Text(f.$2, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+                const Spacer(),
+                Flexible(
+                  child: Text(
+                    _ctrls[f.$1]!.text.isEmpty ? 'Not set' : _ctrls[f.$1]!.text,
+                    style: TextStyle(
+                      fontFamily: 'Poppins', fontSize: 12,
+                      color: _ctrls[f.$1]!.text.isEmpty ? Colors.black26 : AppColors.sky,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ]),
+            ),
+        ],
+        if (_editing) ...[
+          const SizedBox(height: 4),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _saving ? null : () => setState(() => _editing = false),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.lightGray),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _saving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: _saving
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Save', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ]),
+        ],
+      ]),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

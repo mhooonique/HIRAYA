@@ -94,13 +94,13 @@ class ParallaxHero extends StatelessWidget {
 
                 // App Name
                 const Text(
-                  'HIRAYA',
+                  'DIGITAL PLATFORM',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 72,
+                    fontSize: 56,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
-                    letterSpacing: 12,
+                    letterSpacing: 8,
                   ),
                 )
                     .animate()

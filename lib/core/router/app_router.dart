@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/profile/screens/public_profile_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
@@ -14,6 +15,10 @@ import '../../features/admin/screens/admin_screen.dart';
 import '../../features/innovator/screens/innovator_dashboard_screen.dart';
 import '../../features/client/screens/client_dashboard_screen.dart';
 import '../../features/landing/screens/landing_screen.dart';
+import '../../features/marketplace/screens/marketplace_screen.dart';
+import '../../features/product/screens/product_detail_screen.dart';
+import '../../features/search/screens/search_screen.dart';
+import '../../features/messaging/screens/messaging_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthStateNotifier(ref);
@@ -52,8 +57,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           location == '/pending' ||
           location.startsWith('/reset-password');
 
+      // Public routes — accessible without login
+      final isPublic = location == '/marketplace' ||
+          location == '/search' ||
+          location.startsWith('/product/') ||
+          location.startsWith('/profile/');
+
       // Not logged in trying to access a protected route
-      if (!loggedIn && !isGuestOnly && location != '/otp') return '/login';
+      if (!loggedIn && !isGuestOnly && !isPublic && location != '/otp') return '/login';
 
       // Logged in trying to access guest-only routes → send to dashboard
       if (loggedIn && isGuestOnly) return _dashboardFor(role);
@@ -94,9 +105,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      GoRoute(path: '/marketplace', builder: (_, __) => const MarketplaceScreen()),
+      GoRoute(path: '/search',      builder: (_, __) => const SearchScreen()),
+      GoRoute(path: '/messaging',   builder: (_, __) => const MessagingScreen()),
+
+      GoRoute(
+        path: '/product/:id',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
+          return ProductDetailScreen(productId: id);
+        },
+      ),
+
       GoRoute(path: '/admin',               builder: (_, __) => const AdminScreen()),
       GoRoute(path: '/innovator/dashboard', builder: (_, __) => const InnovatorDashboardScreen()),
       GoRoute(path: '/client/dashboard',    builder: (_, __) => const ClientDashboardScreen()),
+
+      GoRoute(
+        path: '/profile/:id',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
+          return PublicProfileScreen(userId: id);
+        },
+      ),
     ],
   );
 });

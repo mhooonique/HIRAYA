@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
+import 'core/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,7 @@ class HirayaApp extends ConsumerWidget {
       title:                    'HIRAYA',
       theme:                    AppTheme.lightTheme,
       darkTheme:                AppTheme.darkTheme,
-      themeMode:                ThemeMode.light,
+      themeMode:                ref.watch(themeProvider),
       routerConfig:             router,
       debugShowCheckedModeBanner: false,
     );

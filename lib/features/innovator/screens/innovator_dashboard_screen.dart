@@ -8,6 +8,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/providers/theme_provider.dart';
 import '../providers/innovator_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
@@ -1259,6 +1261,10 @@ class _InnovatorProfile extends StatelessWidget {
               _ProfileRow(label: 'Account Status', value: user.userStatus == 1 ? 'Active' : 'Pending', icon: Icons.circle_rounded),
             ]),
           ),
+          const SizedBox(height: 20),
+          _SocialLinksCard(socialLinks: user.socialLinks),
+          const SizedBox(height: 20),
+          const _ThemeToggleCard(),
         ]),
       ),
     );
@@ -1282,6 +1288,218 @@ class _ProfileRow extends StatelessWidget {
       Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
     ]),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  SOCIAL LINKS CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _SocialLinksCard extends ConsumerStatefulWidget {
+  final Map<String, String> socialLinks;
+  const _SocialLinksCard({required this.socialLinks});
+
+  @override
+  ConsumerState<_SocialLinksCard> createState() => _SocialLinksCardState();
+}
+
+class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
+  bool _editing = false;
+  bool _saving = false;
+  late final Map<String, TextEditingController> _ctrls;
+
+  static const _fields = [
+    ('facebook',  'Facebook',    Icons.facebook_rounded),
+    ('instagram', 'Instagram',   Icons.camera_alt_rounded),
+    ('linkedin',  'LinkedIn',    Icons.work_rounded),
+    ('x',         'X / Twitter', Icons.close_rounded),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrls = {
+      for (final f in _fields)
+        f.$1: TextEditingController(text: widget.socialLinks[f.$1] ?? ''),
+    };
+  }
+
+  @override
+  void dispose() {
+    for (final c in _ctrls.values) c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final body = {for (final f in _fields) f.$1: _ctrls[f.$1]!.text.trim()};
+      await ref.read(apiServiceProvider).put('users/me/social', body, auth: true);
+      setState(() { _editing = false; _saving = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Social links updated', style: TextStyle(fontFamily: 'Poppins')),
+          backgroundColor: AppColors.teal,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (_) {
+      setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.lightGray),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.share_rounded, size: 16, color: AppColors.navy),
+          const SizedBox(width: 8),
+          const Text('Social Links', style: TextStyle(
+              fontFamily: 'Poppins', fontSize: 15,
+              fontWeight: FontWeight.w700, color: AppColors.navy)),
+          const Spacer(),
+          if (!_editing)
+            TextButton.icon(
+              onPressed: () => setState(() => _editing = true),
+              icon: const Icon(Icons.edit_rounded, size: 14),
+              label: const Text('Edit', style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+            ),
+        ]),
+        const SizedBox(height: 12),
+        for (final f in _fields) ...[
+          if (_editing)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: TextFormField(
+                controller: _ctrls[f.$1],
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
+                decoration: InputDecoration(
+                  labelText: f.$2,
+                  labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
+                  prefixIcon: Icon(f.$3, size: 18, color: AppColors.navy),
+                  hintText: 'https://...',
+                  hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
+                  filled: true, fillColor: AppColors.offWhite,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.teal, width: 1.5)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(children: [
+                Icon(f.$3, size: 16,
+                    color: (_ctrls[f.$1]!.text.isEmpty) ? Colors.black26 : AppColors.navy),
+                const SizedBox(width: 10),
+                Text(f.$2, style: const TextStyle(
+                    fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+                const Spacer(),
+                Flexible(
+                  child: Text(
+                    _ctrls[f.$1]!.text.isEmpty ? 'Not set' : _ctrls[f.$1]!.text,
+                    style: TextStyle(
+                      fontFamily: 'Poppins', fontSize: 12,
+                      color: _ctrls[f.$1]!.text.isEmpty ? Colors.black26 : AppColors.sky,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ]),
+            ),
+        ],
+        if (_editing) ...[
+          const SizedBox(height: 4),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _saving ? null : () => setState(() => _editing = false),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.lightGray),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _saving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: _saving
+                    ? const SizedBox(width: 16, height: 16,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Save', style: TextStyle(
+                        fontFamily: 'Poppins', fontSize: 13,
+                        color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ]),
+        ],
+      ]),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  THEME TOGGLE CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _ThemeToggleCard extends ConsumerWidget {
+  const _ThemeToggleCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+    final bg     = isDark ? Colors.white.withValues(alpha: 0.06) : AppColors.navy.withValues(alpha: 0.04);
+    final border = isDark ? Colors.white12 : AppColors.lightGray;
+    final label  = isDark ? 'Dark Mode' : 'Light Mode';
+    final sub    = isDark ? 'Switch to light' : 'Switch to dark';
+    final icon   = isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded;
+    final color  = isDark ? AppColors.golden : AppColors.teal;
+    final textPrimary   = isDark ? Colors.white : AppColors.navy;
+    final textSecondary = isDark ? Colors.white38 : Colors.black38;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Row(children: [
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 14),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: textPrimary)),
+          Text(sub,   style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: textSecondary)),
+        ]),
+        const Spacer(),
+        Switch(
+          value: isDark,
+          onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
+          activeColor: AppColors.teal,
+          inactiveThumbColor: AppColors.navy.withValues(alpha: 0.5),
+          inactiveTrackColor: AppColors.lightGray,
+        ),
+      ]),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

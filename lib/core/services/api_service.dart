@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  static const _baseUrl = 'https://yosef-trilingual-scalably.ngrok-free.dev/hiraya_api/api/v1/';
+  static const _baseUrl = 'http://localhost/hiraya_api/api/v1/';
   static const _tokenKey = 'hiraya_jwt';
 
   final Dio _dio;
@@ -16,8 +16,9 @@ class ApiService {
   ApiService()
       : _dio = Dio(BaseOptions(
           baseUrl: _baseUrl,
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 15),
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 60),
+          sendTimeout: const Duration(seconds: 60),
           headers: {'Content-Type': 'application/json'},
         )),
         _storage = const FlutterSecureStorage();

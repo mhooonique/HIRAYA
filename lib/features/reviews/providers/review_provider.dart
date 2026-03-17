@@ -187,6 +187,28 @@ class ReviewNotifier extends StateNotifier<ReviewState> {
     }
   }
 
+  Future<bool> updateReview({
+    required int reviewId,
+    required int rating,
+    required String body,
+    String? title,
+  }) async {
+    state = state.copyWith(isSubmitting: true, error: null);
+    try {
+      await _api.put('/reviews/$reviewId', {
+        'rating': rating,
+        'title': title,
+        'body': body,
+      });
+      await load();
+      state = state.copyWith(isSubmitting: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isSubmitting: false, error: 'Failed to update review');
+      return false;
+    }
+  }
+
   Future<void> deleteReview(int reviewId) async {
     try {
       await _api.delete('/reviews/$reviewId');
