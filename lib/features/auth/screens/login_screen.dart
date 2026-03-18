@@ -108,7 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               child: _LeftPanel(orbCtrl: _orbCtrl, gradientCtrl: _gradientCtrl),
             ),
 
-          // ── Right — login form ─────────────────────────────────────────
+          // ── Right — login Form ─────────────────────────────────────────
           Expanded(
             flex: 3,
             child: _buildRightPanel(authState, isPending, isRejected, size),
