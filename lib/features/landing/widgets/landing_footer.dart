@@ -43,6 +43,7 @@ class LandingFooter extends StatelessWidget {
           ),
           child: Column(
             children: [
+<<<<<<< HEAD
               // ── Newsletter section ───────────────────────────────
               const _NewsletterSection(),
 
@@ -608,6 +609,12 @@ class _BrandColumn extends StatelessWidget {
               ).createShader(bounds),
               child: const Text(
                 'HIRAYA',
+=======
+              Image.asset('assets/images/logo/final-logo.png', height: 36),
+              const SizedBox(width: 12),
+              const Text(
+                'DIGITAL PLATFORM',
+>>>>>>> origin/master
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: Colors.white,
@@ -629,12 +636,18 @@ class _BrandColumn extends StatelessWidget {
             color: AppColors.golden.withValues(alpha: 0.55),
             letterSpacing: 0.3,
           ),
+<<<<<<< HEAD
         ),
         const SizedBox(height: 14),
         SizedBox(
           width: 260,
           child: Text(
             'The Philippine Innovation Marketplace — connecting Filipino innovators with the world.',
+=======
+          const SizedBox(height: 20),
+          const Text(
+            '© 2026  DIGITAL PLATFORM. Department of Science and Technology. All rights reserved.',
+>>>>>>> origin/master
             style: TextStyle(
               fontFamily: 'Poppins',
               color: Colors.white.withValues(alpha: 0.38),

@@ -12,6 +12,7 @@ import '../../../core/services/api_service.dart';
 import '../../../core/providers/theme_provider.dart';
 import 'analytics_screen.dart';
 import '../providers/admin_provider.dart';
+import '../providers/analytics_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
 
@@ -80,6 +81,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           onApprove: notifier.approveUser,
           onReject:  notifier.rejectUser,
           onDelete:  notifier.deleteUser,
+          onPromote:  notifier.promoteToAdmin,
+          onDemote:   notifier.demoteFromAdmin,
         );
       case 'analytics':
         return const AnalyticsScreen();
@@ -142,7 +145,7 @@ class _AdminSidebar extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: GestureDetector(
-              onTap: () => context.go('/marketplace'),
+              onTap: () => context.push('/marketplace'),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
@@ -277,9 +280,10 @@ class _AdminThemeToggle extends ConsumerWidget {
 }
 
 // ─── TOP BAR ──────────────────────────────────────────────────────────────────
-class _AdminTopBar extends StatelessWidget {
+class _AdminTopBar extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final email = ref.watch(authProvider).user?.email ?? 'admin';
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -299,11 +303,19 @@ class _AdminTopBar extends StatelessWidget {
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+<<<<<<< HEAD
           decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.golden.withValues(alpha: 0.25))),
           child: const Row(children: [
             Icon(Icons.admin_panel_settings_rounded, color: AppColors.golden, size: 14),
             SizedBox(width: 6),
             Text('Super Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden, fontWeight: FontWeight.w600)),
+=======
+          decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.teal.withValues(alpha: 0.3))),
+          child: Row(children: [
+            const Icon(Icons.shield_rounded, color: AppColors.teal, size: 14),
+            const SizedBox(width: 6),
+            Text(email, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.teal, fontWeight: FontWeight.w600)),
+>>>>>>> origin/master
           ]),
         ),
         const SizedBox(width: 8),
@@ -414,34 +426,50 @@ class _PendingRow extends StatelessWidget {
   }
 }
 
-class _CategoryBreakdown extends StatelessWidget {
-  final List<Map<String, dynamic>> _cats = const [
-    {'name': 'Agriculture',            'count': 1, 'color': AppColors.teal},
-    {'name': 'Healthcare',             'count': 1, 'color': AppColors.crimson},
-    {'name': 'Energy',                 'count': 1, 'color': AppColors.golden},
-    {'name': 'Construction',           'count': 1, 'color': AppColors.navy},
-    {'name': 'Product Design',         'count': 1, 'color': AppColors.sky},
-    {'name': 'Information Technology', 'count': 1, 'color': Color(0xFF1B4B8A)},
-  ];
+class _CategoryBreakdown extends ConsumerWidget {
+  const _CategoryBreakdown();
 
   @override
-  Widget build(BuildContext context) {
-    final total = _cats.fold<int>(0, (sum, c) => sum + (c['count'] as int));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cats = ref.watch(analyticsProvider).categoryDistribution;
+    final isLoading = ref.watch(analyticsProvider).isLoading;
+
+    if (isLoading && cats.isEmpty) {
+      return Container(
+        height: 100,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: const Color(0xFF151F2B), borderRadius: BorderRadius.circular(16)),
+        child: const Center(child: CircularProgressIndicator(color: AppColors.teal, strokeWidth: 2)),
+      );
+    }
+    if (cats.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: const Color(0xFF151F2B), borderRadius: BorderRadius.circular(16)),
+        child: const Center(child: Text('No approved products yet', style: TextStyle(fontFamily: 'Poppins', color: Colors.white38))),
+      );
+    }
+
+    final total = cats.fold<int>(0, (sum, c) => sum + ((c['count'] as num?)?.toInt() ?? 0));
+    final palette = [AppColors.teal, AppColors.crimson, AppColors.golden, AppColors.sky, AppColors.navy, const Color(0xFF9B59B6), const Color(0xFF1B4B8A)];
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: const Color(0xFF151F2B), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
-      child: Column(children: _cats.asMap().entries.map((entry) {
-        final cat = entry.value;
-        final pct = total > 0 ? (cat['count'] as int) / total : 0.0;
+      child: Column(children: cats.asMap().entries.map((entry) {
+        final cat   = entry.value;
+        final count = (cat['count'] as num?)?.toInt() ?? 0;
+        final pct   = total > 0 ? count / total : 0.0;
+        final color = AppColors.categoryColors[cat['category'] as String? ?? ''] ?? palette[entry.key % palette.length];
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: Row(children: [
-            SizedBox(width: 150, child: Text(cat['name'], style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white54), overflow: TextOverflow.ellipsis)),
+            SizedBox(width: 160, child: Text(cat['category'] as String? ?? '', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white54), overflow: TextOverflow.ellipsis)),
             const SizedBox(width: 12),
             Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(value: pct, backgroundColor: Colors.white.withValues(alpha: 0.06), valueColor: AlwaysStoppedAnimation<Color>(cat['color'] as Color), minHeight: 6))),
+                child: LinearProgressIndicator(value: pct, backgroundColor: Colors.white.withValues(alpha: 0.06), valueColor: AlwaysStoppedAnimation<Color>(color), minHeight: 6))),
             const SizedBox(width: 12),
-            Text('${cat['count']}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+            Text('$count', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
           ]),
         );
       }).toList()),
@@ -452,8 +480,19 @@ class _CategoryBreakdown extends StatelessWidget {
 // ─── PRODUCTS TAB ─────────────────────────────────────────────────────────────
 class _ProductsTab extends StatelessWidget {
   final List<ProductModel> products;
-  final Future<void> Function(int) onApprove, onReject;
+  final Future<String?> Function(int) onApprove, onReject;
   const _ProductsTab({required this.products, required this.onApprove, required this.onReject});
+
+  void _handleResult(BuildContext context, String? error) {
+    if (error != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error, style: const TextStyle(fontFamily: 'Poppins')),
+        backgroundColor: AppColors.crimson,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -479,8 +518,8 @@ class _ProductsTab extends StatelessWidget {
           ...products.asMap().entries.map((e) => _ProductReviewCard(
             product:   e.value,
             index:     e.key,
-            onApprove: () => onApprove(e.value.id),
-            onReject:  () => onReject(e.value.id),
+            onApprove: () async => _handleResult(context, await onApprove(e.value.id)),
+            onReject:  () async => _handleResult(context, await onReject(e.value.id)),
           )),
       ]),
     );
@@ -514,7 +553,6 @@ class _ProductReviewCard extends StatelessWidget {
         const Divider(color: Colors.white10, height: 1),
         const SizedBox(height: 16),
         Row(children: [
-          // ── View Details button ──────────────────────────────────────────
           TextButton(
             onPressed: () => _showProductDetail(context, product.id, onApprove, onReject),
             child: const Text('View Details',
@@ -543,9 +581,105 @@ class _ProductReviewCard extends StatelessWidget {
 // ─── USERS TAB ────────────────────────────────────────────────────────────────
 class _UsersTab extends StatelessWidget {
   final List<UserModel> users;
-  final Future<void> Function(int) onApprove, onReject, onDelete;
+  final Future<String?> Function(int) onApprove, onReject, onDelete, onPromote, onDemote;
 
-  const _UsersTab({required this.users, required this.onApprove, required this.onReject, required this.onDelete});
+  const _UsersTab({required this.users, required this.onApprove, required this.onReject, required this.onDelete, required this.onPromote, required this.onDemote});
+
+  void _handleResult(BuildContext context, String? error) {
+    if (error != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error, style: const TextStyle(fontFamily: 'Poppins')),
+        backgroundColor: AppColors.crimson,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+    }
+  }
+
+  void _confirmPromote(BuildContext context, UserModel user) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF151F2B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(children: [
+          Icon(Icons.admin_panel_settings_rounded, color: AppColors.golden, size: 24),
+          SizedBox(width: 10),
+          Text('Promote to Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
+        ]),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('You are about to grant admin privileges to:', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13)),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.golden.withValues(alpha: 0.3))),
+            child: Row(children: [
+              CircleAvatar(radius: 20, backgroundColor: AppColors.golden.withValues(alpha: 0.2),
+                  child: Text(user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
+                      style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.golden))),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(user.fullName, style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 14)),
+                Text(user.email,   style: const TextStyle(fontFamily: 'Poppins', color: Colors.white38, fontSize: 12)),
+              ])),
+            ]),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+            child: const Row(children: [
+              Icon(Icons.info_outline, color: Colors.orange, size: 16),
+              SizedBox(width: 8),
+              Expanded(child: Text('Admin users have full access to manage users, products, and platform settings.', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.orange))),
+            ]),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54))),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              _handleResult(context, await onPromote(user.id));
+            },
+            icon:  const Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white),
+            label: const Text('Yes, Make Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.golden, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDemote(BuildContext context, UserModel user) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF151F2B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(children: [
+          Icon(Icons.remove_moderator_rounded, color: Colors.white54, size: 24),
+          SizedBox(width: 10),
+          Text('Remove Admin Access', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
+        ]),
+        content: Text(
+          'Remove admin access from ${user.fullName}? They will be restored to their original role.',
+          style: const TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54))),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              _handleResult(context, await onDemote(user.id));
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2A3444), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: const Text('Remove Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -577,18 +711,20 @@ class _UsersTab extends StatelessWidget {
               child: const Center(child: Text('No users found.', style: TextStyle(fontFamily: 'Poppins', color: Colors.white38))))
         else
           ...users.asMap().entries.map((e) => _UserRow(
-            user:      e.value,
-            index:     e.key,
-            onApprove: () => onApprove(e.value.id),
-            onReject:  () => onReject(e.value.id),
-            onDelete:  () => _confirmDelete(context, e.value, onDelete),
-            onView:    () => _showUserDetail(context, e.value),
+            user:         e.value,
+            index:        e.key,
+            onApprove:    () async => _handleResult(context, await onApprove(e.value.id)),
+            onReject:     () async => _handleResult(context, await onReject(e.value.id)),
+            onDelete:     () => _confirmDelete(context, e.value, onDelete),
+            onView:       () => _showUserDetail(context, e.value),
+            onPromote:    () => _confirmPromote(context, e.value),
+            onDemote:     () => _confirmDemote(context, e.value),
           )),
       ]),
     );
   }
 
-  void _confirmDelete(BuildContext context, UserModel user, Future<void> Function(int) onDelete) {
+  void _confirmDelete(BuildContext context, UserModel user, Future<String?> Function(int) onDelete) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -634,9 +770,17 @@ class _UsersTab extends StatelessWidget {
             child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54)),
           ),
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              onDelete(user.id);
+              final err = await onDelete(user.id);
+              if (err != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(err, style: const TextStyle(fontFamily: 'Poppins')),
+                  backgroundColor: AppColors.crimson,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ));
+              }
             },
             icon:  const Icon(Icons.delete_forever_rounded, size: 16, color: Colors.white),
             label: const Text('Yes, Delete Account', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
@@ -669,6 +813,14 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
   UserModel? _fullUser;
   bool _loading = true;
 
+  // KYC lazy load state
+  String? _govIdBase64;
+  String? _govIdFilename;
+  String? _selfieBase64;
+  String? _selfieFilename;
+  bool _kycLoading = false;
+  bool _kycLoaded  = false;
+
   @override
   void initState() {
     super.initState();
@@ -679,10 +831,43 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
     try {
       final api = ref.read(apiServiceProvider);
       final res = await api.get('admin/users/${widget.userId}', auth: true);
-      final data = res['success'] == true ? res['data'] as Map<String, dynamic> : res;
-      if (mounted) setState(() { _fullUser = UserModel.fromJson(data); _loading = false; });
+      final rawData = res['data'];
+      if (res['success'] == true && rawData is Map<String, dynamic>) {
+        if (mounted) setState(() {
+          _fullUser        = UserModel.fromJson(rawData);
+          _govIdFilename   = rawData['gov_id_filename']  as String?;
+          _selfieFilename  = rawData['selfie_filename']  as String?;
+          _loading         = false;
+        });
+      } else {
+        if (mounted) setState(() { _fullUser = widget.user; _loading = false; });
+      }
     } catch (_) {
       if (mounted) setState(() { _fullUser = widget.user; _loading = false; });
+    }
+  }
+
+  Future<void> _loadKyc() async {
+    if (_kycLoaded || _kycLoading) return;
+    setState(() => _kycLoading = true);
+    try {
+      final api = ref.read(apiServiceProvider);
+      final res = await api.get('admin/users/${widget.userId}/kyc', auth: true);
+      if (res['success'] == true) {
+        final data = res['data'] as Map<String, dynamic>;
+        if (mounted) setState(() {
+          _govIdBase64    = data['gov_id_base64']   as String?;
+          _govIdFilename  = data['gov_id_filename']  as String?;
+          _selfieBase64   = data['selfie_base64']    as String?;
+          _selfieFilename = data['selfie_filename']  as String?;
+          _kycLoaded  = true;
+          _kycLoading = false;
+        });
+      } else {
+        if (mounted) setState(() => _kycLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _kycLoading = false);
     }
   }
 
@@ -716,33 +901,55 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
                 Expanded(child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _DetailRow(icon: Icons.email_rounded,    label: 'Email',   value: user.email),
-                    _DetailRow(icon: Icons.phone_rounded,    label: 'Phone',   value: user.phone.isNotEmpty ? user.phone : '—'),
-                    _DetailRow(icon: Icons.cake_rounded,     label: 'Date of Birth', value: user.dateOfBirth ?? '—'),
-                    _DetailRow(icon: Icons.location_on_rounded, label: 'Address', value: (user.city != null && user.province != null) ? '${user.city}, ${user.province}' : (user.city ?? user.province ?? '—')),
-                    _DetailRow(icon: Icons.badge_rounded,    label: 'Role',    value: user.role.toUpperCase()),
-                    _DetailRow(icon: Icons.verified_rounded, label: 'KYC',     value: user.kycStatus.toUpperCase()),
-                    _DetailRow(icon: Icons.toggle_on_rounded, label: 'Status', value: user.userStatus == 1 ? 'ACTIVE' : user.userStatus == 2 ? 'REJECTED' : 'PENDING APPROVAL'),
+                    _DetailRow(icon: Icons.email_rounded,       label: 'Email',   value: user.email),
+                    _DetailRow(icon: Icons.phone_rounded,       label: 'Phone',   value: user.phone.isNotEmpty ? user.phone : '—'),
+                    _DetailRow(icon: Icons.cake_rounded,        label: 'Date of Birth', value: user.dateOfBirth ?? '—'),
+                    _DetailRow(icon: Icons.location_on_rounded, label: 'Address',
+                        value: (user.city != null && user.province != null)
+                            ? '${user.city}, ${user.province}'
+                            : (user.city ?? user.province ?? '—')),
+                    _DetailRow(icon: Icons.badge_rounded,       label: 'Role',    value: user.role.toUpperCase()),
+                    _DetailRow(icon: Icons.verified_rounded,    label: 'KYC',     value: user.kycStatus.toUpperCase()),
+                    _DetailRow(icon: Icons.toggle_on_rounded,   label: 'Status',
+                        value: user.userStatus == 1 ? 'ACTIVE' : user.userStatus == 2 ? 'REJECTED' : 'PENDING APPROVAL'),
                     const SizedBox(height: 20),
-                    const Text('KYC Documents', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                    const Text('KYC Documents',
+                        style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
                     const SizedBox(height: 12),
-                    if (user.govIdBase64 == null && user.selfieBase64 == null)
+                    if (_govIdFilename == null && _selfieFilename == null)
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
+                        decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
                         child: const Row(children: [
                           Icon(Icons.info_outline_rounded, color: Colors.white38, size: 18),
                           SizedBox(width: 10),
-                          Text('No KYC documents submitted yet.', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
+                          Text('No KYC documents submitted yet.',
+                              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
                         ]),
                       )
                     else
                       Column(children: [
-                        if (user.govIdBase64 != null)
-                          _KycImageCard(label: 'Government-Issued ID', filename: user.govIdFilename ?? 'gov_id', base64Data: user.govIdBase64!),
-                        if (user.govIdBase64 != null && user.selfieBase64 != null) const SizedBox(height: 12),
-                        if (user.selfieBase64 != null)
-                          _KycImageCard(label: 'Selfie with ID', filename: user.selfieFilename ?? 'selfie', base64Data: user.selfieBase64!),
+                        if (_govIdFilename != null)
+                          _KycImageCard(
+                            label:      'Government-Issued ID',
+                            filename:   _govIdFilename!,
+                            base64Data: _govIdBase64,
+                            onExpand:   _loadKyc,
+                            isLoading:  _kycLoading,
+                          ),
+                        if (_govIdFilename != null && _selfieFilename != null)
+                          const SizedBox(height: 12),
+                        if (_selfieFilename != null)
+                          _KycImageCard(
+                            label:      'Selfie with ID',
+                            filename:   _selfieFilename!,
+                            base64Data: _selfieBase64,
+                            onExpand:   _loadKyc,
+                            isLoading:  _kycLoading,
+                          ),
                       ]),
                   ]),
                 )),
@@ -754,8 +961,19 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
 
 // ─── KYC Image Card ───────────────────────────────────────────────────────────
 class _KycImageCard extends StatefulWidget {
-  final String label, filename, base64Data;
-  const _KycImageCard({required this.label, required this.filename, required this.base64Data});
+  final String  label;
+  final String  filename;
+  final String? base64Data;
+  final Future<void> Function() onExpand;
+  final bool isLoading;
+
+  const _KycImageCard({
+    required this.label,
+    required this.filename,
+    required this.base64Data,
+    required this.onExpand,
+    required this.isLoading,
+  });
 
   @override
   State<_KycImageCard> createState() => _KycImageCardState();
@@ -768,39 +986,82 @@ class _KycImageCardState extends State<_KycImageCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
+      decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
       child: Column(children: [
         GestureDetector(
-          onTap: () => setState(() => _expanded = !_expanded),
+          onTap: () async {
+            if (!_expanded) await widget.onExpand();
+            setState(() => _expanded = !_expanded);
+          },
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
-              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                  child: Icon(_isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded, color: AppColors.teal, size: 18)),
+              Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      color: AppColors.teal.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Icon(_isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded,
+                      color: AppColors.teal, size: 18)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(widget.label,    style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
-                Text(widget.filename, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38), overflow: TextOverflow.ellipsis),
+                Text(widget.label,
+                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 13,
+                        fontWeight: FontWeight.w600, color: Colors.white)),
+                Text(widget.filename,
+                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 11,
+                        color: Colors.white38),
+                    overflow: TextOverflow.ellipsis),
               ])),
-              Icon(_expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, color: Colors.white38),
+              if (widget.isLoading && _expanded)
+                const SizedBox(width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal))
+              else
+                Icon(_expanded
+                    ? Icons.keyboard_arrow_up_rounded
+                    : Icons.keyboard_arrow_down_rounded,
+                    color: Colors.white38),
             ]),
           ),
         ),
         if (_expanded && !_isPdf)
-          ClipRRect(
-            borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
-            child: Image.memory(base64Decode(widget.base64Data), fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => Container(height: 120, color: Colors.white.withValues(alpha: 0.04),
-                child: const Center(child: Text('Could not load image', style: TextStyle(color: Colors.white38)))),
-            ),
-          ),
+          widget.base64Data != null
+              ? ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12)),
+                  child: Image.memory(
+                    base64Decode(widget.base64Data!),
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Container(
+                        height: 120,
+                        color: Colors.white.withValues(alpha: 0.04),
+                        child: const Center(
+                            child: Text('Could not load image',
+                                style: TextStyle(color: Colors.white38)))),
+                  ),
+                )
+              : const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(color: AppColors.teal, strokeWidth: 2),
+                ),
         if (_expanded && _isPdf)
-          Container(height: 80, margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            decoration: BoxDecoration(color: AppColors.crimson.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-            child: const Center(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            height: 80,
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8)),
+            child: const Center(
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(Icons.picture_as_pdf_rounded, color: AppColors.crimson, size: 28),
               SizedBox(width: 10),
-              Text('PDF document submitted', style: TextStyle(fontFamily: 'Poppins', color: AppColors.crimson, fontSize: 13)),
+              Text('PDF document submitted',
+                  style: TextStyle(
+                      fontFamily: 'Poppins', color: AppColors.crimson, fontSize: 13)),
             ])),
           ),
       ]),
@@ -840,8 +1101,8 @@ class _TableHeader extends StatelessWidget {
 
 class _UserRow extends StatelessWidget {
   final UserModel user; final int index;
-  final VoidCallback onApprove, onReject, onDelete, onView;
-  const _UserRow({required this.user, required this.index, required this.onApprove, required this.onReject, required this.onDelete, required this.onView});
+  final VoidCallback onApprove, onReject, onDelete, onView, onPromote, onDemote;
+  const _UserRow({required this.user, required this.index, required this.onApprove, required this.onReject, required this.onDelete, required this.onView, required this.onPromote, required this.onDemote});
 
   @override
   Widget build(BuildContext context) {
@@ -873,22 +1134,43 @@ class _UserRow extends StatelessWidget {
           color: user.userStatus == 1 ? AppColors.teal : user.userStatus == 2 ? AppColors.crimson : AppColors.golden,
         )),
         SizedBox(
-          width: 200,
+          width: 260,
           child: Row(children: [
-            SizedBox(width: 44, child: TextButton(onPressed: onView, style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                child: const Text('View', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.sky)))),
+            SizedBox(width: 36, child: IconButton(
+              onPressed: onView, padding: EdgeInsets.zero,
+              icon: const Icon(Icons.badge_outlined, color: AppColors.sky, size: 18),
+              tooltip: 'View personal info',
+            )),
+            SizedBox(width: 36, child: IconButton(
+              onPressed: () => context.push('/profile/${user.id}'),
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.person_search_rounded, color: Colors.white38, size: 18),
+              tooltip: 'View public profile',
+            )),
             if (user.userStatus == 0) ...[
               const SizedBox(width: 2),
-              SizedBox(width: 62, child: ElevatedButton(onPressed: onApprove,
+              SizedBox(width: 58, child: ElevatedButton(onPressed: onApprove,
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Approve', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)))),
+                  child: const Text('Approve', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)))),
               const SizedBox(width: 2),
-              SizedBox(width: 52, child: OutlinedButton(onPressed: onReject,
+              SizedBox(width: 48, child: OutlinedButton(onPressed: onReject,
                   style: OutlinedButton.styleFrom(side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.5)), padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.crimson)))),
-            ] else const SizedBox(width: 116),
-            const SizedBox(width: 4),
-            SizedBox(width: 34, child: IconButton(
+                  child: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.crimson)))),
+            ] else ...[
+              if (user.role != 'admin')
+                SizedBox(width: 72, child: TextButton(
+                  onPressed: onPromote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  child: const Text('Make Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: AppColors.golden)),
+                ))
+              else
+                SizedBox(width: 72, child: TextButton(
+                  onPressed: onDemote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  child: const Text('Demote', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: Colors.white38)),
+                )),
+              const SizedBox(width: 2),
+            ],
+            const Spacer(),
+            SizedBox(width: 32, child: IconButton(
               onPressed: onDelete, padding: EdgeInsets.zero,
               icon: const Icon(Icons.delete_outline_rounded, color: Colors.white24, size: 18),
               hoverColor: AppColors.crimson.withValues(alpha: 0.1),
@@ -995,7 +1277,6 @@ class _AdminProductDetailDialogState
                     ),
                   )
                 : Column(children: [
-                    // Header
                     Padding(
                       padding: const EdgeInsets.fromLTRB(28, 28, 20, 0),
                       child: Row(children: [
@@ -1021,42 +1302,54 @@ class _AdminProductDetailDialogState
                       ]),
                     ),
                     const Divider(color: Colors.white10, height: 28),
-                    // Body
                     Expanded(child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        // Description
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
+                          child: Row(children: [
+                            CircleAvatar(radius: 20, backgroundColor: AppColors.teal.withValues(alpha: 0.15),
+                                child: Text((_data!['innovator_name'] as String? ?? '?').isNotEmpty ? (_data!['innovator_name'] as String)[0].toUpperCase() : '?',
+                                    style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.teal))),
+                            const SizedBox(width: 12),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(_data!['innovator_name'] ?? '—', style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 13)),
+                              Text('@${_data!['innovator_username'] ?? '—'}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38)),
+                              if ((_data!['innovator_email'] ?? '').toString().isNotEmpty)
+                                Text(_data!['innovator_email'].toString(), style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.sky)),
+                              if ((_data!['innovator_phone'] ?? '').toString().isNotEmpty)
+                                Text(_data!['innovator_phone'].toString(), style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38)),
+                            ])),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: _data!['kyc_status'] == 'verified' ? AppColors.teal.withValues(alpha: 0.15) : Colors.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                              child: Text((_data!['kyc_status'] ?? 'unverified').toString().toUpperCase(),
+                                  style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: _data!['kyc_status'] == 'verified' ? AppColors.teal : Colors.orange)),
+                            ),
+                          ]),
+                        ),
+                        const SizedBox(height: 20),
                         const Text('Description',
                             style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
                         const SizedBox(height: 8),
-                        Text(_data!['description'] ?? '—',
+                        Text((_data!['description'] ?? '').toString().isNotEmpty ? _data!['description'].toString() : '—',
                             style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.white, height: 1.6)),
                         const SizedBox(height: 20),
-
-                        // Stats row
-                        Row(children: [
-                          _DetailRow(icon: Icons.favorite_rounded,       label: 'Likes',     value: '${_data!['likes'] ?? 0}'),
-                          const SizedBox(width: 24),
-                          _DetailRow(icon: Icons.remove_red_eye_rounded, label: 'Views',     value: '${_data!['views'] ?? 0}'),
-                          const SizedBox(width: 24),
-                          _DetailRow(icon: Icons.handshake_rounded,      label: 'Interests', value: '${_data!['interest_count'] ?? 0}'),
-                        ]),
-                        const SizedBox(height: 20),
-
-                        // External link
                         if ((_data!['external_link'] ?? '').toString().isNotEmpty) ...[
                           const Text('External Link',
                               style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
                           const SizedBox(height: 8),
-                          Text(_data!['external_link'],
-                              style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppColors.sky)),
+                          GestureDetector(
+                            onTap: () => launchUrl(Uri.parse(_data!['external_link'].toString())),
+                            child: Text(_data!['external_link'].toString(),
+                                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppColors.sky, decoration: TextDecoration.underline, decorationColor: AppColors.sky)),
+                          ),
                           const SizedBox(height: 20),
                         ],
-
-                        // Images
                         if ((_data!['images'] as List?)?.isNotEmpty == true) ...[
-                          const Text('Images',
-                              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
+                          Text('Images (${(_data!['images'] as List).length})',
+                              style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
                           const SizedBox(height: 12),
                           SizedBox(
                             height: 160,
@@ -1064,8 +1357,7 @@ class _AdminProductDetailDialogState
                               scrollDirection: Axis.horizontal,
                               itemCount: (_data!['images'] as List).length,
                               itemBuilder: (ctx, i) {
-                                final img = (_data!['images'] as List)[i];
-                                final b64 = img['image_base64'] as String? ?? '';
+                                final b64 = (_data!['images'] as List)[i] as String? ?? '';
                                 return Container(
                                   width: 200,
                                   margin: const EdgeInsets.only(right: 12),
@@ -1077,7 +1369,7 @@ class _AdminProductDetailDialogState
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
                                     child: b64.isNotEmpty
-                                        ? Image.memory(base64Decode(b64), fit: BoxFit.cover)
+                                        ? Image.memory(base64Decode(b64), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_rounded, color: Colors.white24)))
                                         : const Center(child: Icon(Icons.image_not_supported_rounded, color: Colors.white24)),
                                   ),
                                 );
@@ -1086,9 +1378,32 @@ class _AdminProductDetailDialogState
                           ),
                           const SizedBox(height: 20),
                         ],
+                        if ((_data!['video_base64'] ?? '').toString().isNotEmpty) ...[
+                          const Text('Video',
+                              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
+                            child: Row(children: [
+                              const Icon(Icons.videocam_rounded, color: AppColors.sky, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(child: Text(_data!['video_filename']?.toString() ?? 'video file', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white70))),
+                              const Icon(Icons.check_circle_rounded, color: AppColors.teal, size: 16),
+                            ]),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                        Row(children: [
+                          _DetailRow(icon: Icons.favorite_rounded,       label: 'Likes',     value: '${_data!['likes'] ?? 0}'),
+                          const SizedBox(width: 24),
+                          _DetailRow(icon: Icons.remove_red_eye_rounded, label: 'Views',     value: '${_data!['views'] ?? 0}'),
+                          const SizedBox(width: 24),
+                          _DetailRow(icon: Icons.handshake_rounded,      label: 'Interests', value: '${_data!['interest_count'] ?? 0}'),
+                        ]),
+                        const SizedBox(height: 8),
                       ]),
                     )),
-                    // Action buttons
                     Padding(
                       padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                       child: Row(children: [

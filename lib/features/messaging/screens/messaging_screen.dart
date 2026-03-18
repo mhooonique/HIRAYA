@@ -19,19 +19,17 @@ class MessagingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<IncomingCall?>(
-      messagingProvider.select((s) => s.incomingCall),
-      (previous, next) {
-        if (next != null && previous?.id != next.id) {
-          _showIncomingCallDialog(context, ref, next);
-        }
-      },
-    );
-
     final mState   = ref.watch(messagingProvider);
     final user     = ref.watch(authProvider).user;
-    final uid      = user?.id.toString() ?? '2';
     final isNarrow = MediaQuery.of(context).size.width < 820;
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final uid = user.id.toString();
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
@@ -578,32 +576,104 @@ class _ChatPanelState extends ConsumerState<_ChatPanel> {
   }
 
   void _confirmReport(BuildContext ctx, Conversation conv) {
+    const reasons = [
+      'Harassment or bullying',
+      'Spam or unwanted messages',
+      'Inappropriate or offensive content',
+      'Threats or violent language',
+      'Fake identity or impersonation',
+    ];
+    String? selected;
+    final detailCtrl = TextEditingController();
+
     showDialog(
       context: ctx,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Report Conversation',
-            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.navy)),
-        content: const Text(
-            'This flags the conversation for Admin review. The other party will not be notified. Continue?',
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black54, height: 1.5)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.black45))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-            onPressed: () {
-              ref.read(messagingProvider.notifier).reportConversation(conv.id);
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                content: Text('Conversation reported to Admin.', style: TextStyle(fontFamily: 'Poppins')),
-                backgroundColor: AppColors.crimson, behavior: SnackBarBehavior.floating,
-              ));
-            },
-            child: const Text('Report', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(children: [
+            Icon(Icons.flag_rounded, color: AppColors.crimson, size: 20),
+            SizedBox(width: 8),
+            Text('Flag this User',
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.navy)),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Why are you flagging this user? The other party will not be notified. After 3 flags, the account is automatically suspended.',
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black54, height: 1.5),
+              ),
+              const SizedBox(height: 12),
+              ...reasons.map((r) => RadioListTile<String>(
+                value: r,
+                groupValue: selected,
+                activeColor: AppColors.crimson,
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(r, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black87)),
+                onChanged: (v) => setDialogState(() => selected = v),
+              )),
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: Colors.black12),
+              const SizedBox(height: 12),
+              TextField(
+                controller: detailCtrl,
+                maxLength: 200,
+                maxLines: 3,
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black87),
+                decoration: InputDecoration(
+                  hintText: 'Add details (optional) — visible only to admin',
+                  hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.black12)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.black12)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.crimson)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  counterStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 10, color: Colors.black38),
+                ),
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () {
+                detailCtrl.dispose();
+                Navigator.pop(dialogCtx);
+              },
+              child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.black45)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: selected == null ? Colors.grey : AppColors.crimson,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: selected == null ? null : () async {
+                final detail = detailCtrl.text.trim();
+                final fullReason = detail.isNotEmpty ? '$selected — "$detail"' : selected!;
+                detailCtrl.dispose();
+                Navigator.pop(dialogCtx);
+                final suspended = await ref.read(messagingProvider.notifier)
+                    .reportConversation(conv.id, reason: fullReason);
+                if (!ctx.mounted) return;
+                ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                  content: Text(
+                    suspended
+                        ? 'User has been suspended after 3 flags.'
+                        : 'User flagged. Admin has been notified.',
+                    style: const TextStyle(fontFamily: 'Poppins'),
+                  ),
+                  backgroundColor: suspended ? Colors.deepOrange : AppColors.crimson,
+                  behavior: SnackBarBehavior.floating,
+                ));
+              },
+              child: const Text('Submit Flag',
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -832,7 +902,7 @@ class _TypingIndicatorState extends State<_TypingIndicator> with TickerProviderS
   }
 
   @override
-  void dispose() { for (final c in _controllers) c.dispose(); super.dispose(); }
+  void dispose() { for (final c in _controllers) { c.dispose(); } super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -1143,89 +1213,3 @@ class _EmptyState extends StatelessWidget {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  INCOMING CALL DIALOG
-// ─────────────────────────────────────────────────────────────────────────────
-void _showIncomingCallDialog(BuildContext context, WidgetRef ref, IncomingCall call) {
-  showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      contentPadding: const EdgeInsets.all(24),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: AppColors.sky.withValues(alpha: 0.15),
-            child: Icon(
-              call.isVideo ? Icons.videocam_rounded : Icons.call_rounded,
-              size: 32,
-              color: AppColors.sky,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Incoming ${call.isVideo ? "Video" : "Voice"} Call',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            call.callerName,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Decline
-              Column(
-                children: [
-                  FloatingActionButton(
-                    heroTag: 'decline_call',
-                    backgroundColor: Colors.red,
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      ref.read(messagingProvider.notifier).declineCall(call.id);
-                    },
-                    child: const Icon(Icons.call_end_rounded, color: Colors.white),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text('Decline', style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
-                ],
-              ),
-              // Accept
-              Column(
-                children: [
-                  FloatingActionButton(
-                    heroTag: 'accept_call',
-                    backgroundColor: Colors.green,
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      ref.read(messagingProvider.notifier).acceptCall(call.id, call.roomUrl);
-                    },
-                    child: Icon(
-                      call.isVideo ? Icons.videocam_rounded : Icons.call_rounded,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text('Accept', style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
-}

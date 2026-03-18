@@ -169,6 +169,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isRehydrating: false);
   }
 
+  // ── Helper: fetch full profile after login ──────────────────────────────────
+  Future<UserModel> _fetchFullUser(Map<String, dynamic> fallback) async {
+    try {
+      final res = await _api.get('users/me', auth: true);
+      final userData = res['user'] as Map<String, dynamic>?;
+      if (userData != null && userData['id'] != null) {
+        return UserModel.fromJson(userData);
+      }
+    } catch (_) {}
+    return UserModel.fromJson(fallback);
+  }
+
   Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null, loginStatus: LoginStatus.idle);
     try {
@@ -200,9 +212,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       await _api.saveToken(res['token'] as String);
+      // Fetch full profile so avatar & social links are included
+      final user = await _fetchFullUser(res['user'] as Map<String, dynamic>);
       state = state.copyWith(
         isLoading: false,
-        user:  UserModel.fromJson(res['user'] as Map<String, dynamic>),
+        user:  user,
         token: res['token'] as String,
       );
     } catch (_) {
@@ -256,13 +270,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       });
 
       if (res['needs_signup'] == true) {
+        final nameParts = (account.displayName ?? '').trim().split(RegExp(r'\s+'));
+        final fallbackFirst = nameParts.isNotEmpty ? nameParts.first : '';
+        final fallbackLast  = nameParts.length > 1 ? nameParts.skip(1).join(' ') : '';
+        final apiFirst = (res['first_name'] as String?)?.trim() ?? '';
+        final apiLast  = (res['last_name']  as String?)?.trim() ?? '';
         state = state.copyWith(
           isLoading:              false,
           needsGoogleSignup:      true,
-          googlePrefillEmail:     res['email']      as String? ?? account.email,
-          googlePrefillFirstName: res['first_name'] as String? ?? '',
-          googlePrefillLastName:  res['last_name']  as String? ?? '',
-          googlePrefillGoogleId:  res['google_id']  as String? ?? account.id,
+          googlePrefillEmail:     res['email']     as String? ?? account.email,
+          googlePrefillFirstName: apiFirst.isNotEmpty ? apiFirst : fallbackFirst,
+          googlePrefillLastName:  apiLast.isNotEmpty  ? apiLast  : fallbackLast,
+          googlePrefillGoogleId:  res['google_id'] as String? ?? account.id,
         );
         return;
       }
@@ -290,9 +309,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       await _api.saveToken(res['token'] as String);
+      // Fetch full profile so avatar & social links are included
+      final user = await _fetchFullUser(res['user'] as Map<String, dynamic>);
       state = state.copyWith(
         isLoading: false,
-        user:  UserModel.fromJson(res['user'] as Map<String, dynamic>),
+        user:  user,
         token: res['token'] as String,
       );
     } catch (e) {
@@ -331,8 +352,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       // Account created but user_status = 0 — needs admin approval.
-      // Do NOT save token or log them in. Just set loginStatus to pending
-      // so the router sends them to the pending approval screen.
       state = state.copyWith(
         isLoading:   false,
         loginStatus: LoginStatus.pending,
@@ -346,6 +365,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _api.clearToken();
     await _googleSignIn.signOut();
     state = const AuthState(isRehydrating: false);
+  }
+
+  /// Upload a new profile picture. Returns null on success, error string on failure.
+  Future<String?> updateAvatar(String base64) async {
+    try {
+      final res = await _api.put('users/me/avatar', {'avatar_base64': base64}, auth: true);
+      if (res['success'] != true) {
+        return res['message'] as String? ?? 'Failed to update avatar.';
+      }
+      if (state.user != null) {
+        final updated = base64.isEmpty
+            ? state.user!.copyWith(clearAvatar: true)
+            : state.user!.copyWith(avatarBase64: base64);
+        state = state.copyWith(user: updated);
+      }
+      return null;
+    } catch (_) {
+      return 'Network error. Please try again.';
+    }
   }
 
   void clearGooglePrefill()  => state = state.copyWith(needsGoogleSignup: false);

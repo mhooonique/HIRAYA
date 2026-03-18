@@ -4,14 +4,13 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
-  static const _baseUrl = 'http://localhost/hiraya_api/api/v1/';
+  static const _baseUrl = 'https://fqzjx5pz-80.asse.devtunnels.ms/hiraya_api/api/v1/';
+
   static const _tokenKey = 'hiraya_jwt';
 
   final Dio _dio;
-  final FlutterSecureStorage _storage;
 
   ApiService()
       : _dio = Dio(BaseOptions(
@@ -20,21 +19,24 @@ class ApiService {
           receiveTimeout: const Duration(seconds: 60),
           sendTimeout: const Duration(seconds: 60),
           headers: {'Content-Type': 'application/json'},
-        )),
-        _storage = const FlutterSecureStorage();
+          validateStatus: (status) => status != null && status < 500,
+        ));
 
-  // ── Token management ────────────────────────────────────────────────────────
+  // ── Token management (shared_preferences → localStorage on web) ─────────────
 
   Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
   }
 
   Future<String?> getStoredToken() async {
-    return _storage.read(key: _tokenKey);
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
   }
 
   Future<void> clearToken() async {
-    await _storage.delete(key: _tokenKey);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
   }
 
   Future<Options> _authOptions() async {

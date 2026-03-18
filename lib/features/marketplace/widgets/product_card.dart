@@ -28,12 +28,15 @@ class _ProductCardState extends ConsumerState<ProductCard> {
   Color get _categoryColor =>
       AppColors.categoryColors[widget.product.category] ?? AppColors.teal;
 
+  bool get _isDummy => widget.product.id < 0;
+
   bool get _isClient {
     final auth = ref.read(authProvider);
     return auth.isLoggedIn && auth.user?.role == 'client';
   }
 
   void _onLikeTap() {
+    if (_isDummy) return; // no-op for dummy
     if (_isClient) {
       ref.read(clientProvider.notifier).toggleLike(widget.product.id);
     } else {
@@ -42,6 +45,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
   }
 
   void _onWishlistTap() {
+    if (_isDummy) return;
     if (_isClient) {
       ref.read(clientProvider.notifier).toggleWishlist(widget.product);
     } else {
@@ -50,6 +54,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
   }
 
   void _onBookmarkTap() {
+    if (_isDummy) return;
     if (_isClient) {
       ref.read(clientProvider.notifier).toggleBookmark(widget.product);
     } else {
@@ -106,6 +111,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
     final auth = ref.watch(authProvider);
     final isClient = auth.isLoggedIn && auth.user?.role == 'client';
 
+<<<<<<< HEAD
     final clientState = isClient ? ref.watch(clientProvider) : null;
     final isLiked =
         clientState?.likedIds.contains(widget.product.id) ?? false;
@@ -115,20 +121,39 @@ class _ProductCardState extends ConsumerState<ProductCard> {
         clientState?.bookmarkIds.contains(widget.product.id) ?? false;
 
     final catColor = _categoryColor;
+=======
+    // Only watch client state for real products
+    final clientState = (isClient && !_isDummy) ? ref.watch(clientProvider) : null;
+    final isLiked      = clientState?.likedIds.contains(widget.product.id) ?? false;
+    final isWishlisted = clientState?.wishlistIds.contains(widget.product.id) ?? false;
+    final isBookmarked = clientState?.bookmarkIds.contains(widget.product.id) ?? false;
+
+    final cardBg      = isDark ? const Color(0xFF1A2233) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF2A3448) : AppColors.lightGray;
+    final nameColor   = isDark ? Colors.white : AppColors.navy;
+    final descColor   = isDark ? Colors.white54 : Colors.black45;
+    final dividerColor = isDark ? const Color(0xFF2A3448) : AppColors.lightGray;
+>>>>>>> origin/master
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
+      onExit:  (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: () => context.go('/product/${widget.product.id}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
+<<<<<<< HEAD
           transform: Matrix4.translationValues(
               0.0, _hovered ? -8.0 : 0.0, 0.0),
+=======
+          transform: Matrix4.identity()
+            ..translate(0.0, _hovered ? -4.0 : 0.0),
+>>>>>>> origin/master
           decoration: BoxDecoration(
             color: AppColors.darkSurface,
             borderRadius: BorderRadius.circular(20),
+<<<<<<< HEAD
             border: Border(
               left: BorderSide(
                 color: catColor.withValues(alpha: _hovered ? 0.90 : 0.55),
@@ -152,6 +177,12 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                     : AppColors.borderDark,
                 width: 1,
               ),
+=======
+            border: Border.all(
+              color: _hovered
+                  ? _categoryColor.withValues(alpha: 0.3)
+                  : borderColor,
+>>>>>>> origin/master
             ),
             boxShadow: [
               BoxShadow(
@@ -171,6 +202,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                 ),
             ],
           ),
+<<<<<<< HEAD
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Column(
@@ -192,8 +224,27 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                           isLiked: isLiked,
                           isClient: isClient,
                         ),
+=======
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cover image / gradient
+              ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+                child: SizedBox(
+                  height: 180,
+                  width: double.infinity,
+                  child: widget.product.images.isNotEmpty
+                      ? _buildCoverImage(widget.product.images.first,
+                          isLiked: isLiked, isClient: isClient)
+                      : _buildGradientCover(
+                          _categoryColor, widget.product.category,
+                          isLiked: isLiked, isClient: isClient),
+>>>>>>> origin/master
                 ),
 
+<<<<<<< HEAD
                 // ── Content ─────────────────────────────────
                 Expanded(
                   child: Padding(
@@ -207,6 +258,92 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                             _StatusBadge(
                               label: _statusLabel(widget.product.status),
                               color: _statusColor(widget.product.status),
+=======
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Demo badge for dummy posts
+                    if (_isDummy) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.golden.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: AppColors.golden.withValues(alpha: 0.4)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.science_rounded,
+                                color: AppColors.golden, size: 11),
+                            SizedBox(width: 4),
+                            Text('SHOWCASE',
+                                style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.golden,
+                                    letterSpacing: 0.5)),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    Text(
+                      widget.product.name,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: nameColor,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.product.description,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        color: descColor,
+                        height: 1.5,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Innovator row
+                    // Dummy innovators are not clickable (no real profile)
+                    GestureDetector(
+                      onTap: _isDummy
+                          ? null
+                          : () => context
+                              .go('/profile/${widget.product.innovatorId}'),
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor:
+                              _categoryColor.withValues(alpha: 0.15),
+                          child: Text(
+                            widget.product.innovatorName
+                                .substring(0, 1)
+                                .toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: _categoryColor,
+>>>>>>> origin/master
                             ),
                             if (widget.product.isVerifiedInnovator) ...[
                               const SizedBox(width: 6),
@@ -232,9 +369,93 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
+<<<<<<< HEAD
                         const SizedBox(height: 5),
                         Text(
                           widget.product.description,
+=======
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            widget.product.innovatorName,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: _isDummy
+                                  ? Colors.black45
+                                  : AppColors.sky,
+                              decoration: _isDummy
+                                  ? TextDecoration.none
+                                  : TextDecoration.underline,
+                              decorationColor: AppColors.sky,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (!_isDummy)
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              size: 10, color: AppColors.sky),
+                      ]),
+                    ),
+
+                    const SizedBox(height: 10),
+                    Divider(height: 1, color: dividerColor),
+                    const SizedBox(height: 10),
+
+                    Row(children: [
+                      _StatChip(
+                        icon: Icons.remove_red_eye_rounded,
+                        value: '${widget.product.views}',
+                      ),
+                      const SizedBox(width: 10),
+                      _StatChip(
+                        icon: Icons.trending_up_rounded,
+                        value: '${widget.product.interestCount}',
+                        color: AppColors.teal,
+                      ),
+                      const Spacer(),
+
+                      // Wishlist + bookmark — real products & clients only
+                      if (isClient && !_isDummy) ...[
+                        _IconAction(
+                          icon: isWishlisted
+                              ? Icons.bookmark_added_rounded
+                              : Icons.bookmark_add_outlined,
+                          color: isWishlisted
+                              ? AppColors.golden
+                              : Colors.black38,
+                          onTap: _onWishlistTap,
+                          tooltip: isWishlisted
+                              ? 'Remove from wishlist'
+                              : 'Add to wishlist',
+                        ),
+                        const SizedBox(width: 6),
+                        _IconAction(
+                          icon: isBookmarked
+                              ? Icons.turned_in_rounded
+                              : Icons.turned_in_not_rounded,
+                          color: isBookmarked
+                              ? AppColors.teal
+                              : Colors.black38,
+                          onTap: _onBookmarkTap,
+                          tooltip: isBookmarked
+                              ? 'Remove bookmark'
+                              : 'Bookmark',
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _categoryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _isDummy ? 'View Showcase' : 'View Details',
+>>>>>>> origin/master
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 11,
@@ -439,13 +660,34 @@ class _ProductCardState extends ConsumerState<ProductCard> {
         .slideY(begin: 0.2, end: 0);
   }
 
-  Widget _buildCoverImage(String base64Img,
+  Widget _buildCoverImage(String imageStr,
       {required bool isLiked, required bool isClient}) {
     try {
-      final bytes = base64Decode(base64Img);
+      // URL = dummy product image, base64 = real product image
+      final isUrl = imageStr.startsWith('http');
       return Stack(fit: StackFit.expand, children: [
+<<<<<<< HEAD
         Image.memory(bytes, fit: BoxFit.cover),
         // Cinematic dark gradient overlay
+=======
+        isUrl
+            ? Image.network(
+                imageStr,
+                fit: BoxFit.cover,
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : Container(
+                        color: _categoryColor.withValues(alpha: 0.1),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                              color: _categoryColor, strokeWidth: 2),
+                        )),
+                errorBuilder: (_, __, ___) => _buildGradientCover(
+                    _categoryColor, widget.product.category,
+                    isLiked: isLiked, isClient: isClient),
+              )
+            : Image.memory(base64Decode(imageStr), fit: BoxFit.cover),
+>>>>>>> origin/master
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -454,9 +696,15 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
+<<<<<<< HEAD
                   Colors.black.withValues(alpha: 0.55),
                 ],
                 stops: const [0.4, 1.0],
+=======
+                  Colors.black.withValues(alpha: 0.3)
+                ],
+                stops: const [0.5, 1.0],
+>>>>>>> origin/master
               ),
             ),
           ),
@@ -471,6 +719,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
             top: 10,
             right: 10,
             child: Container(
+<<<<<<< HEAD
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: AppColors.teal,
@@ -494,11 +743,55 @@ class _ProductCardState extends ConsumerState<ProductCard> {
             count: widget.product.likes,
             isClient: isClient,
             onTap: _onLikeTap,
+=======
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                  color: AppColors.teal,
+                  borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.verified_rounded,
+                  color: Colors.white, size: 14),
+            ),
           ),
-        ),
+        // Like button — real products only
+        if (!_isDummy)
+          Positioned(
+            bottom: 12, right: 12,
+            child: _LikeButton(
+              liked: isLiked,
+              count: widget.product.likes,
+              isClient: isClient,
+              onTap: _onLikeTap,
+            ),
+          )
+        else
+          // Dummy: show like count but not interactive
+          Positioned(
+            bottom: 12, right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.favorite_rounded,
+                    color: Colors.white60, size: 14),
+                const SizedBox(width: 4),
+                Text('${widget.product.likes}',
+                    style: const TextStyle(
+                        color: Colors.white60,
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+              ]),
+            ),
+>>>>>>> origin/master
+          ),
       ]);
     } catch (_) {
-      return _buildGradientCover(_categoryColor, widget.product.category,
+      return _buildGradientCover(
+          _categoryColor, widget.product.category,
           isLiked: isLiked, isClient: isClient);
     }
   }
@@ -567,8 +860,18 @@ class _ProductCardState extends ConsumerState<ProductCard> {
         ),
       ),
       Positioned(
+<<<<<<< HEAD
         top: 10,
         left: 10,
+=======
+        right: -20, bottom: -20,
+        child: Icon(_categoryIcon(category),
+            size: 120,
+            color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      Positioned(
+        top: 12, left: 12,
+>>>>>>> origin/master
         child: _CategoryBadge(label: category),
       ),
       if (widget.product.isVerifiedInnovator)
@@ -576,6 +879,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
           top: 10,
           right: 10,
           child: Container(
+<<<<<<< HEAD
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               color: AppColors.teal,
@@ -599,12 +903,53 @@ class _ProductCardState extends ConsumerState<ProductCard> {
           count: widget.product.likes,
           isClient: isClient,
           onTap: _onLikeTap,
+=======
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+                color: AppColors.teal,
+                borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Icons.verified_rounded,
+                color: Colors.white, size: 14),
+          ),
         ),
-      ),
+      if (!_isDummy)
+        Positioned(
+          bottom: 12, right: 12,
+          child: _LikeButton(
+            liked: isLiked,
+            count: widget.product.likes,
+            isClient: isClient,
+            onTap: _onLikeTap,
+          ),
+        )
+      else
+        Positioned(
+          bottom: 12, right: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.favorite_rounded,
+                  color: Colors.white60, size: 14),
+              const SizedBox(width: 4),
+              Text('${widget.product.likes}',
+                  style: const TextStyle(
+                      color: Colors.white60,
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ]),
+          ),
+>>>>>>> origin/master
+        ),
     ]);
   }
 }
 
+<<<<<<< HEAD
 // ─── LOCATION CHIP ─────────────────────────────────────────────────────────────
 class _LocationChip extends StatelessWidget {
   final String category;
@@ -742,6 +1087,18 @@ class _RatingStars extends StatelessWidget {
         ),
       ],
     );
+=======
+  IconData _categoryIcon(String category) {
+    switch (category) {
+      case 'Agriculture':            return Icons.grass_rounded;
+      case 'Healthcare':             return Icons.medical_services_rounded;
+      case 'Energy':                 return Icons.bolt_rounded;
+      case 'Construction':           return Icons.foundation_rounded;
+      case 'Product Design':         return Icons.design_services_rounded;
+      case 'Information Technology': return Icons.computer_rounded;
+      default:                       return Icons.lightbulb_rounded;
+    }
+>>>>>>> origin/master
   }
 }
 
@@ -766,7 +1123,11 @@ class _LikeButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding:
+<<<<<<< HEAD
             const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+=======
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+>>>>>>> origin/master
         decoration: BoxDecoration(
           color: liked
               ? AppColors.crimson
@@ -820,6 +1181,7 @@ class _CategoryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
+<<<<<<< HEAD
         padding:
             const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
@@ -837,6 +1199,23 @@ class _CategoryBadge extends StatelessWidget {
                 ? AppColors.golden
                 : Colors.white.withValues(alpha: 0.9),
             letterSpacing: 0.4,
+=======
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(20),
+          border:
+              Border.all(color: Colors.white.withValues(alpha: 0.4)),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            letterSpacing: 0.5,
+>>>>>>> origin/master
           ),
         ),
       );
@@ -861,7 +1240,11 @@ class _IconAction extends StatelessWidget {
         message: tooltip,
         child: GestureDetector(
           onTap: onTap,
+<<<<<<< HEAD
           child: Icon(icon, size: 17, color: color),
+=======
+          child: Icon(icon, size: 18, color: color),
+>>>>>>> origin/master
         ),
       );
 }
@@ -882,17 +1265,29 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+<<<<<<< HEAD
           Icon(icon, size: 12, color: color),
+=======
+          Icon(icon, size: 13, color: color),
+>>>>>>> origin/master
           const SizedBox(width: 3),
           Text(
             value,
             style: TextStyle(
               fontFamily: 'Poppins',
+<<<<<<< HEAD
               fontSize: 11,
+=======
+              fontSize: 12,
+>>>>>>> origin/master
               color: color,
               fontWeight: FontWeight.w500,
             ),
           ),
         ],
       );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/master

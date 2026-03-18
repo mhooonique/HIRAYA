@@ -1,20 +1,14 @@
-// ═══════════════════════════════════════════════════════════════════════════════
-// FILE 1: lib/features/notifications/providers/notification_provider.dart
-// ═══════════════════════════════════════════════════════════════════════════════
-
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/api_service.dart';
 
-// ── Model ─────────────────────────────────────────────────────────────────────
-
 class AppNotification {
   final int id;
-  final String type;   // product_approved | product_rejected | new_interest
-                       // new_message | review_posted | system
+  final String type;
   final String title;
   final String body;
   final bool isRead;
-  final String? actionUrl; // e.g. /product/3  or /messages
+  final String? actionUrl;
   final DateTime createdAt;
 
   const AppNotification({
@@ -48,8 +42,6 @@ class AppNotification {
       );
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
-
 class NotificationState {
   final bool isLoading;
   final List<AppNotification> notifications;
@@ -77,58 +69,76 @@ class NotificationState {
       );
 }
 
-// ── Notifier ──────────────────────────────────────────────────────────────────
-
 class NotificationNotifier extends StateNotifier<NotificationState> {
   final ApiService _api;
+  Timer? _pollTimer;
 
   NotificationNotifier(this._api) : super(const NotificationState()) {
     load();
+    _startPolling();
   }
 
-  Future<void> load() async {
-    state = state.copyWith(isLoading: true);
+  void _startPolling() {
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _silentRefresh());
+  }
+
+  Future<bool> _isLoggedIn() async {
+    final token = await _api.getStoredToken();
+    return token != null;
+  }
+
+  Future<void> _silentRefresh() async {
+    if (!await _isLoggedIn()) return;
     try {
-      final res = await _api.get('/notifications');
+      final res = await _api.get('/notifications', auth: true);
       final list = (res['notifications'] as List? ?? [])
           .map((e) => AppNotification.fromJson(e))
           .toList();
-      state = state.copyWith(
-        isLoading: false,
-        notifications: list,
-        unreadCount: list.where((n) => !n.isRead).length,
-      );
+      if (mounted) {
+        state = state.copyWith(
+          notifications: list,
+          unreadCount: list.where((n) => !n.isRead).length,
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> load() async {
+    if (!await _isLoggedIn()) return;
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final res = await _api.get('/notifications', auth: true);
+      final list = (res['notifications'] as List? ?? [])
+          .map((e) => AppNotification.fromJson(e))
+          .toList();
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          notifications: list,
+          unreadCount: list.where((n) => !n.isRead).length,
+        );
+      }
     } catch (_) {
-      // Use dummy data if API unavailable
-      final dummy = _dummy();
-      state = state.copyWith(
-        isLoading: false,
-        notifications: dummy,
-        unreadCount: dummy.where((n) => !n.isRead).length,
-      );
+      if (mounted) {
+        state = state.copyWith(isLoading: false, error: 'Could not load notifications.');
+      }
     }
   }
 
   Future<void> markRead(int id) async {
-    // Optimistic update
-    final updated = state.notifications.map((n) {
-      return n.id == id ? n.copyWith(isRead: true) : n;
-    }).toList();
+    final updated = state.notifications.map((n) =>
+        n.id == id ? n.copyWith(isRead: true) : n).toList();
     state = state.copyWith(
       notifications: updated,
       unreadCount: updated.where((n) => !n.isRead).length,
     );
-    try {
-      await _api.put('/notifications/$id/read', {});
-    } catch (_) {}
+    try { await _api.put('/notifications/$id/read', {}, auth: true); } catch (_) {}
   }
 
   Future<void> markAllRead() async {
     final updated = state.notifications.map((n) => n.copyWith(isRead: true)).toList();
     state = state.copyWith(notifications: updated, unreadCount: 0);
-    try {
-      await _api.put('/notifications/read-all', {});
-    } catch (_) {}
+    try { await _api.put('/notifications/read-all', {}, auth: true); } catch (_) {}
   }
 
   Future<void> deleteNotification(int id) async {
@@ -137,48 +147,14 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       notifications: updated,
       unreadCount: updated.where((n) => !n.isRead).length,
     );
-    try {
-      await _api.delete('/notifications/$id');
-    } catch (_) {}
+    try { await _api.delete('/notifications/$id', auth: true); } catch (_) {}
   }
 
-  List<AppNotification> _dummy() => [
-        AppNotification(
-          id: 1, type: 'product_approved',
-          title: 'Innovation Approved!',
-          body: 'Your innovation "AquaRice Smart Irrigation" has been approved and is now live.',
-          isRead: false, actionUrl: '/product/1',
-          createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
-        ),
-        AppNotification(
-          id: 2, type: 'new_interest',
-          title: 'New Interest Received',
-          body: 'A client expressed interest in "SolarNet Mini Grid".',
-          isRead: false, actionUrl: '/messages',
-          createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-        ),
-        AppNotification(
-          id: 3, type: 'review_posted',
-          title: 'New Review',
-          body: 'Someone left a 5-star review on "CocoComposite Panel".',
-          isRead: false, actionUrl: '/product/2',
-          createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-        ),
-        AppNotification(
-          id: 4, type: 'new_message',
-          title: 'New Message',
-          body: 'You have a new message from Maria Santos.',
-          isRead: true, actionUrl: '/messages',
-          createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-        ),
-        AppNotification(
-          id: 5, type: 'system',
-          title: 'Welcome to HIRAYA!',
-          body: 'Complete your KYC verification to unlock all features.',
-          isRead: true, actionUrl: null,
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-      ];
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
 }
 
 final notificationProvider =

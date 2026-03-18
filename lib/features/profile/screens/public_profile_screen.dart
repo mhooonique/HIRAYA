@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/widgets/user_avatar.dart';
 import '../../auth/providers/auth_provider.dart';
 
 // Suppress unused import warning for dart:html — used in _VideoCard via html.window
@@ -27,7 +28,7 @@ class _ProfileData {
 final _publicProfileProvider =
     FutureProvider.family<_ProfileData, int>((ref, userId) async {
   final api = ref.read(apiServiceProvider);
-  final res = await api.get('users/$userId/profile');
+  final res = await api.get('users/$userId/profile', auth: true);
   if (res['success'] != true) throw Exception('User not found');
   final userData = res['data'] as Map<String, dynamic>;
   final productsJson =
@@ -46,7 +47,9 @@ class PublicProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(_publicProfileProvider(userId));
-    final isLoggedIn = ref.watch(authProvider).isLoggedIn;
+    final authState  = ref.watch(authProvider);
+    final isLoggedIn = authState.isLoggedIn;
+    final isAdmin    = authState.user?.role == 'admin';
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
@@ -56,6 +59,7 @@ class PublicProfileScreen extends ConsumerWidget {
         data: (profile) => _ProfileView(
           profile: profile,
           isLoggedIn: isLoggedIn,
+          isAdmin: isAdmin,
           onBack: () => context.pop(),
           onMessage: () =>
               context.go(isLoggedIn ? '/messaging' : '/login'),
@@ -108,6 +112,7 @@ class _ErrorView extends StatelessWidget {
 class _ProfileView extends StatelessWidget {
   final _ProfileData profile;
   final bool isLoggedIn;
+  final bool isAdmin;
   final VoidCallback onBack;
   final VoidCallback onMessage;
   final void Function(int) onProductTap;
@@ -115,6 +120,7 @@ class _ProfileView extends StatelessWidget {
   const _ProfileView({
     required this.profile,
     required this.isLoggedIn,
+    required this.isAdmin,
     required this.onBack,
     required this.onMessage,
     required this.onProductTap,
@@ -123,11 +129,12 @@ class _ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = profile.user;
-    final firstName = (u['first_name'] as String? ?? 'U');
-    final lastName = (u['last_name'] as String? ?? '');
-    final fullName = '$firstName $lastName'.trim();
-    final username = u['username'] as String? ?? '';
-    final kycStatus = u['kyc_status'] as String? ?? 'unverified';
+    final firstName   = (u['first_name'] as String? ?? 'U');
+    final lastName    = (u['last_name'] as String? ?? '');
+    final fullName    = '$firstName $lastName'.trim();
+    final username    = u['username'] as String? ?? '';
+    final kycStatus   = u['kyc_status'] as String? ?? 'unverified';
+    final avatarBase64 = u['avatar_base64'] as String?;
     final socialLinks =
         (u['social_links'] as Map<String, dynamic>?) ?? {};
     final products = profile.products;
@@ -209,28 +216,19 @@ class _ProfileView extends StatelessWidget {
                     children: [
                       // Avatar
                       Container(
-                        width: 80,
-                        height: 80,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white
-                              .withValues(alpha: 0.2),
                           border: Border.all(
                               color: Colors.white
                                   .withValues(alpha: 0.4),
                               width: 2),
                         ),
-                        child: Center(
-                          child: Text(
-                            firstName
-                                .substring(0, 1)
-                                .toUpperCase(),
-                            style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 36,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white),
-                          ),
+                        child: UserAvatar(
+                          name:         firstName,
+                          avatarBase64: avatarBase64,
+                          radius:       40,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          foregroundColor: Colors.white,
                         ),
                       ).animate().scale(
                           duration: 500.ms,
@@ -301,8 +299,8 @@ class _ProfileView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Message button
-                SizedBox(
+                // Message button — hidden for admin users
+                if (!isAdmin) SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: onMessage,

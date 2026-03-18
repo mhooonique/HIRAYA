@@ -78,6 +78,7 @@ class _LandingNavbarState extends State<LandingNavbar>
         },
         onAboutTap: widget.onAboutTap,
       ),
+<<<<<<< HEAD
     );
     overlay.insert(entry);
     _mobileDrawerOverlay = entry;
@@ -98,6 +99,35 @@ class _LandingNavbarState extends State<LandingNavbar>
             const Spacer(),
             if (!isMobile) ...[
               _NavLink(
+=======
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(children: [
+                Image.asset('assets/images/logo/final-logo.png', height: 32),
+                const SizedBox(width: 10),
+                const Text('DIGITAL PLATFORM', style: TextStyle(
+                  fontFamily: 'Poppins', color: Colors.white,
+                  fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 2,
+                )),
+              ]),
+              const SizedBox(height: 24),
+              const Divider(color: Colors.white10),
+              const SizedBox(height: 8),
+              _MobileMenuItem(
+                icon: Icons.storefront_rounded,
+>>>>>>> origin/master
                 label: 'Marketplace',
                 onTap: () => context.go('/marketplace'),
                 showDot: true,
@@ -1303,6 +1333,7 @@ class _CategoryGridItemState extends State<_CategoryGridItem> {
           ),
           child: Row(
             children: [
+<<<<<<< HEAD
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 30,
@@ -1325,6 +1356,18 @@ class _CategoryGridItemState extends State<_CategoryGridItem> {
                   size: 15,
                   color: widget.color.withValues(
                       alpha: _hovered ? 1.0 : 0.55),
+=======
+              Image.asset('assets/images/logo/final-logo.png', height: isMobile ? 32 : 40),
+              const SizedBox(width: 10),
+              Text(
+                'DIGITAL PLATFORM',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Colors.white,
+                  fontSize: isMobile ? 18 : 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 3,
+>>>>>>> origin/master
                 ),
               ),
               const SizedBox(width: 8),

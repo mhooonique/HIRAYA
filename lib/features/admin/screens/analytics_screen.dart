@@ -1,3 +1,6 @@
+import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -148,13 +151,13 @@ class AnalyticsScreen extends ConsumerWidget {
 
           const SizedBox(height: 28),
 
-          const _SectionHeader(title: 'Login Frequency Distribution'),
+          const _SectionHeader(title: 'Product Status Distribution'),
           const SizedBox(height: 16),
           _DarkCard(
-            title: 'Logins per Week',
+            title: 'Products by Status',
             child: SizedBox(
               height: 180,
-              child: _LoginFreqChart(),
+              child: _ProductStatusChart(data: state.productStatus),
             ),
           ),
 
@@ -817,28 +820,55 @@ class _CategoryPieChart extends StatelessWidget {
   }
 }
 
-// ─── LOGIN FREQUENCY CHART ────────────────────────────────────────────────────
-class _LoginFreqChart extends StatelessWidget {
-  final _data = const [18, 34, 42, 28, 15, 9, 6];
-  final _labels = const ['0-1x', '2-3x', '4-5x', '6-7x', '8-10x', '11-14x', '15x+'];
+// ─── PRODUCT STATUS CHART ─────────────────────────────────────────────────────
+class _ProductStatusChart extends StatelessWidget {
+  final List<Map<String, dynamic>> data;
+  const _ProductStatusChart({required this.data});
+
+  static const _statusColors = {
+    'approved': AppColors.teal,
+    'pending':  AppColors.golden,
+    'rejected': AppColors.crimson,
+    'draft':    Colors.white24,
+  };
 
   @override
   Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return const Center(child: Text('No data', style: TextStyle(fontFamily: 'Poppins', color: Colors.white38)));
+    }
+    final maxY = data.map((e) => (e['count'] as num?)?.toDouble() ?? 0).fold(0.0, (a, b) => a > b ? a : b);
     return BarChart(
       BarChartData(
         backgroundColor: Colors.transparent,
         alignment: BarChartAlignment.spaceAround,
-        maxY: 50,
-        barTouchData: BarTouchData(enabled: true),
+        maxY: (maxY * 1.2).ceilToDouble().clamp(5, double.infinity),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => const Color(0xFF1E2D3D),
+            getTooltipItem: (group, groupIndex, rod, _) {
+              final d = data[groupIndex];
+              final status = (d['status'] as String? ?? '').toUpperCase();
+              return BarTooltipItem(
+                '$status\n${rod.toY.toInt()} products',
+                const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white),
+              );
+            },
+          ),
+        ),
         titlesData: FlTitlesData(
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (val, _) {
                 final i = val.toInt();
-                if (i >= 0 && i < _labels.length) {
-                  return Text(_labels[i],
-                      style: const TextStyle(fontFamily: 'Poppins', fontSize: 9, color: Colors.white38));
+                if (i >= 0 && i < data.length) {
+                  final status = (data[i]['status'] as String? ?? '');
+                  final label = status.isEmpty ? '?' : status[0].toUpperCase() + status.substring(1);
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(label, style: const TextStyle(fontFamily: 'Poppins', fontSize: 10, color: Colors.white54)),
+                  );
                 }
                 return const SizedBox();
               },
@@ -849,7 +879,7 @@ class _LoginFreqChart extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (val, _) => Text(val.toInt().toString(),
                   style: const TextStyle(fontFamily: 'Poppins', fontSize: 9, color: Colors.white38)),
-              reservedSize: 24,
+              reservedSize: 28,
             ),
           ),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -860,15 +890,18 @@ class _LoginFreqChart extends StatelessWidget {
           getDrawingHorizontalLine: (_) => FlLine(color: Colors.white.withValues(alpha: 0.04), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
-        barGroups: _data.asMap().entries.map((e) {
+        barGroups: data.asMap().entries.map((e) {
+          final status = e.value['status'] as String? ?? '';
+          final count  = (e.value['count'] as num?)?.toDouble() ?? 0;
+          final color  = _statusColors[status] ?? AppColors.sky;
           return BarChartGroupData(
             x: e.key,
             barRods: [
               BarChartRodData(
-                toY: e.value.toDouble(),
-                color: AppColors.sky,
-                width: 24,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                toY: count,
+                color: color,
+                width: 36,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
               ),
             ],
           );
@@ -914,21 +947,11 @@ class _FilterDropdown extends StatelessWidget {
 }
 
 // ─── EXPORT BUTTON ────────────────────────────────────────────────────────────
-class _ExportButton extends StatelessWidget {
+class _ExportButton extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('CSV export initiated — file will download shortly.',
-                style: TextStyle(fontFamily: 'Poppins')),
-            backgroundColor: AppColors.teal,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      },
+      onTap: () => _exportCsv(ref.read(analyticsProvider)),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
@@ -946,5 +969,64 @@ class _ExportButton extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _exportCsv(AnalyticsState s) {
+    final buf = StringBuffer();
+
+    buf.writeln('HIRAYA Analytics Export');
+    buf.writeln('Generated,${DateTime.now().toIso8601String()}');
+    buf.writeln();
+
+    buf.writeln('=== Engagement ===');
+    buf.writeln('Metric,Value');
+    buf.writeln('Daily Active Users,${s.dau}');
+    buf.writeln('Monthly Active Users,${s.mau}');
+    buf.writeln('Inactive 30d,${s.inactiveUsers30}');
+    buf.writeln('Inactive 60d,${s.inactiveUsers60}');
+    buf.writeln('Inactive 90d+,${s.inactiveUsers90}');
+    buf.writeln();
+
+    buf.writeln('=== User Growth (Monthly) ===');
+    buf.writeln('Month,Innovators,Clients,Total');
+    for (final g in s.userGrowth) {
+      buf.writeln('${g.month},${g.innovators},${g.clients},${g.total}');
+    }
+    buf.writeln();
+
+    buf.writeln('=== Leaderboard (${s.selectedLeaderboardMetric}) ===');
+    buf.writeln('Rank,Name,Username,Role,Value,Metric');
+    for (final e in s.leaderboard) {
+      buf.writeln('${e.rank},"${e.name}",@${e.username},${e.role},${e.value},${e.metric}');
+    }
+    buf.writeln();
+
+    buf.writeln('=== Top Products ===');
+    buf.writeln('Name,Innovator,Category,Likes,Views,Interests,Rising');
+    for (final p in s.topProducts) {
+      buf.writeln('"${p.name}","${p.innovator}",${p.category},${p.likes},${p.views},${p.interests},${p.rising}');
+    }
+    buf.writeln();
+
+    buf.writeln('=== Product Status ===');
+    buf.writeln('Status,Count');
+    for (final d in s.productStatus) {
+      buf.writeln('${d['status']},${d['count']}');
+    }
+    buf.writeln();
+
+    buf.writeln('=== Category Distribution ===');
+    buf.writeln('Category,Count');
+    for (final d in s.categoryDistribution) {
+      buf.writeln('"${d['category']}",${d['count']}');
+    }
+
+    final bytes = utf8.encode(buf.toString());
+    final blob  = html.Blob([bytes], 'text/csv');
+    final url   = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', 'hiraya_analytics_${DateTime.now().millisecondsSinceEpoch}.csv')
+      ..click();
+    html.Url.revokeObjectUrl(url);
   }
 }

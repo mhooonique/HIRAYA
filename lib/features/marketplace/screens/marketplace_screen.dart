@@ -97,6 +97,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     final isDesktop = w > 900;
 
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: AppColors.deepVoid,
       // ── Scroll-to-top FAB ─────────────────────────────────
       floatingActionButton: AnimatedOpacity(
@@ -166,6 +167,39 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                     auth: auth,
                     onLogoTap: () => context.go('/'),
                     onSignIn: () => context.go('/login'),
+=======
+      backgroundColor: AppColors.offWhite,
+      body: NestedScrollView(
+        controller: _scrollCtrl,
+        headerSliverBuilder: (context, innerScrolled) => [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            backgroundColor: AppColors.navy,
+            automaticallyImplyLeading: false,
+leading: context.canPop()
+    ? IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.arrow_back_rounded,
+              color: Colors.white, size: 18),
+        ),
+        onPressed: () => context.pop(),
+      )
+    : null,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.navy, AppColors.teal],
+>>>>>>> origin/master
                   ),
                 ),
 
@@ -727,6 +761,7 @@ class _HeroSearchBar extends StatelessWidget {
             offset: const Offset(0, 4),
           ),
         ],
+<<<<<<< HEAD
       ),
       child: TextField(
         controller: controller,
@@ -743,6 +778,288 @@ class _HeroSearchBar extends StatelessWidget {
             fontFamily: 'Poppins',
             fontSize: 14,
             color: Colors.white.withValues(alpha: 0.30),
+=======
+        body: RefreshIndicator(
+          onRefresh: notifier.loadProducts,
+          color: AppColors.teal,
+          child: CustomScrollView(
+            slivers: [
+              // Search bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      24, 20, 24, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                                BorderRadius.circular(12),
+                            border: Border.all(
+                                color: AppColors.lightGray),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black
+                                    .withValues(alpha: 0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          child: TextField(
+                            controller: _searchCtrl,
+                            onTap: () => context.push('/search'),
+                            readOnly: true,
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText:
+                                  'Search innovations, innovators...',
+                              hintStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                color: Colors.black26,
+                              ),
+                              prefixIcon: Icon(
+                                  Icons.search_rounded,
+                                  color: Colors.black38,
+                                  size: 20),
+                              border: InputBorder.none,
+                              contentPadding:
+                                  EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Sort button
+                      PopupMenuButton<String>(
+                        onSelected: notifier.setSort,
+                        shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(12)),
+                        child: Container(
+                          padding: const EdgeInsets.all(13),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                                BorderRadius.circular(12),
+                            border: Border.all(
+                                color: AppColors.lightGray),
+                          ),
+                          child: const Icon(
+                              Icons.sort_rounded,
+                              color: AppColors.navy,
+                              size: 20),
+                        ),
+                        itemBuilder: (_) => [
+                          _sortItem(
+                              'newest', 'Newest First',
+                              Icons.access_time_rounded),
+                          _sortItem(
+                              'most_liked', 'Most Liked',
+                              Icons.favorite_rounded),
+                          _sortItem(
+                              'most_viewed', 'Most Viewed',
+                              Icons.remove_red_eye_rounded),
+                          _sortItem(
+                              'most_interest',
+                              'Most Interest',
+                              Icons.trending_up_rounded),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Category filter
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(bottom: 16),
+                  child: CategoryFilterBar(
+                    selected: state.selectedCategory,
+                    onSelect: notifier.setCategory,
+                  ),
+                ),
+              ),
+
+              // Stats bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${products.length} innovations found',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          color: Colors.black45,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (state.selectedCategory != 'All' ||
+                          state.searchQuery.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            _searchCtrl.clear();
+                            notifier.setSearch('');
+                            notifier.setCategory('All');
+                          },
+                          child: const Text(
+                            'Clear filters',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              color: AppColors.crimson,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                  child: SizedBox(height: 16)),
+
+              // Loading
+              if (state.isLoading)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.teal),
+                  ),
+                )
+              // Error
+              else if (state.error != null)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.wifi_off_rounded,
+                            size: 64, color: AppColors.lightGray),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Failed to load innovations',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          state.error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 13,
+                            color: Colors.black38,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () => ref
+                              .read(marketplaceProvider.notifier)
+                              .loadProducts(),
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text('Retry',
+                              style: TextStyle(fontFamily: 'Poppins')),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.teal,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              // Empty
+              else if (products.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                            Icons.search_off_rounded,
+                            size: 64,
+                            color: AppColors.lightGray),
+                        SizedBox(height: 16),
+                        Text(
+                          'No innovations found',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Try a different category or search term',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            color: Colors.black38,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              // Grid
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                      24, 0, 24, 32),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => ProductCard(
+                        product: products[index],
+                        index: index,
+                      ),
+                      childCount: products.length,
+                    ),
+                    gridDelegate:
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:
+                          MediaQuery.of(context).size.width > 1200
+                              ? 4
+                              : MediaQuery.of(context).size.width >
+                                      800
+                                  ? 3
+                                  : MediaQuery.of(context)
+                                              .size
+                                              .width >
+                                          500
+                                      ? 2
+                                      : 1,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: 0.72,
+                    ),
+                  ),
+                ),
+            ],
+>>>>>>> origin/master
           ),
           prefixIcon: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),

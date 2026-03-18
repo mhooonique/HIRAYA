@@ -98,7 +98,7 @@ class OtpNotifier extends StateNotifier<OtpState> {
       await _sendEmailOtp(userId);
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: 'Failed to send OTP. Please try again.');
     }
   }
 
@@ -109,32 +109,17 @@ class OtpNotifier extends StateNotifier<OtpState> {
     try {
       final deviceId = await getDeviceId();
 
-      if (false) { // SMS path disabled on web
-        final credential = PhoneAuthProvider.credential(
-          verificationId: state.verificationId!,
-          smsCode:        code,
+      final res = await _api.post('otp/verify', {
+        'user_id':   state.userId,
+        'code':      code,
+        'device_id': deviceId,
+      }, auth: false);
+      if (res['success'] != true) {
+        state = state.copyWith(
+          isLoading: false,
+          error:     res['error'] ?? 'Invalid or expired code',
         );
-        await FirebaseAuth.instance.signInWithCredential(credential);
-        // Trust device on backend
-        await _api.post('otp/verify', {
-          'user_id':      state.userId,
-          'code':         '000000', // Firebase already verified — just trust device
-          'device_id':    deviceId,
-          'sms_verified': true,
-        }, auth: false);
-      } else {
-        final res = await _api.post('otp/verify', {
-          'user_id':   state.userId,
-          'code':      code,
-          'device_id': deviceId,
-        }, auth: false);
-        if (res['success'] != true) {
-          state = state.copyWith(
-            isLoading: false,
-            error:     res['error'] ?? 'Invalid or expired code',
-          );
-          return false;
-        }
+        return false;
       }
 
       state = state.copyWith(isLoading: false, isVerified: true);
@@ -155,7 +140,7 @@ class OtpNotifier extends StateNotifier<OtpState> {
       await _sendEmailOtp(state.userId);
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: 'Failed to resend OTP. Please try again.');
     }
   }
 

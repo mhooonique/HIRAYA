@@ -424,7 +424,7 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
 
   void _startCallPolling() {
     _callPollTimer?.cancel();
-    _callPollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollIncomingCalls());
+    _callPollTimer = Timer.periodic(const Duration(seconds: 8), (_) => _pollIncomingCalls());
   }
 
   Future<void> _pollIncomingCalls() async {
@@ -504,21 +504,25 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
   void clearSearch() => state = state.copyWith(globalSearchQuery: '');
 
   // ── Report ────────────────────────────────────────────────────────────────
-  Future<void> reportConversation(String convId) async {
+  Future<bool> reportConversation(String convId, {required String reason}) async {
     try {
-      await _api.post('messages/conversations/$convId/report', {});
+      final res = await _api.post('messages/conversations/$convId/report', {'reason': reason});
       state = state.copyWith(
         conversations: state.conversations
             .map((c) => c.id == convId ? c.copyWith(isReported: true) : c)
             .toList(),
       );
-    } catch (_) {}
+      return res['suspended'] == true;
+    } catch (_) {
+      return false;
+    }
   }
 
-  Future<void> reportMessage(String convId, String msgId) async {
+  Future<void> reportMessage(String convId, String msgId, {String reason = 'Inappropriate content'}) async {
     try {
       await _api.post('messages/conversations/$convId/report', {
         'message_id': int.tryParse(msgId),
+        'reason': reason,
       });
       state = state.copyWith(
         conversations: state.conversations.map((c) {

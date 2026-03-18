@@ -188,7 +188,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     final history = prefs.getStringList(_historyKey) ?? [];
 
     try {
-      final res = await _api.get('/search/trending');
+      final res = await _api.get('search/trending');
       final trending = (res['trending_products'] as List? ?? [])
           .map((e) => ProductModel.fromJson(e))
           .toList();
@@ -226,7 +226,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         ...state.filters.toQueryParams(),
         'page': page.toString(),
       };
-      final res = await _api.get('/search', queryParams: params);
+      final res = await _api.get('search', queryParams: params);
       final newResults = (res['products'] as List? ?? [])
           .map((e) => ProductModel.fromJson(e))
           .toList();
@@ -259,7 +259,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     }
     try {
       final res = await _api.get(
-        '/search/suggestions',
+        'search/suggestions',
         queryParams: {'q': query},
       );
       final suggestions = List<String>.from(res['suggestions'] ?? []);
