@@ -133,7 +133,7 @@ class _AdminSidebar extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: GestureDetector(
-              onTap: () => context.go('/marketplace'),
+              onTap: () => context.push('/marketplace'),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
@@ -913,7 +913,7 @@ class _UserRow extends StatelessWidget {
             )),
             // View public profile
             SizedBox(width: 36, child: IconButton(
-              onPressed: () => context.go('/profile/${user.id}'),
+              onPressed: () => context.push('/profile/${user.id}'),
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.person_search_rounded, color: Colors.white38, size: 18),
               tooltip: 'View public profile',

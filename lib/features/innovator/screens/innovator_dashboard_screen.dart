@@ -250,7 +250,7 @@ class _InnovatorSidebar extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(12),
             child: GestureDetector(
-              onTap: () => context.go('/marketplace'),
+              onTap: () => context.push('/marketplace'),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -269,7 +269,7 @@ class _InnovatorSidebar extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: GestureDetector(
-              onTap: () => context.go('/messages'),
+              onTap: () => context.go('/messaging'),
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
