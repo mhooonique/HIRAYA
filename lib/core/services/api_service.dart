@@ -5,9 +5,9 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 class ApiService {
-  static const _baseUrl = 'http://localhost/hiraya_api/api/v1/';
+  static const _baseUrl = 'https://fqzjx5pz-80.asse.devtunnels.ms/hiraya_api/api/v1/';
+
   static const _tokenKey = 'hiraya_jwt';
 
   final Dio _dio;

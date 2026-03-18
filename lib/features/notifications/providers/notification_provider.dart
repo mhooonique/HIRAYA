@@ -2,16 +2,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/api_service.dart';
 
-// ── Model ─────────────────────────────────────────────────────────────────────
-
 class AppNotification {
   final int id;
-  final String type;   // product_approved | product_rejected | new_interest
-                       // new_message | review_posted | product_liked | system
+  final String type;
   final String title;
   final String body;
   final bool isRead;
-  final String? actionUrl; // e.g. /product/3  or /messages
+  final String? actionUrl;
   final DateTime createdAt;
 
   const AppNotification({
@@ -45,8 +42,6 @@ class AppNotification {
       );
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
-
 class NotificationState {
   final bool isLoading;
   final List<AppNotification> notifications;
@@ -74,8 +69,6 @@ class NotificationState {
       );
 }
 
-// ── Notifier ──────────────────────────────────────────────────────────────────
-
 class NotificationNotifier extends StateNotifier<NotificationState> {
   final ApiService _api;
   Timer? _pollTimer;
@@ -89,61 +82,63 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _silentRefresh());
   }
 
-  /// Silent refresh — updates badge count without showing a loading spinner.
+  Future<bool> _isLoggedIn() async {
+    final token = await _api.getStoredToken();
+    return token != null;
+  }
+
   Future<void> _silentRefresh() async {
+    if (!await _isLoggedIn()) return;
     try {
-      final res = await _api.get('/notifications');
+      final res = await _api.get('/notifications', auth: true);
       final list = (res['notifications'] as List? ?? [])
           .map((e) => AppNotification.fromJson(e))
           .toList();
-      state = state.copyWith(
-        notifications: list,
-        unreadCount: list.where((n) => !n.isRead).length,
-      );
-    } catch (_) {
-      // Silent — don't disrupt existing state on transient errors
-    }
+      if (mounted) {
+        state = state.copyWith(
+          notifications: list,
+          unreadCount: list.where((n) => !n.isRead).length,
+        );
+      }
+    } catch (_) {}
   }
 
   Future<void> load() async {
+    if (!await _isLoggedIn()) return;
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final res = await _api.get('/notifications');
+      final res = await _api.get('/notifications', auth: true);
       final list = (res['notifications'] as List? ?? [])
           .map((e) => AppNotification.fromJson(e))
           .toList();
-      state = state.copyWith(
-        isLoading: false,
-        notifications: list,
-        unreadCount: list.where((n) => !n.isRead).length,
-      );
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          notifications: list,
+          unreadCount: list.where((n) => !n.isRead).length,
+        );
+      }
     } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Could not load notifications.',
-      );
+      if (mounted) {
+        state = state.copyWith(isLoading: false, error: 'Could not load notifications.');
+      }
     }
   }
 
   Future<void> markRead(int id) async {
-    final updated = state.notifications.map((n) {
-      return n.id == id ? n.copyWith(isRead: true) : n;
-    }).toList();
+    final updated = state.notifications.map((n) =>
+        n.id == id ? n.copyWith(isRead: true) : n).toList();
     state = state.copyWith(
       notifications: updated,
       unreadCount: updated.where((n) => !n.isRead).length,
     );
-    try {
-      await _api.put('/notifications/$id/read', {});
-    } catch (_) {}
+    try { await _api.put('/notifications/$id/read', {}, auth: true); } catch (_) {}
   }
 
   Future<void> markAllRead() async {
     final updated = state.notifications.map((n) => n.copyWith(isRead: true)).toList();
     state = state.copyWith(notifications: updated, unreadCount: 0);
-    try {
-      await _api.put('/notifications/read-all', {});
-    } catch (_) {}
+    try { await _api.put('/notifications/read-all', {}, auth: true); } catch (_) {}
   }
 
   Future<void> deleteNotification(int id) async {
@@ -152,9 +147,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       notifications: updated,
       unreadCount: updated.where((n) => !n.isRead).length,
     );
-    try {
-      await _api.delete('/notifications/$id');
-    } catch (_) {}
+    try { await _api.delete('/notifications/$id', auth: true); } catch (_) {}
   }
 
   @override

@@ -28,7 +28,7 @@ class _ProfileData {
 final _publicProfileProvider =
     FutureProvider.family<_ProfileData, int>((ref, userId) async {
   final api = ref.read(apiServiceProvider);
-  final res = await api.get('users/$userId/profile');
+  final res = await api.get('users/$userId/profile', auth: true);
   if (res['success'] != true) throw Exception('User not found');
   final userData = res['data'] as Map<String, dynamic>;
   final productsJson =
@@ -47,7 +47,9 @@ class PublicProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(_publicProfileProvider(userId));
-    final isLoggedIn = ref.watch(authProvider).isLoggedIn;
+    final authState  = ref.watch(authProvider);
+    final isLoggedIn = authState.isLoggedIn;
+    final isAdmin    = authState.user?.role == 'admin';
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
@@ -57,6 +59,7 @@ class PublicProfileScreen extends ConsumerWidget {
         data: (profile) => _ProfileView(
           profile: profile,
           isLoggedIn: isLoggedIn,
+          isAdmin: isAdmin,
           onBack: () => context.pop(),
           onMessage: () =>
               context.go(isLoggedIn ? '/messaging' : '/login'),
@@ -109,6 +112,7 @@ class _ErrorView extends StatelessWidget {
 class _ProfileView extends StatelessWidget {
   final _ProfileData profile;
   final bool isLoggedIn;
+  final bool isAdmin;
   final VoidCallback onBack;
   final VoidCallback onMessage;
   final void Function(int) onProductTap;
@@ -116,6 +120,7 @@ class _ProfileView extends StatelessWidget {
   const _ProfileView({
     required this.profile,
     required this.isLoggedIn,
+    required this.isAdmin,
     required this.onBack,
     required this.onMessage,
     required this.onProductTap,
@@ -294,8 +299,8 @@ class _ProfileView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Message button
-                SizedBox(
+                // Message button — hidden for admin users
+                if (!isAdmin) SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: onMessage,

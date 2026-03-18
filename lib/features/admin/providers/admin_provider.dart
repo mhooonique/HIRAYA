@@ -224,8 +224,9 @@ class AdminNotifier extends StateNotifier<AdminState> {
     try {
       final res = await _api.put('admin/users/$id/demote-admin', {}, auth: true);
       if (res['success'] != true) return res['message'] as String? ?? 'Failed to demote user.';
+      final restoredRole = res['restored_role'] as String? ?? 'client';
       state = state.copyWith(
-        users: state.users.map((u) => u.id != id ? u : _patchUser(u, role: 'client')).toList(),
+        users: state.users.map((u) => u.id != id ? u : _patchUser(u, role: restoredRole)).toList(),
       );
       return null;
     } catch (_) {

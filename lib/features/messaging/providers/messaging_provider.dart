@@ -424,7 +424,7 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
 
   void _startCallPolling() {
     _callPollTimer?.cancel();
-    _callPollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollIncomingCalls());
+    _callPollTimer = Timer.periodic(const Duration(seconds: 8), (_) => _pollIncomingCalls());
   }
 
   Future<void> _pollIncomingCalls() async {

@@ -64,7 +64,10 @@ class _GlobalCallListenerState extends ConsumerState<_GlobalCallListener> {
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.user != null && next.user!.id != _lastUserId) {
         _lastUserId = next.user!.id;
-        ref.read(messagingProvider.notifier).loadConversations(next.user!.id);
+        // Admins don't use messaging — skip polling to avoid noisy network calls
+        if (next.user!.role != 'admin') {
+          ref.read(messagingProvider.notifier).loadConversations(next.user!.id);
+        }
       }
       // Stop polling on logout
       if (next.user == null && _lastUserId != null) {
