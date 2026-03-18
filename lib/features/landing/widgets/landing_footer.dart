@@ -16,7 +16,7 @@ class LandingFooter extends StatelessWidget {
               Image.asset('assets/images/logo/final-logo.png', height: 36),
               const SizedBox(width: 12),
               const Text(
-                'HIRAYA',
+                'DIGITAL PLATFORM',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: Colors.white,
@@ -29,7 +29,7 @@ class LandingFooter extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           const Text(
-            '© 2026  HIRAYA. Department of Science and Technology. All rights reserved.',
+            '© 2026  DIGITAL PLATFORM. Department of Science and Technology. All rights reserved.',
             style: TextStyle(
               fontFamily: 'Poppins',
               color: Colors.white38,

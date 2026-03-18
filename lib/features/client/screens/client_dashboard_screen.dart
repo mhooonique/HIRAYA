@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/widgets/user_avatar.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
 import '../../marketplace/providers/marketplace_provider.dart';
@@ -178,13 +179,12 @@ class _ClientTopBar extends StatelessWidget {
             const SizedBox(width: 4),
             GestureDetector(
               onTap: () => tabController.animateTo(4),
-              child: CircleAvatar(
-                radius: 16,
+              child: UserAvatar(
+                name:         user?.firstName ?? 'C',
+                avatarBase64: user?.avatarBase64,
+                radius:       16,
                 backgroundColor: AppColors.sky.withValues(alpha: 0.2),
-                child: Text(
-                  (user?.firstName ?? 'C').substring(0, 1).toUpperCase(),
-                  style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.sky),
-                ),
+                foregroundColor: AppColors.sky,
               ),
             ),
             const SizedBox(width: 8),
@@ -614,11 +614,25 @@ class _ClientProfile extends ConsumerWidget {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.lightGray)),
             child: Column(children: [
-              CircleAvatar(
-                radius: 38,
+              UserAvatar(
+                name:         firstName,
+                avatarBase64: u?.avatarBase64,
+                radius:       38,
                 backgroundColor: AppColors.sky.withValues(alpha: 0.15),
-                child: Text(firstName.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 30, fontWeight: FontWeight.w800, color: AppColors.sky)),
+                foregroundColor: AppColors.sky,
+                uploadable:   true,
+                onUpload: (base64) async {
+                  final err = await ref.read(authProvider.notifier).updateAvatar(base64);
+                  if (err != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(err), backgroundColor: Colors.red),
+                    );
+                  } else if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profile picture updated!')),
+                    );
+                  }
+                },
               ),
               const SizedBox(height: 14),
               Text(fullName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.navy)),

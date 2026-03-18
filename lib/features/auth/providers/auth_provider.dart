@@ -256,13 +256,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       });
 
       if (res['needs_signup'] == true) {
+        final nameParts = (account.displayName ?? '').trim().split(RegExp(r'\s+'));
+        final fallbackFirst = nameParts.isNotEmpty ? nameParts.first : '';
+        final fallbackLast  = nameParts.length > 1 ? nameParts.skip(1).join(' ') : '';
+        final apiFirst = (res['first_name'] as String?)?.trim() ?? '';
+        final apiLast  = (res['last_name']  as String?)?.trim() ?? '';
         state = state.copyWith(
           isLoading:              false,
           needsGoogleSignup:      true,
-          googlePrefillEmail:     res['email']      as String? ?? account.email,
-          googlePrefillFirstName: res['first_name'] as String? ?? '',
-          googlePrefillLastName:  res['last_name']  as String? ?? '',
-          googlePrefillGoogleId:  res['google_id']  as String? ?? account.id,
+          googlePrefillEmail:     res['email']     as String? ?? account.email,
+          googlePrefillFirstName: apiFirst.isNotEmpty ? apiFirst : fallbackFirst,
+          googlePrefillLastName:  apiLast.isNotEmpty  ? apiLast  : fallbackLast,
+          googlePrefillGoogleId:  res['google_id'] as String? ?? account.id,
         );
         return;
       }
@@ -346,6 +351,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _api.clearToken();
     await _googleSignIn.signOut();
     state = const AuthState(isRehydrating: false);
+  }
+
+  /// Upload a new profile picture. Returns null on success, error string on failure.
+  Future<String?> updateAvatar(String base64) async {
+    try {
+      final res = await _api.put('users/me/avatar', {'avatar_base64': base64});
+      if (res['success'] != true) {
+        return res['message'] as String? ?? 'Failed to update avatar.';
+      }
+      if (state.user != null) {
+        final updated = base64.isEmpty
+            ? state.user!.copyWith(clearAvatar: true)
+            : state.user!.copyWith(avatarBase64: base64);
+        state = state.copyWith(user: updated);
+      }
+      return null;
+    } catch (_) {
+      return 'Network error. Please try again.';
+    }
   }
 
   void clearGooglePrefill()  => state = state.copyWith(needsGoogleSignup: false);

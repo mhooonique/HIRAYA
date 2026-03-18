@@ -1,18 +1,30 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// lib/features/admin/providers/analytics_provider.dart
 
-// Mock data models — will be replaced by real API calls
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/api_service.dart';
+
+// ── Models ────────────────────────────────────────────────────────────────────
+
 class UserGrowthData {
   final String month;
   final int innovators;
   final int clients;
   final int deactivations;
+
   UserGrowthData({
     required this.month,
     required this.innovators,
     required this.clients,
-    required this.deactivations,
+    this.deactivations = 0,
   });
+
   int get total => innovators + clients;
+
+  factory UserGrowthData.fromJson(Map<String, dynamic> j) => UserGrowthData(
+    month:      j['month']      as String? ?? '',
+    innovators: (j['innovators'] as num?)?.toInt() ?? 0,
+    clients:    (j['clients']    as num?)?.toInt() ?? 0,
+  );
 }
 
 class LeaderboardEntry {
@@ -22,6 +34,7 @@ class LeaderboardEntry {
   final String role;
   final int value;
   final String metric;
+
   LeaderboardEntry({
     required this.rank,
     required this.name,
@@ -30,6 +43,16 @@ class LeaderboardEntry {
     required this.value,
     required this.metric,
   });
+
+  factory LeaderboardEntry.fromJson(Map<String, dynamic> j, String metricLabel) =>
+      LeaderboardEntry(
+        rank:     (j['rank']  as num?)?.toInt() ?? 0,
+        name:     j['name']     as String? ?? '',
+        username: j['username'] as String? ?? '',
+        role:     j['role']     as String? ?? '',
+        value:    (j['value']  as num?)?.toInt() ?? 0,
+        metric:   metricLabel,
+      );
 }
 
 class TopProduct {
@@ -39,8 +62,8 @@ class TopProduct {
   final int likes;
   final int views;
   final int interests;
-  final int messages;
   final bool rising;
+
   TopProduct({
     required this.name,
     required this.category,
@@ -48,13 +71,25 @@ class TopProduct {
     required this.likes,
     required this.views,
     required this.interests,
-    required this.messages,
     this.rising = false,
   });
+
+  factory TopProduct.fromJson(Map<String, dynamic> j) => TopProduct(
+    name:      j['name']      as String? ?? '',
+    category:  j['category']  as String? ?? '',
+    innovator: j['innovator'] as String? ?? '',
+    likes:     (j['likes']     as num?)?.toInt() ?? 0,
+    views:     (j['views']     as num?)?.toInt() ?? 0,
+    interests: (j['interests'] as num?)?.toInt() ?? 0,
+    rising:    (j['rising']   as bool?) ?? false,
+  );
 }
+
+// ── State ─────────────────────────────────────────────────────────────────────
 
 class AnalyticsState {
   final List<UserGrowthData> userGrowth;
+  final Map<String, List<LeaderboardEntry>> allLeaderboards;
   final List<LeaderboardEntry> leaderboard;
   final List<TopProduct> topProducts;
   final int dau;
@@ -66,145 +101,155 @@ class AnalyticsState {
   final String filterCategory;
   final String filterStatus;
   final bool isLoading;
+  final String? error;
+  final List<Map<String, dynamic>> categoryDistribution;
+  final List<Map<String, dynamic>> productStatus;
 
   AnalyticsState({
-    this.userGrowth = const [],
-    this.leaderboard = const [],
-    this.topProducts = const [],
-    this.dau = 0,
-    this.mau = 0,
-    this.inactiveUsers30 = 0,
-    this.inactiveUsers60 = 0,
-    this.inactiveUsers90 = 0,
-    this.selectedLeaderboardMetric = 'most_products',
-    this.filterCategory = 'All',
-    this.filterStatus = 'All',
-    this.isLoading = false,
+    this.userGrowth                 = const [],
+    this.allLeaderboards            = const {},
+    this.leaderboard                = const [],
+    this.topProducts                = const [],
+    this.dau                        = 0,
+    this.mau                        = 0,
+    this.inactiveUsers30            = 0,
+    this.inactiveUsers60            = 0,
+    this.inactiveUsers90            = 0,
+    this.selectedLeaderboardMetric  = 'most_products',
+    this.filterCategory             = 'All',
+    this.filterStatus               = 'All',
+    this.isLoading                  = false,
+    this.error,
+    this.categoryDistribution       = const [],
+    this.productStatus              = const [],
   });
 
   AnalyticsState copyWith({
-    List<UserGrowthData>? userGrowth,
-    List<LeaderboardEntry>? leaderboard,
-    List<TopProduct>? topProducts,
-    int? dau,
-    int? mau,
-    int? inactiveUsers30,
-    int? inactiveUsers60,
-    int? inactiveUsers90,
-    String? selectedLeaderboardMetric,
-    String? filterCategory,
-    String? filterStatus,
-    bool? isLoading,
+    List<UserGrowthData>?                userGrowth,
+    Map<String, List<LeaderboardEntry>>? allLeaderboards,
+    List<LeaderboardEntry>?              leaderboard,
+    List<TopProduct>?                    topProducts,
+    int?                                 dau,
+    int?                                 mau,
+    int?                                 inactiveUsers30,
+    int?                                 inactiveUsers60,
+    int?                                 inactiveUsers90,
+    String?                              selectedLeaderboardMetric,
+    String?                              filterCategory,
+    String?                              filterStatus,
+    bool?                                isLoading,
+    String?                              error,
+    List<Map<String, dynamic>>?          categoryDistribution,
+    List<Map<String, dynamic>>?          productStatus,
   }) =>
       AnalyticsState(
-        userGrowth: userGrowth ?? this.userGrowth,
-        leaderboard: leaderboard ?? this.leaderboard,
-        topProducts: topProducts ?? this.topProducts,
-        dau: dau ?? this.dau,
-        mau: mau ?? this.mau,
-        inactiveUsers30: inactiveUsers30 ?? this.inactiveUsers30,
-        inactiveUsers60: inactiveUsers60 ?? this.inactiveUsers60,
-        inactiveUsers90: inactiveUsers90 ?? this.inactiveUsers90,
-        selectedLeaderboardMetric:
-            selectedLeaderboardMetric ?? this.selectedLeaderboardMetric,
-        filterCategory: filterCategory ?? this.filterCategory,
-        filterStatus: filterStatus ?? this.filterStatus,
-        isLoading: isLoading ?? this.isLoading,
+        userGrowth:                userGrowth                ?? this.userGrowth,
+        allLeaderboards:           allLeaderboards           ?? this.allLeaderboards,
+        leaderboard:               leaderboard               ?? this.leaderboard,
+        topProducts:               topProducts               ?? this.topProducts,
+        dau:                       dau                       ?? this.dau,
+        mau:                       mau                       ?? this.mau,
+        inactiveUsers30:           inactiveUsers30           ?? this.inactiveUsers30,
+        inactiveUsers60:           inactiveUsers60           ?? this.inactiveUsers60,
+        inactiveUsers90:           inactiveUsers90           ?? this.inactiveUsers90,
+        selectedLeaderboardMetric: selectedLeaderboardMetric ?? this.selectedLeaderboardMetric,
+        filterCategory:            filterCategory            ?? this.filterCategory,
+        filterStatus:              filterStatus              ?? this.filterStatus,
+        isLoading:                 isLoading                 ?? this.isLoading,
+        error:                     error,
+        categoryDistribution:      categoryDistribution      ?? this.categoryDistribution,
+        productStatus:             productStatus             ?? this.productStatus,
       );
 }
 
+// ── Notifier ──────────────────────────────────────────────────────────────────
+
 class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
-  AnalyticsNotifier() : super(AnalyticsState()) {
+  final ApiService _api;
+
+  AnalyticsNotifier(this._api) : super(AnalyticsState()) {
     loadAnalytics();
   }
 
-  void loadAnalytics() {
-    state = state.copyWith(
-      userGrowth: _dummyGrowth(),
-      leaderboard: _dummyLeaderboard('most_products'),
-      topProducts: _dummyTopProducts(),
-      dau: 34,
-      mau: 187,
-      inactiveUsers30: 12,
-      inactiveUsers60: 7,
-      inactiveUsers90: 3,
-      isLoading: false,
-    );
-  }
+  Future<void> loadAnalytics() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final res = await _api.get('admin/analytics/full', auth: true);
+      if (res['success'] != true) {
+        state = state.copyWith(isLoading: false, error: 'Failed to load analytics');
+        return;
+      }
+      final data = res['data'] as Map<String, dynamic>;
 
-  void setLeaderboardMetric(String metric) {
-    state = state.copyWith(
-      selectedLeaderboardMetric: metric,
-      leaderboard: _dummyLeaderboard(metric),
-    );
-  }
+      // User growth
+      final growth = ((data['user_growth'] as List?) ?? [])
+          .map((j) => UserGrowthData.fromJson(j as Map<String, dynamic>))
+          .toList();
 
-  void setFilterCategory(String cat) =>
-      state = state.copyWith(filterCategory: cat);
-  void setFilterStatus(String s) =>
-      state = state.copyWith(filterStatus: s);
+      // All leaderboards cached
+      final lbRaw = (data['leaderboard'] as Map<String, dynamic>?) ?? {};
+      final allLb = <String, List<LeaderboardEntry>>{
+        'most_products': _parseLb(lbRaw['most_products'], 'products uploaded'),
+        'most_approved': _parseLb(lbRaw['most_approved'], 'approved'),
+        'most_interest': _parseLb(lbRaw['most_interest'], 'interests received'),
+        'most_liked':    _parseLb(lbRaw['most_liked'],    'likes received'),
+      };
 
-  List<UserGrowthData> _dummyGrowth() => [
-        UserGrowthData(month: 'Aug', innovators: 3, clients: 2, deactivations: 0),
-        UserGrowthData(month: 'Sep', innovators: 5, clients: 4, deactivations: 1),
-        UserGrowthData(month: 'Oct', innovators: 8, clients: 6, deactivations: 0),
-        UserGrowthData(month: 'Nov', innovators: 12, clients: 9, deactivations: 2),
-        UserGrowthData(month: 'Dec', innovators: 7, clients: 11, deactivations: 1),
-        UserGrowthData(month: 'Jan', innovators: 15, clients: 14, deactivations: 3),
-        UserGrowthData(month: 'Feb', innovators: 18, clients: 16, deactivations: 1),
-        UserGrowthData(month: 'Mar', innovators: 22, clients: 20, deactivations: 2),
-      ];
+      // Top products
+      final products = ((data['top_products'] as List?) ?? [])
+          .map((j) => TopProduct.fromJson(j as Map<String, dynamic>))
+          .toList();
 
-  List<LeaderboardEntry> _dummyLeaderboard(String metric) {
-    switch (metric) {
-      case 'most_products':
-        return [
-          LeaderboardEntry(rank: 1, name: 'Maria Santos', username: 'maria_santos', role: 'innovator', value: 6, metric: 'products uploaded'),
-          LeaderboardEntry(rank: 2, name: 'Rico Bautista', username: 'rico_dev', role: 'innovator', value: 4, metric: 'products uploaded'),
-          LeaderboardEntry(rank: 3, name: 'Dr. Ana Reyes', username: 'dr_ana', role: 'innovator', value: 3, metric: 'products uploaded'),
-          LeaderboardEntry(rank: 4, name: 'Carlo Mendoza', username: 'carlo_m', role: 'innovator', value: 2, metric: 'products uploaded'),
-          LeaderboardEntry(rank: 5, name: 'Liza Tan', username: 'liza_tan', role: 'innovator', value: 1, metric: 'products uploaded'),
-        ];
-      case 'most_approved':
-        return [
-          LeaderboardEntry(rank: 1, name: 'Dr. Ana Reyes', username: 'dr_ana', role: 'innovator', value: 5, metric: 'approved'),
-          LeaderboardEntry(rank: 2, name: 'Maria Santos', username: 'maria_santos', role: 'innovator', value: 4, metric: 'approved'),
-          LeaderboardEntry(rank: 3, name: 'Rico Bautista', username: 'rico_dev', role: 'innovator', value: 3, metric: 'approved'),
-        ];
-      case 'most_interest':
-        return [
-          LeaderboardEntry(rank: 1, name: 'Juan dela Cruz', username: 'juan_dc', role: 'client', value: 18, metric: 'interests sent'),
-          LeaderboardEntry(rank: 2, name: 'Pedro Reyes', username: 'pedro_r', role: 'client', value: 12, metric: 'interests sent'),
-          LeaderboardEntry(rank: 3, name: 'Ana Garcia', username: 'ana_g', role: 'client', value: 9, metric: 'interests sent'),
-        ];
-      case 'most_liked':
-        return [
-          LeaderboardEntry(rank: 1, name: 'Pedro Reyes', username: 'pedro_r', role: 'client', value: 45, metric: 'likes given'),
-          LeaderboardEntry(rank: 2, name: 'Juan dela Cruz', username: 'juan_dc', role: 'client', value: 38, metric: 'likes given'),
-          LeaderboardEntry(rank: 3, name: 'Rosa Cruz', username: 'rosa_c', role: 'client', value: 27, metric: 'likes given'),
-        ];
-      case 'most_liked_innovator':
-        return [
-          LeaderboardEntry(rank: 1, name: 'Dr. Ana Reyes', username: 'dr_ana', role: 'innovator', value: 211, metric: 'total likes received'),
-          LeaderboardEntry(rank: 2, name: 'Rico Bautista', username: 'rico_dev', role: 'innovator', value: 189, metric: 'total likes received'),
-          LeaderboardEntry(rank: 3, name: 'Maria Santos', username: 'maria_santos', role: 'innovator', value: 142, metric: 'total likes received'),
-        ];
-      default:
-        return [];
+      // Category & status distributions
+      final cats = _toMapList(data['category_distribution']);
+      final status = _toMapList(data['product_status']);
+
+      state = state.copyWith(
+        isLoading:            false,
+        userGrowth:           growth,
+        allLeaderboards:      allLb,
+        leaderboard:          allLb[state.selectedLeaderboardMetric] ?? [],
+        topProducts:          products,
+        dau:                  (data['dau']          as num?)?.toInt() ?? 0,
+        mau:                  (data['mau']          as num?)?.toInt() ?? 0,
+        inactiveUsers30:      (data['inactive_30d'] as num?)?.toInt() ?? 0,
+        inactiveUsers60:      (data['inactive_60d'] as num?)?.toInt() ?? 0,
+        inactiveUsers90:      (data['inactive_90d'] as num?)?.toInt() ?? 0,
+        categoryDistribution: cats,
+        productStatus:        status,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: 'Connection error: $e');
     }
   }
 
-  List<TopProduct> _dummyTopProducts() => [
-        TopProduct(name: 'AI Diagnostic Tablet', category: 'Healthcare', innovator: 'Dr. Ana Reyes', likes: 211, views: 1203, interests: 45, messages: 23, rising: true),
-        TopProduct(name: 'BarangayConnect App', category: 'Information Technology', innovator: 'Rico Bautista', likes: 189, views: 987, interests: 34, messages: 18),
-        TopProduct(name: 'Smart Rice Monitoring', category: 'Agriculture', innovator: 'Maria Santos', likes: 142, views: 890, interests: 23, messages: 11, rising: true),
-        TopProduct(name: 'Solar Water Purifier', category: 'Energy', innovator: 'Juan dela Cruz', likes: 98, views: 654, interests: 17, messages: 8),
-        TopProduct(name: 'Modular Ergonomic Desk', category: 'Product Design', innovator: 'Liza Tan', likes: 54, views: 321, interests: 8, messages: 4),
-        TopProduct(name: 'Bamboo Composite Panel', category: 'Construction', innovator: 'Carlo Mendoza', likes: 76, views: 432, interests: 12, messages: 6),
-      ];
+  void setLeaderboardMetric(String metric) => state = state.copyWith(
+    selectedLeaderboardMetric: metric,
+    leaderboard: state.allLeaderboards[metric] ?? [],
+  );
+
+  void setFilterCategory(String cat) => state = state.copyWith(filterCategory: cat);
+  void setFilterStatus(String s)     => state = state.copyWith(filterStatus: s);
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  List<LeaderboardEntry> _parseLb(dynamic raw, String label) {
+    if (raw == null) return [];
+    return (raw as List).asMap().entries.map((e) =>
+      LeaderboardEntry.fromJson(e.value as Map<String, dynamic>, label),
+    ).toList();
+  }
+
+  List<Map<String, dynamic>> _toMapList(dynamic raw) {
+    if (raw == null) return [];
+    return (raw as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+  }
 }
 
-final analyticsProvider =
-    StateNotifierProvider<AnalyticsNotifier, AnalyticsState>(
-  (ref) => AnalyticsNotifier(),
+// ── Provider ──────────────────────────────────────────────────────────────────
+
+final analyticsProvider = StateNotifierProvider<AnalyticsNotifier, AnalyticsState>(
+  (ref) => AnalyticsNotifier(ref.read(apiServiceProvider)),
 );

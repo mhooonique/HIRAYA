@@ -44,6 +44,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // 2FA pending → go to OTP screen
       if (auth.requires2fa && location != '/otp') return '/otp';
 
+      // On OTP page but no active 2FA flow (e.g. page refresh) → back to login
+      if (location == '/otp' && !auth.requires2fa) return '/login';
+
       // '/' is public — anyone can view the landing page
       if (location == '/') {
         // If already logged in, send to their dashboard

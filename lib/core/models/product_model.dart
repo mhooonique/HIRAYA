@@ -17,6 +17,7 @@ class ProductModel {
   final DateTime createdAt;
 
   // Extended fields
+  final String? innovatorAvatarBase64;
   final String? videoBase64;
   final String? videoFilename;
   final String? externalLink;
@@ -43,6 +44,7 @@ class ProductModel {
     required this.innovatorId,
     required this.kycStatus,
     required this.createdAt,
+    this.innovatorAvatarBase64,
     this.videoBase64,
     this.videoFilename,
     this.externalLink,
@@ -72,6 +74,7 @@ class ProductModel {
         innovatorId:   (json['innovator_id']    as num?)?.toInt() ?? 0,
         kycStatus:          json['kyc_status']       as String? ?? 'unverified',
         createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+        innovatorAvatarBase64: json['innovator_avatar_base64'] as String?,
         videoBase64:    json['video_base64']    as String?,
         videoFilename:  json['video_filename']  as String?,
         externalLink:   json['external_link']   as String?,

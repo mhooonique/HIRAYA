@@ -23,8 +23,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _firstNameCtrl   = TextEditingController();
   final _lastNameCtrl    = TextEditingController();
   final _middleNameCtrl  = TextEditingController();
-  final _suffixCtrl      = TextEditingController();
   final _usernameCtrl    = TextEditingController();
+  String? _selectedSuffix;
   final _emailCtrl       = TextEditingController();
   final _passwordCtrl    = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
@@ -74,7 +74,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   void dispose() {
-    for (final c in [_firstNameCtrl, _lastNameCtrl, _middleNameCtrl, _suffixCtrl,
+    for (final c in [_firstNameCtrl, _lastNameCtrl, _middleNameCtrl,
                      _usernameCtrl, _emailCtrl, _passwordCtrl, _confirmPassCtrl, _phoneCtrl]) c.dispose();
     for (final c in _otpControllers) c.dispose();
     for (final f in _otpFocusNodes)  f.dispose();
@@ -98,13 +98,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ..firstName  = _firstNameCtrl.text.trim()
           ..lastName   = _lastNameCtrl.text.trim()
           ..middleName = _middleNameCtrl.text.trim()
-          ..suffix     = _suffixCtrl.text.trim()
+          ..suffix     = _selectedSuffix ?? ''
           ..username   = _usernameCtrl.text.trim()
           ..email      = _emailCtrl.text.trim();
 
         if (_data.firstName.isEmpty || _data.lastName.isEmpty ||
             _data.username.isEmpty  || _data.email.isEmpty) {
           setState(() => _stepError = 'Please fill in all required fields');
+          return;
+        }
+        if (_data.username.length < 4 || _data.username.length > 30) {
+          setState(() => _stepError = 'Username must be 4–30 characters');
           return;
         }
         if (!_data.email.endsWith('@gmail.com')) {
@@ -329,7 +333,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final auth  = ref.watch(authProvider);
     final total = _data.isGoogleSignup ? 6 : 7;
 
-    return Scaffold(
+    return Theme(
+      // Force light theme on signup — hardcoded white fields + dark text
+      data: ThemeData(
+        useMaterial3: true,
+        fontFamily: 'Poppins',
+        colorScheme: const ColorScheme.light(primary: _teal),
+      ),
+      child: Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
         child: Column(children: [
@@ -354,29 +365,87 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           _buildNavButtons(auth),
         ]),
       ),
-    );
+    ));
   }
 
   Widget _buildHeader(int total) {
+    // Step labels — password step (3) is skipped for Google signups
+    final allLabels = _data.isGoogleSignup
+        ? const ['Role', 'Info', 'Phone', 'KYC', 'Terms', 'Review']
+        : const ['Role', 'Info', 'Pass', 'Phone', 'KYC', 'Terms', 'Review'];
     final displayStep = (_data.isGoogleSignup && _step >= 4) ? _step - 1 : _step;
+
     return Container(
       color: _dark,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── Top nav row ──────────────────────────────────────────────
         Row(children: [
           IconButton(onPressed: _back, icon: const Icon(Icons.arrow_back_ios, color: _white, size: 18)),
-          const SizedBox(width: 4),
-          Text('Step $displayStep of $total', style: const TextStyle(color: Colors.white70, fontSize: 13)),
           const Spacer(),
-          TextButton(onPressed: () => context.go('/login'), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () => context.go('/login'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54, fontSize: 13)),
+          ),
         ]),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: _step / (_data.isGoogleSignup ? 6 : 7),
-          backgroundColor: Colors.white24,
-          valueColor: const AlwaysStoppedAnimation<Color>(_teal),
-          minHeight: 4,
-          borderRadius: BorderRadius.circular(2),
+        const SizedBox(height: 12),
+
+        // ── Step circles with labels ─────────────────────────────────
+        Row(
+          children: List.generate(total * 2 - 1, (i) {
+            if (i.isOdd) {
+              // Connector line between circles
+              final leftStepDone = (i ~/ 2) + 1 < displayStep;
+              return Expanded(
+                child: Container(
+                  height: 2,
+                  color: leftStepDone ? _teal : Colors.white24,
+                ),
+              );
+            }
+            final stepNum  = i ~/ 2 + 1;
+            final isDone   = stepNum < displayStep;
+            final isActive = stepNum == displayStep;
+            final label    = allLabels[i ~/ 2];
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(
+                    color:  isDone || isActive ? _teal : Colors.transparent,
+                    shape:  BoxShape.circle,
+                    border: Border.all(
+                      color: isDone || isActive ? _teal : Colors.white38,
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: isDone
+                        ? const Icon(Icons.check, color: _white, size: 14)
+                        : Text(
+                            '$stepNum',
+                            style: TextStyle(
+                              color:      isActive ? _white : Colors.white54,
+                              fontSize:   11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color:      isActive ? _teal : (isDone ? Colors.white70 : Colors.white38),
+                    fontSize:   9,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            );
+          }),
         ),
       ]),
     );
@@ -492,11 +561,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       const SizedBox(height: 12),
       TextField(controller: _lastNameCtrl,   decoration: _field('Last Name *',   icon: Icons.person_outline)),
       const SizedBox(height: 12),
-      TextField(controller: _middleNameCtrl, decoration: _field('Middle Name',   hint: 'Optional')),
+      TextField(controller: _middleNameCtrl, decoration: _field('Middle Name', hint: 'Optional')),
       const SizedBox(height: 12),
-      TextField(controller: _suffixCtrl,     decoration: _field('Suffix',        hint: 'Jr., Sr., III (Optional)')),
+      DropdownButtonFormField<String>(
+        value: _selectedSuffix,
+        decoration: _field('Suffix').copyWith(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        hint: const Text('None (Optional)', style: TextStyle(color: Colors.black45, fontSize: 14)),
+        items: const [
+          DropdownMenuItem(value: null,   child: Text('None')),
+          DropdownMenuItem(value: 'Jr.',  child: Text('Jr.')),
+          DropdownMenuItem(value: 'Sr.',  child: Text('Sr.')),
+          DropdownMenuItem(value: 'II',   child: Text('II')),
+          DropdownMenuItem(value: 'III',  child: Text('III')),
+          DropdownMenuItem(value: 'IV',   child: Text('IV')),
+          DropdownMenuItem(value: 'V',    child: Text('V')),
+        ],
+        onChanged: (v) => setState(() => _selectedSuffix = v),
+        dropdownColor: _white,
+        borderRadius: BorderRadius.circular(12),
+        style: const TextStyle(color: Colors.black87, fontSize: 14, fontFamily: 'Poppins'),
+      ),
       const SizedBox(height: 12),
-      TextField(controller: _usernameCtrl,   decoration: _field('Username *',    icon: Icons.alternate_email)),
+      TextField(
+        controller: _usernameCtrl,
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]'))],
+        decoration: _field('Username *', icon: Icons.alternate_email,
+          helper: '4–30 characters · letters, numbers, and underscores only'),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller:   _emailCtrl,

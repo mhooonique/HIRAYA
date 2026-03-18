@@ -18,6 +18,7 @@ class UserModel {
   final String? selfieBase64;
   final String? selfieFilename;
   final Map<String, String> socialLinks;
+  final String? avatarBase64;
 
   UserModel({
     required this.id,
@@ -37,6 +38,7 @@ class UserModel {
     this.selfieBase64,
     this.selfieFilename,
     this.socialLinks    = const {},
+    this.avatarBase64,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -56,6 +58,7 @@ class UserModel {
     govIdFilename:  json['gov_id_filename'] as String?,
     selfieBase64:   json['selfie_base64']   as String?,
     selfieFilename: json['selfie_filename'] as String?,
+    avatarBase64:   json['avatar_base64']   as String?,
     socialLinks: (() {
       final raw = json['social_links'];
       if (raw == null) return <String, String>{};
@@ -69,4 +72,25 @@ class UserModel {
   );
 
   String get fullName => '$firstName $lastName'.trim();
+
+  UserModel copyWith({String? avatarBase64, bool clearAvatar = false}) => UserModel(
+    id:             id,
+    firstName:      firstName,
+    lastName:       lastName,
+    username:       username,
+    email:          email,
+    role:           role,
+    kycStatus:      kycStatus,
+    userStatus:     userStatus,
+    phone:          phone,
+    dateOfBirth:    dateOfBirth,
+    city:           city,
+    province:       province,
+    govIdBase64:    govIdBase64,
+    govIdFilename:  govIdFilename,
+    selfieBase64:   selfieBase64,
+    selfieFilename: selfieFilename,
+    socialLinks:    socialLinks,
+    avatarBase64:   clearAvatar ? null : (avatarBase64 ?? this.avatarBase64),
+  );
 }

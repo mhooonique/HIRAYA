@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/widgets/user_avatar.dart';
 import '../../marketplace/providers/marketplace_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/share_qr_section.dart';
@@ -173,13 +174,46 @@ class _ProductDetailScreenState
                     color: Colors.white,
                   ),
                 ),
-                onPressed: () =>
-                    setState(() => _bookmarked = !_bookmarked),
+                onPressed: () async {
+                  final next = !_bookmarked;
+                  setState(() => _bookmarked = next);
+                  final ok = await ref
+                      .read(marketplaceProvider.notifier)
+                      .toggleBookmark(product.id, add: next);
+                  if (!ok && context.mounted) {
+                    setState(() => _bookmarked = !next);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Could not update bookmark.',
+                            style: TextStyle(fontFamily: 'Poppins')),
+                        backgroundColor: AppColors.crimson,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                  }
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.share_rounded,
                     color: Colors.white),
-                onPressed: () {},
+                onPressed: () async {
+                  final url =
+                      '${html.window.location.origin}/product/${product.id}';
+                  await html.window.navigator.clipboard?.writeText(url);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Product link copied to clipboard!',
+                          style: TextStyle(fontFamily: 'Poppins')),
+                      backgroundColor: AppColors.teal,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -217,21 +251,12 @@ class _ProductDetailScreenState
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor:
-                                color.withValues(alpha: 0.15),
-                            child: Text(
-                              product.innovatorName
-                                  .substring(0, 1)
-                                  .toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: color,
-                              ),
-                            ),
+                          UserAvatar(
+                            name:         product.innovatorName,
+                            avatarBase64: product.innovatorAvatarBase64,
+                            radius:       24,
+                            backgroundColor: color.withValues(alpha: 0.15),
+                            foregroundColor: color,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -464,11 +489,24 @@ class _ProductDetailScreenState
           children: [
             // Like button
             GestureDetector(
-              onTap: () {
+              onTap: () async {
                 setState(() => _liked = !_liked);
-                ref
+                final ok = await ref
                     .read(marketplaceProvider.notifier)
                     .likeProduct(product.id);
+                if (!ok && context.mounted) {
+                  setState(() => _liked = !_liked);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Could not update like. Please try again.',
+                          style: TextStyle(fontFamily: 'Poppins')),
+                      backgroundColor: AppColors.crimson,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                }
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -516,26 +554,39 @@ class _ProductDetailScreenState
               child: ElevatedButton.icon(
                 onPressed: _interestSent
                     ? null
-                    : () {
-                        setState(
-                            () => _interestSent = true);
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          SnackBar(
-                            content: const Text(
-                              'Interest expressed! The innovator will be notified.',
-                              style: TextStyle(
-                                  fontFamily: 'Poppins'),
+                    : () async {
+                        final ok = await ref
+                            .read(marketplaceProvider.notifier)
+                            .expressInterest(product.id);
+                        if (!context.mounted) return;
+                        if (ok) {
+                          setState(() => _interestSent = true);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Interest expressed! The innovator will be notified.',
+                                style: TextStyle(fontFamily: 'Poppins'),
+                              ),
+                              backgroundColor: AppColors.teal,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
                             ),
-                            backgroundColor: AppColors.teal,
-                            behavior:
-                                SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(
-                                        10)),
-                          ),
-                        );
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Could not send interest. Please try again.',
+                                style: TextStyle(fontFamily: 'Poppins'),
+                              ),
+                              backgroundColor: AppColors.crimson,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _interestSent

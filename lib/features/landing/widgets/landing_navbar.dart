@@ -31,7 +31,7 @@ class LandingNavbar extends StatelessWidget {
               Row(children: [
                 Image.asset('assets/images/logo/final-logo.png', height: 32),
                 const SizedBox(width: 10),
-                const Text('HIRAYA', style: TextStyle(
+                const Text('DIGITAL PLATFORM', style: TextStyle(
                   fontFamily: 'Poppins', color: Colors.white,
                   fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 2,
                 )),
@@ -121,7 +121,7 @@ class LandingNavbar extends StatelessWidget {
               Image.asset('assets/images/logo/final-logo.png', height: isMobile ? 32 : 40),
               const SizedBox(width: 10),
               Text(
-                'HIRAYA',
+                'DIGITAL PLATFORM',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: Colors.white,

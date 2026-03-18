@@ -323,6 +323,54 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
                         color: AppColors.teal),
                   ),
                 )
+              // Error
+              else if (state.error != null)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.wifi_off_rounded,
+                            size: 64, color: AppColors.lightGray),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Failed to load innovations',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          state.error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 13,
+                            color: Colors.black38,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () => ref
+                              .read(marketplaceProvider.notifier)
+                              .loadProducts(),
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text('Retry',
+                              style: TextStyle(fontFamily: 'Poppins')),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.teal,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               // Empty
               else if (products.isEmpty)
                 const SliverFillRemaining(

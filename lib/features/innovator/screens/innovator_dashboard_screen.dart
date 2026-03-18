@@ -10,6 +10,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/widgets/user_avatar.dart';
 import '../providers/innovator_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
@@ -190,17 +191,12 @@ class _InnovatorSidebar extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 18,
+                  UserAvatar(
+                    name:         user.firstName,
+                    avatarBase64: user.avatarBase64,
+                    radius:       18,
                     backgroundColor: AppColors.teal.withValues(alpha: 0.2),
-                    child: Text(
-                      user.firstName.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.teal),
-                    ),
+                    foregroundColor: AppColors.teal,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -1216,12 +1212,12 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
 // ─────────────────────────────────────────────────────────────────────────────
 //  PROFILE
 // ─────────────────────────────────────────────────────────────────────────────
-class _InnovatorProfile extends StatelessWidget {
+class _InnovatorProfile extends ConsumerWidget {
   final dynamic user;
   const _InnovatorProfile({this.user});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (user == null) return const Center(child: CircularProgressIndicator(color: AppColors.teal));
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -1234,11 +1230,25 @@ class _InnovatorProfile extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.lightGray)),
             child: Column(children: [
-              CircleAvatar(
-                radius: 40,
+              UserAvatar(
+                name:         user.firstName as String,
+                avatarBase64: user.avatarBase64 as String?,
+                radius:       40,
                 backgroundColor: AppColors.teal.withValues(alpha: 0.15),
-                child: Text(user.firstName.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 32, fontWeight: FontWeight.w800, color: AppColors.teal)),
+                foregroundColor: AppColors.teal,
+                uploadable:   true,
+                onUpload: (base64) async {
+                  final err = await ref.read(authProvider.notifier).updateAvatar(base64);
+                  if (err != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(err), backgroundColor: Colors.red),
+                    );
+                  } else if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profile picture updated!')),
+                    );
+                  }
+                },
               ),
               const SizedBox(height: 16),
               Text(user.fullName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.navy)),

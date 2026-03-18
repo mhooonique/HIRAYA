@@ -120,78 +120,137 @@ class AdminNotifier extends StateNotifier<AdminState> {
   }
 
   // ── Products ─────────────────────────────────────────────────────────────────
-  Future<void> approveProduct(int id) async {
+  /// Returns null on success, error message string on failure.
+  Future<String?> approveProduct(int id) async {
+    final snapshot = state.pendingProducts;
+    state = state.copyWith(
+      pendingProducts: state.pendingProducts.where((p) => p.id != id).toList(),
+    );
     try {
-      await _api.put('admin/products/$id/approve', {}, auth: true);
-      state = state.copyWith(
-        pendingProducts: state.pendingProducts.where((p) => p.id != id).toList(),
-        stats: state.stats.copyWith(
-          totalProducts:   state.stats.totalProducts   + 1,
-          pendingProducts: state.stats.pendingProducts - 1,
-        ),
-      );
-    } catch (_) {}
+      final res = await _api.put('admin/products/$id/approve', {}, auth: true);
+      if (res['success'] != true) {
+        state = state.copyWith(pendingProducts: snapshot);
+        return res['message'] as String? ?? 'Failed to approve product.';
+      }
+      await _loadStats();
+      return null;
+    } catch (_) {
+      state = state.copyWith(pendingProducts: snapshot);
+      return 'Network error. Please try again.';
+    }
   }
 
-  Future<void> rejectProduct(int id) async {
+  Future<String?> rejectProduct(int id) async {
+    final snapshot = state.pendingProducts;
+    state = state.copyWith(
+      pendingProducts: state.pendingProducts.where((p) => p.id != id).toList(),
+    );
     try {
-      await _api.put('admin/products/$id/reject', {}, auth: true);
-      state = state.copyWith(
-        pendingProducts: state.pendingProducts.where((p) => p.id != id).toList(),
-        stats: state.stats.copyWith(
-          pendingProducts: state.stats.pendingProducts - 1,
-        ),
-      );
-    } catch (_) {}
+      final res = await _api.put('admin/products/$id/reject', {}, auth: true);
+      if (res['success'] != true) {
+        state = state.copyWith(pendingProducts: snapshot);
+        return res['message'] as String? ?? 'Failed to reject product.';
+      }
+      await _loadStats();
+      return null;
+    } catch (_) {
+      state = state.copyWith(pendingProducts: snapshot);
+      return 'Network error. Please try again.';
+    }
   }
 
   // ── Users ────────────────────────────────────────────────────────────────────
-  Future<void> approveUser(int id) async {
+  Future<String?> approveUser(int id) async {
     try {
-      await _api.put('admin/users/$id/approve', {}, auth: true);
+      final res = await _api.put('admin/users/$id/approve', {}, auth: true);
+      if (res['success'] != true) return res['message'] as String? ?? 'Failed to approve user.';
       state = state.copyWith(
         users: state.users.map((u) => u.id != id ? u : _patchUser(u, kycStatus: 'verified', userStatus: 1)).toList(),
       );
-    } catch (_) {}
+      return null;
+    } catch (_) {
+      return 'Network error. Please try again.';
+    }
   }
 
-  Future<void> rejectUser(int id) async {
+  Future<String?> rejectUser(int id) async {
     try {
-      await _api.put('admin/users/$id/reject', {}, auth: true);
+      final res = await _api.put('admin/users/$id/reject', {}, auth: true);
+      if (res['success'] != true) return res['message'] as String? ?? 'Failed to reject user.';
       state = state.copyWith(
         users: state.users.map((u) => u.id != id ? u : _patchUser(u, kycStatus: 'rejected', userStatus: 2)).toList(),
       );
-    } catch (_) {}
+      return null;
+    } catch (_) {
+      return 'Network error. Please try again.';
+    }
   }
 
-  Future<void> deleteUser(int id) async {
+  Future<void> refresh() async => loadAll();
+
+  Future<String?> deleteUser(int id) async {
+    final snapshot = state.users;
+    state = state.copyWith(
+      users: state.users.where((u) => u.id != id).toList(),
+      stats: state.stats.copyWith(totalUsers: state.stats.totalUsers - 1),
+    );
     try {
-      await _api.delete('admin/users/$id', auth: true);
+      final res = await _api.delete('admin/users/$id', auth: true);
+      if (res['success'] != true) {
+        state = state.copyWith(users: snapshot);
+        return res['message'] as String? ?? 'Failed to delete user.';
+      }
+      return null;
+    } catch (_) {
+      state = state.copyWith(users: snapshot);
+      return 'Network error. Please try again.';
+    }
+  }
+
+  Future<String?> promoteToAdmin(int id) async {
+    try {
+      final res = await _api.put('admin/users/$id/promote-admin', {}, auth: true);
+      if (res['success'] != true) return res['message'] as String? ?? 'Failed to promote user.';
       state = state.copyWith(
-        users: state.users.where((u) => u.id != id).toList(),
-        stats: state.stats.copyWith(totalUsers: state.stats.totalUsers - 1),
+        users: state.users.map((u) => u.id != id ? u : _patchUser(u, role: 'admin')).toList(),
       );
-    } catch (_) {}
+      return null;
+    } catch (_) {
+      return 'Network error. Please try again.';
+    }
+  }
+
+  Future<String?> demoteFromAdmin(int id) async {
+    try {
+      final res = await _api.put('admin/users/$id/demote-admin', {}, auth: true);
+      if (res['success'] != true) return res['message'] as String? ?? 'Failed to demote user.';
+      state = state.copyWith(
+        users: state.users.map((u) => u.id != id ? u : _patchUser(u, role: 'client')).toList(),
+      );
+      return null;
+    } catch (_) {
+      return 'Network error. Please try again.';
+    }
   }
 
   // ── Tab ──────────────────────────────────────────────────────────────────────
   void setTab(String tab) => state = state.copyWith(activeTab: tab);
 
   // ── Helper ───────────────────────────────────────────────────────────────────
-  UserModel _patchUser(UserModel u, {required String kycStatus, required int userStatus}) =>
+  UserModel _patchUser(UserModel u, {String? kycStatus, int? userStatus, String? role}) =>
       UserModel(
         id:          u.id,
         firstName:   u.firstName,
         lastName:    u.lastName,
         username:    u.username,
         email:       u.email,
-        role:        u.role,
+        role:        role       ?? u.role,
         phone:       u.phone,
         dateOfBirth: u.dateOfBirth,
         city:        u.city,
         province:    u.province,
-        kycStatus:   kycStatus,
-        userStatus:  userStatus,
+        kycStatus:   kycStatus  ?? u.kycStatus,
+        userStatus:  userStatus ?? u.userStatus,
       );
 }
 

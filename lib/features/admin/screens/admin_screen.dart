@@ -13,6 +13,7 @@ import '../../../core/services/api_service.dart';
 import '../../../core/providers/theme_provider.dart';
 import 'analytics_screen.dart';
 import '../providers/admin_provider.dart';
+import '../providers/analytics_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
 
@@ -81,6 +82,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           onApprove: notifier.approveUser,
           onReject:  notifier.rejectUser,
           onDelete:  notifier.deleteUser,
+          onPromote: notifier.promoteToAdmin,
+          onDemote:  notifier.demoteFromAdmin,
         );
       case 'analytics':
         return const AnalyticsScreen();
@@ -265,9 +268,10 @@ class _AdminThemeToggle extends ConsumerWidget {
 }
 
 // ─── TOP BAR ──────────────────────────────────────────────────────────────────
-class _AdminTopBar extends StatelessWidget {
+class _AdminTopBar extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final email = ref.watch(authProvider).user?.email ?? 'admin';
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -278,10 +282,10 @@ class _AdminTopBar extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.teal.withValues(alpha: 0.3))),
-          child: const Row(children: [
-            Icon(Icons.shield_rounded, color: AppColors.teal, size: 14),
-            SizedBox(width: 6),
-            Text('dost@admin.com', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.teal, fontWeight: FontWeight.w600)),
+          child: Row(children: [
+            const Icon(Icons.shield_rounded, color: AppColors.teal, size: 14),
+            const SizedBox(width: 6),
+            Text(email, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.teal, fontWeight: FontWeight.w600)),
           ]),
         ),
         const SizedBox(width: 8),
@@ -392,34 +396,50 @@ class _PendingRow extends StatelessWidget {
   }
 }
 
-class _CategoryBreakdown extends StatelessWidget {
-  final List<Map<String, dynamic>> _cats = const [
-    {'name': 'Agriculture',            'count': 1, 'color': AppColors.teal},
-    {'name': 'Healthcare',             'count': 1, 'color': AppColors.crimson},
-    {'name': 'Energy',                 'count': 1, 'color': AppColors.golden},
-    {'name': 'Construction',           'count': 1, 'color': AppColors.navy},
-    {'name': 'Product Design',         'count': 1, 'color': AppColors.sky},
-    {'name': 'Information Technology', 'count': 1, 'color': Color(0xFF1B4B8A)},
-  ];
+class _CategoryBreakdown extends ConsumerWidget {
+  const _CategoryBreakdown();
 
   @override
-  Widget build(BuildContext context) {
-    final total = _cats.fold<int>(0, (sum, c) => sum + (c['count'] as int));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cats = ref.watch(analyticsProvider).categoryDistribution;
+    final isLoading = ref.watch(analyticsProvider).isLoading;
+
+    if (isLoading && cats.isEmpty) {
+      return Container(
+        height: 100,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: const Color(0xFF151F2B), borderRadius: BorderRadius.circular(16)),
+        child: const Center(child: CircularProgressIndicator(color: AppColors.teal, strokeWidth: 2)),
+      );
+    }
+    if (cats.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: const Color(0xFF151F2B), borderRadius: BorderRadius.circular(16)),
+        child: const Center(child: Text('No approved products yet', style: TextStyle(fontFamily: 'Poppins', color: Colors.white38))),
+      );
+    }
+
+    final total = cats.fold<int>(0, (sum, c) => sum + ((c['count'] as num?)?.toInt() ?? 0));
+    final palette = [AppColors.teal, AppColors.crimson, AppColors.golden, AppColors.sky, AppColors.navy, const Color(0xFF9B59B6), const Color(0xFF1B4B8A)];
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: const Color(0xFF151F2B), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
-      child: Column(children: _cats.asMap().entries.map((entry) {
-        final cat = entry.value;
-        final pct = total > 0 ? (cat['count'] as int) / total : 0.0;
+      child: Column(children: cats.asMap().entries.map((entry) {
+        final cat   = entry.value;
+        final count = (cat['count'] as num?)?.toInt() ?? 0;
+        final pct   = total > 0 ? count / total : 0.0;
+        final color = AppColors.categoryColors[cat['category'] as String? ?? ''] ?? palette[entry.key % palette.length];
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: Row(children: [
-            SizedBox(width: 150, child: Text(cat['name'], style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white54), overflow: TextOverflow.ellipsis)),
+            SizedBox(width: 160, child: Text(cat['category'] as String? ?? '', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white54), overflow: TextOverflow.ellipsis)),
             const SizedBox(width: 12),
             Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(value: pct, backgroundColor: Colors.white.withValues(alpha: 0.06), valueColor: AlwaysStoppedAnimation<Color>(cat['color'] as Color), minHeight: 6))),
+                child: LinearProgressIndicator(value: pct, backgroundColor: Colors.white.withValues(alpha: 0.06), valueColor: AlwaysStoppedAnimation<Color>(color), minHeight: 6))),
             const SizedBox(width: 12),
-            Text('${cat['count']}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+            Text('$count', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
           ]),
         );
       }).toList()),
@@ -430,8 +450,19 @@ class _CategoryBreakdown extends StatelessWidget {
 // ─── PRODUCTS TAB ─────────────────────────────────────────────────────────────
 class _ProductsTab extends StatelessWidget {
   final List<ProductModel> products;
-  final Future<void> Function(int) onApprove, onReject;
+  final Future<String?> Function(int) onApprove, onReject;
   const _ProductsTab({required this.products, required this.onApprove, required this.onReject});
+
+  void _handleResult(BuildContext context, String? error) {
+    if (error != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error, style: const TextStyle(fontFamily: 'Poppins')),
+        backgroundColor: AppColors.crimson,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -457,8 +488,8 @@ class _ProductsTab extends StatelessWidget {
           ...products.asMap().entries.map((e) => _ProductReviewCard(
             product:   e.value,
             index:     e.key,
-            onApprove: () => onApprove(e.value.id),
-            onReject:  () => onReject(e.value.id),
+            onApprove: () async => _handleResult(context, await onApprove(e.value.id)),
+            onReject:  () async => _handleResult(context, await onReject(e.value.id)),
           )),
       ]),
     );
@@ -521,9 +552,20 @@ class _ProductReviewCard extends StatelessWidget {
 // ─── USERS TAB ────────────────────────────────────────────────────────────────
 class _UsersTab extends StatelessWidget {
   final List<UserModel> users;
-  final Future<void> Function(int) onApprove, onReject, onDelete;
+  final Future<String?> Function(int) onApprove, onReject, onDelete, onPromote, onDemote;
 
-  const _UsersTab({required this.users, required this.onApprove, required this.onReject, required this.onDelete});
+  const _UsersTab({required this.users, required this.onApprove, required this.onReject, required this.onDelete, required this.onPromote, required this.onDemote});
+
+  void _handleResult(BuildContext context, String? error) {
+    if (error != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error, style: const TextStyle(fontFamily: 'Poppins')),
+        backgroundColor: AppColors.crimson,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -557,16 +599,18 @@ class _UsersTab extends StatelessWidget {
           ...users.asMap().entries.map((e) => _UserRow(
             user:      e.value,
             index:     e.key,
-            onApprove: () => onApprove(e.value.id),
-            onReject:  () => onReject(e.value.id),
+            onApprove: () async => _handleResult(context, await onApprove(e.value.id)),
+            onReject:  () async => _handleResult(context, await onReject(e.value.id)),
             onDelete:  () => _confirmDelete(context, e.value, onDelete),
             onView:    () => _showUserDetail(context, e.value),
+            onPromote: () async => _handleResult(context, await onPromote(e.value.id)),
+            onDemote:  () async => _handleResult(context, await onDemote(e.value.id)),
           )),
       ]),
     );
   }
 
-  void _confirmDelete(BuildContext context, UserModel user, Future<void> Function(int) onDelete) {
+  void _confirmDelete(BuildContext context, UserModel user, Future<String?> Function(int) onDelete) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -612,9 +656,17 @@ class _UsersTab extends StatelessWidget {
             child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54)),
           ),
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              onDelete(user.id);
+              final err = await onDelete(user.id);
+              if (err != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(err, style: const TextStyle(fontFamily: 'Poppins')),
+                  backgroundColor: AppColors.crimson,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ));
+              }
             },
             icon:  const Icon(Icons.delete_forever_rounded, size: 16, color: Colors.white),
             label: const Text('Yes, Delete Account', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
@@ -818,8 +870,8 @@ class _TableHeader extends StatelessWidget {
 
 class _UserRow extends StatelessWidget {
   final UserModel user; final int index;
-  final VoidCallback onApprove, onReject, onDelete, onView;
-  const _UserRow({required this.user, required this.index, required this.onApprove, required this.onReject, required this.onDelete, required this.onView});
+  final VoidCallback onApprove, onReject, onDelete, onView, onPromote, onDemote;
+  const _UserRow({required this.user, required this.index, required this.onApprove, required this.onReject, required this.onDelete, required this.onView, required this.onPromote, required this.onDemote});
 
   @override
   Widget build(BuildContext context) {
@@ -851,22 +903,47 @@ class _UserRow extends StatelessWidget {
           color: user.userStatus == 1 ? AppColors.teal : user.userStatus == 2 ? AppColors.crimson : AppColors.golden,
         )),
         SizedBox(
-          width: 200,
+          width: 260,
           child: Row(children: [
-            SizedBox(width: 44, child: TextButton(onPressed: onView, style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                child: const Text('View', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.sky)))),
+            // View personal info
+            SizedBox(width: 36, child: IconButton(
+              onPressed: onView, padding: EdgeInsets.zero,
+              icon: const Icon(Icons.badge_outlined, color: AppColors.sky, size: 18),
+              tooltip: 'View personal info',
+            )),
+            // View public profile
+            SizedBox(width: 36, child: IconButton(
+              onPressed: () => context.go('/profile/${user.id}'),
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.person_search_rounded, color: Colors.white38, size: 18),
+              tooltip: 'View public profile',
+            )),
+            // Approve / Reject if pending
             if (user.userStatus == 0) ...[
               const SizedBox(width: 2),
-              SizedBox(width: 62, child: ElevatedButton(onPressed: onApprove,
+              SizedBox(width: 58, child: ElevatedButton(onPressed: onApprove,
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Approve', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)))),
+                  child: const Text('Approve', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)))),
               const SizedBox(width: 2),
-              SizedBox(width: 52, child: OutlinedButton(onPressed: onReject,
+              SizedBox(width: 48, child: OutlinedButton(onPressed: onReject,
                   style: OutlinedButton.styleFrom(side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.5)), padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.crimson)))),
-            ] else const SizedBox(width: 116),
-            const SizedBox(width: 4),
-            SizedBox(width: 34, child: IconButton(
+                  child: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.crimson)))),
+            ] else ...[
+              // Promote / Demote
+              if (user.role != 'admin')
+                SizedBox(width: 72, child: TextButton(
+                  onPressed: onPromote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  child: const Text('Make Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: AppColors.golden)),
+                ))
+              else
+                SizedBox(width: 72, child: TextButton(
+                  onPressed: onDemote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  child: const Text('Demote', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: Colors.white38)),
+                )),
+              const SizedBox(width: 2),
+            ],
+            const Spacer(),
+            SizedBox(width: 32, child: IconButton(
               onPressed: onDelete, padding: EdgeInsets.zero,
               icon: const Icon(Icons.delete_outline_rounded, color: Colors.white24, size: 18),
               hoverColor: AppColors.crimson.withValues(alpha: 0.1),
