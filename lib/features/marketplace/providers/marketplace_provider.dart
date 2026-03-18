@@ -1,9 +1,13 @@
+// lib/features/marketplace/providers/marketplace_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/models/product_model.dart';
+import '../data/dummy_products.dart';
 
 class MarketplaceState {
-  final List<ProductModel> products;
+  final List<ProductModel> products;       // real only
+  final List<ProductModel> allProducts;    // real + dummy merged
   final List<ProductModel> trending;
   final bool isLoading;
   final String? error;
@@ -12,47 +16,48 @@ class MarketplaceState {
   final String sortBy;
 
   MarketplaceState({
-    this.products = const [],
-    this.trending = const [],
-    this.isLoading = false,
+    this.products        = const [],
+    this.allProducts     = const [],
+    this.trending        = const [],
+    this.isLoading       = false,
     this.error,
     this.selectedCategory = 'All',
-    this.searchQuery = '',
-    this.sortBy = 'newest',
+    this.searchQuery      = '',
+    this.sortBy           = 'newest',
   });
 
   MarketplaceState copyWith({
     List<ProductModel>? products,
+    List<ProductModel>? allProducts,
     List<ProductModel>? trending,
-    bool? isLoading,
-    String? error,
-    String? selectedCategory,
-    String? searchQuery,
-    String? sortBy,
+    bool?               isLoading,
+    String?             error,
+    String?             selectedCategory,
+    String?             searchQuery,
+    String?             sortBy,
   }) =>
       MarketplaceState(
-        products: products ?? this.products,
-        trending: trending ?? this.trending,
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-        selectedCategory: selectedCategory ?? this.selectedCategory,
-        searchQuery: searchQuery ?? this.searchQuery,
-        sortBy: sortBy ?? this.sortBy,
+        products:          products          ?? this.products,
+        allProducts:       allProducts       ?? this.allProducts,
+        trending:          trending          ?? this.trending,
+        isLoading:         isLoading         ?? this.isLoading,
+        error:             error,
+        selectedCategory:  selectedCategory  ?? this.selectedCategory,
+        searchQuery:       searchQuery       ?? this.searchQuery,
+        sortBy:            sortBy            ?? this.sortBy,
       );
 
   List<ProductModel> get filtered {
-    var list = List<ProductModel>.from(products);
+    var list = List<ProductModel>.from(allProducts);
     if (selectedCategory != 'All') {
       list = list.where((p) => p.category == selectedCategory).toList();
     }
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
-      list = list
-          .where((p) =>
-              p.name.toLowerCase().contains(q) ||
-              p.description.toLowerCase().contains(q) ||
-              p.innovatorName.toLowerCase().contains(q))
-          .toList();
+      list = list.where((p) =>
+          p.name.toLowerCase().contains(q) ||
+          p.description.toLowerCase().contains(q) ||
+          p.innovatorName.toLowerCase().contains(q)).toList();
     }
     switch (sortBy) {
       case 'most_liked':
@@ -65,14 +70,32 @@ class MarketplaceState {
         list.sort((a, b) => b.interestCount.compareTo(a.interestCount));
         break;
       default:
-        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        // Interleave dummy and real for a natural feel
+        final real  = list.where((p) => !isDummyProduct(p.id)).toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        final dummy = list.where((p) =>  isDummyProduct(p.id)).toList();
+        list = _interleave(real, dummy);
     }
     return list;
+  }
+
+  /// Interleave real and dummy posts so dummy fills gaps
+  static List<ProductModel> _interleave(
+      List<ProductModel> real, List<ProductModel> dummy) {
+    final result = <ProductModel>[];
+    int ri = 0, di = 0;
+    while (ri < real.length || di < dummy.length) {
+      if (ri < real.length) result.add(real[ri++]);
+      if (ri < real.length) result.add(real[ri++]);
+      if (di < dummy.length) result.add(dummy[di++]);
+    }
+    return result;
   }
 }
 
 class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
   final ApiService _api;
+
   MarketplaceNotifier(this._api) : super(MarketplaceState()) {
     loadProducts();
   }
@@ -82,43 +105,49 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
     try {
       final res = await _api.get('/products', auth: false);
       if (res['success'] == true) {
-        final list = (res['data'] as List)
+        final realList = (res['data'] as List)
             .map((j) => ProductModel.fromJson(j))
             .toList();
-        state = state.copyWith(products: list, isLoading: false);
-      } else {
+        final merged = [...realList, ...dummyProducts];
         state = state.copyWith(
-          isLoading: false,
-          error: res['message'] as String? ?? 'Failed to load products.',
+          products:    realList,
+          allProducts: merged,
+          isLoading:   false,
+        );
+      } else {
+        // If API fails, still show dummy posts
+        state = state.copyWith(
+          products:    [],
+          allProducts: dummyProducts,
+          isLoading:   false,
+          error:       res['message'] as String? ?? 'Failed to load products.',
         );
       }
     } catch (_) {
+      // If offline, still show dummy posts
       state = state.copyWith(
-        isLoading: false,
-        error: 'Could not connect. Check your connection and try again.',
+        products:    [],
+        allProducts: dummyProducts,
+        isLoading:   false,
+        error:       'Could not connect. Showing demo content.',
       );
     }
   }
 
   void setCategory(String cat) => state = state.copyWith(selectedCategory: cat);
-  void setSearch(String q) => state = state.copyWith(searchQuery: q);
-  void setSort(String s) => state = state.copyWith(sortBy: s);
+  void setSearch(String q)     => state = state.copyWith(searchQuery: q);
+  void setSort(String s)       => state = state.copyWith(sortBy: s);
 
-  /// Returns true on success, false on failure (so callers can revert UI).
   Future<bool> likeProduct(int productId) async {
+    if (isDummyProduct(productId)) return false; // no-op for dummy
     final snapshot = state.products;
     final updated = snapshot.map((p) {
       if (p.id == productId) {
         return ProductModel.fromJson({
-          'id': p.id,
-          'name': p.name,
-          'description': p.description,
-          'category': p.category,
-          'images': p.images,
-          'likes': p.likes + 1,
-          'views': p.views,
-          'interest_count': p.interestCount,
-          'status': p.status,
+          'id': p.id, 'name': p.name, 'description': p.description,
+          'category': p.category, 'images': p.images,
+          'likes': p.likes + 1, 'views': p.views,
+          'interest_count': p.interestCount, 'status': p.status,
           'innovator_name': p.innovatorName,
           'innovator_username': p.innovatorUsername,
           'innovator_id': p.innovatorId,
@@ -128,19 +157,23 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
       }
       return p;
     }).toList();
-    state = state.copyWith(products: updated);
+    state = state.copyWith(products: updated,
+        allProducts: [...updated, ...dummyProducts]);
     try {
       await _api.post('/products/$productId/like', {}, auth: true);
       return true;
     } catch (_) {
-      state = state.copyWith(products: snapshot);
+      state = state.copyWith(products: snapshot,
+          allProducts: [...snapshot, ...dummyProducts]);
       return false;
     }
   }
 
   Future<bool> expressInterest(int productId) async {
+    if (isDummyProduct(productId)) return false; // no-op for dummy
     try {
-      final res = await _api.post('/products/$productId/interest', {}, auth: true);
+      final res = await _api.post(
+          '/products/$productId/interest', {}, auth: true);
       return res['success'] == true;
     } catch (_) {
       return false;
@@ -148,6 +181,7 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
   }
 
   Future<bool> toggleBookmark(int productId, {required bool add}) async {
+    if (isDummyProduct(productId)) return false; // no-op for dummy
     try {
       if (add) {
         await _api.post('/products/$productId/bookmark', {}, auth: true);
@@ -161,6 +195,7 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
   }
 }
 
-final marketplaceProvider = StateNotifierProvider<MarketplaceNotifier, MarketplaceState>(
+final marketplaceProvider =
+    StateNotifierProvider<MarketplaceNotifier, MarketplaceState>(
   (ref) => MarketplaceNotifier(ref.read(apiServiceProvider)),
 );
