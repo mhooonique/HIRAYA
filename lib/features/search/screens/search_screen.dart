@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/search_provider.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/models/product_model.dart';
 import '../../marketplace/widgets/product_card.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {

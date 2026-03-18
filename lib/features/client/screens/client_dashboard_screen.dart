@@ -84,7 +84,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
     final interests = ref.watch(_interestsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: AppColors.midnight,
       body: Column(
         children: [
           _ClientTopBar(user: user, tabController: _tabController, tabs: _tabs),
@@ -145,32 +145,52 @@ class _ClientTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.lightGray)),
+      decoration: BoxDecoration(
+        color: AppColors.midnight,
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
       ),
       child: Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
           child: Row(children: [
-            Image.asset('assets/images/logo/final-logo.png', height: 32),
-            const SizedBox(width: 10),
-            const Text('HIRAYA',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy, letterSpacing: 3)),
-            const SizedBox(width: 6),
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [AppColors.golden, AppColors.warmEmber],
+              ).createShader(bounds),
+              child: const Text(
+                'HIRAYA',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: 3,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: AppColors.sky.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-              child: const Text('Client', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.sky)),
+              decoration: BoxDecoration(
+                color: AppColors.sky.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.sky.withValues(alpha: 0.30)),
+              ),
+              child: const Text(
+                'Client',
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.sky),
+              ),
             ),
             const Spacer(),
             IconButton(
-              icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.navy),
+              icon: Icon(Icons.chat_bubble_rounded, color: Colors.white.withValues(alpha: 0.70)),
               onPressed: () => context.go('/messages'),
               tooltip: 'Messages',
             ),
             IconButton(
-              icon: const Icon(Icons.storefront_rounded, color: AppColors.navy),
+              icon: Icon(Icons.storefront_rounded, color: Colors.white.withValues(alpha: 0.70)),
               onPressed: () => context.go('/marketplace'),
               tooltip: 'Browse Marketplace',
             ),
@@ -178,12 +198,27 @@ class _ClientTopBar extends StatelessWidget {
             const SizedBox(width: 4),
             GestureDetector(
               onTap: () => tabController.animateTo(4),
-              child: CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.sky.withValues(alpha: 0.2),
-                child: Text(
-                  (user?.firstName ?? 'C').substring(0, 1).toUpperCase(),
-                  style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.sky),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.sky, Color(0xFF1A6BAD)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.sky.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    (user?.firstName ?? 'C').substring(0, 1).toUpperCase(),
+                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -193,12 +228,12 @@ class _ClientTopBar extends StatelessWidget {
         TabBar(
           controller: tabController,
           tabs: tabs,
-          labelColor: AppColors.navy,
-          unselectedLabelColor: Colors.black38,
+          labelColor: AppColors.golden,
+          unselectedLabelColor: Colors.white.withValues(alpha: 0.40),
           labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700),
           unselectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w400),
-          indicatorColor: AppColors.sky,
-          indicatorWeight: 3,
+          indicatorColor: AppColors.golden,
+          indicatorWeight: 2.5,
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
         ),
@@ -238,15 +273,14 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.lightGray),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
-            child: const Row(children: [
-              Icon(Icons.search_rounded, color: Colors.black38, size: 20),
-              SizedBox(width: 12),
-              Text('Search innovations, innovators...', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.black38)),
+            child: Row(children: [
+              Icon(Icons.search_rounded, color: Colors.white.withValues(alpha: 0.35), size: 20),
+              const SizedBox(width: 12),
+              Text('Search innovations, innovators...', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.white.withValues(alpha: 0.35))),
             ]),
           ),
         ),
@@ -264,21 +298,23 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(children: [
-          Text('${products.length} innovations', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+          Text('${products.length} innovations', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.45))),
           const Spacer(),
           PopupMenuButton<String>(
             onSelected: notifier.setSort,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            color: const Color(0xFF1A2A3A),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.navy.withValues(alpha: 0.06),
+                color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
-              child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.sort_rounded, size: 16, color: AppColors.navy),
-                SizedBox(width: 6),
-                Text('Sort', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.navy)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.sort_rounded, size: 16, color: Colors.white.withValues(alpha: 0.60)),
+                const SizedBox(width: 6),
+                Text('Sort', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.60))),
               ]),
             ),
             itemBuilder: (_) => [
@@ -405,38 +441,37 @@ class _SavedProductRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGray),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Row(children: [
         Container(
           width: 52, height: 52,
-          decoration: BoxDecoration(color: catColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: catColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
           child: Icon(Icons.lightbulb_rounded, color: catColor, size: 24),
         ),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.navy),
+          Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
               maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 3),
           Row(children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(color: catColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(color: catColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
               child: Text(product.category, style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w600, color: catColor)),
             ),
             const SizedBox(width: 6),
             if (product.kycStatus == 'verified') const Icon(Icons.verified_rounded, size: 11, color: AppColors.teal),
             const SizedBox(width: 3),
-            Expanded(child: Text(product.innovatorName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black45), overflow: TextOverflow.ellipsis)),
+            Expanded(child: Text(product.innovatorName, style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white.withValues(alpha: 0.40)), overflow: TextOverflow.ellipsis)),
           ]),
           const SizedBox(height: 6),
           Row(children: [
             _MiniStat(icon: Icons.favorite_rounded, value: '${product.likes}', color: AppColors.crimson),
             const SizedBox(width: 10),
-            _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views}', color: Colors.black38),
+            _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views}', color: Colors.white38),
           ]),
         ])),
         const SizedBox(width: 12),
@@ -528,25 +563,28 @@ class _InterestRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: item.status == 'accepted' ? AppColors.teal.withValues(alpha: 0.3) : AppColors.lightGray),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
+        border: Border.all(
+          color: item.status == 'accepted'
+              ? AppColors.teal.withValues(alpha: 0.30)
+              : Colors.white.withValues(alpha: 0.10),
+        ),
       ),
       child: Row(children: [
         Container(
           width: 48, height: 48,
-          decoration: BoxDecoration(color: catColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: catColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
           child: Icon(Icons.lightbulb_rounded, color: catColor, size: 22),
         ),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item.productName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.navy),
+          Text(item.productName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
               maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 2),
-          Text('by ${item.innovatorName}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black45)),
+          Text('by ${item.innovatorName}', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.45))),
           const SizedBox(height: 3),
-          Text('Sent ${_timeAgo(item.sentAt)}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black38)),
+          Text('Sent ${_timeAgo(item.sentAt)}', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white.withValues(alpha: 0.30))),
         ])),
         const SizedBox(width: 12),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -608,25 +646,37 @@ class _ClientProfile extends ConsumerWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('My Profile', style: TextStyle(fontFamily: 'Poppins', fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.navy)),
+          const Text('My Profile', style: TextStyle(fontFamily: 'Poppins', fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.lightGray)),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            ),
             child: Column(children: [
-              CircleAvatar(
-                radius: 38,
-                backgroundColor: AppColors.sky.withValues(alpha: 0.15),
-                child: Text(firstName.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 30, fontWeight: FontWeight.w800, color: AppColors.sky)),
+              Container(
+                width: 76, height: 76,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppColors.sky, Color(0xFF1A6BAD)]),
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: AppColors.sky.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 6))],
+                ),
+                child: Center(child: Text(firstName.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white))),
               ),
               const SizedBox(height: 14),
-              Text(fullName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.navy)),
-              Text('@$username', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+              Text(fullName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+              Text('@$username', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.45))),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(color: AppColors.sky.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(
+                  color: AppColors.sky.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.sky.withValues(alpha: 0.30)),
+                ),
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.person_rounded, color: AppColors.sky, size: 14),
                   SizedBox(width: 6),
@@ -634,7 +684,7 @@ class _ClientProfile extends ConsumerWidget {
                 ]),
               ),
               const SizedBox(height: 20),
-              const Divider(color: AppColors.lightGray),
+              Divider(color: Colors.white.withValues(alpha: 0.10)),
               const SizedBox(height: 14),
               _ProfileRow(label: 'Email', value: email, icon: Icons.email_outlined),
               _ProfileRow(label: 'KYC Status', value: kycStatus.toUpperCase(), icon: Icons.verified_user_rounded),
@@ -677,9 +727,9 @@ class _ProfileRow extends StatelessWidget {
     child: Row(children: [
       Icon(icon, size: 16, color: AppColors.sky),
       const SizedBox(width: 12),
-      Text(label, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+      Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.45))),
       const Spacer(),
-      Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
+      Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
     ]),
   );
 }
@@ -795,15 +845,15 @@ class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.lightGray),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.share_rounded, size: 16, color: AppColors.navy),
+          Icon(Icons.share_rounded, size: 16, color: Colors.white.withValues(alpha: 0.60)),
           const SizedBox(width: 8),
-          const Text('Social Links', style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navy)),
+          Text('Social Links', style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.85))),
           const Spacer(),
           if (!_editing)
             TextButton.icon(
@@ -904,25 +954,25 @@ class _TabHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-    color: Colors.white,
+    color: AppColors.midnight,
     child: Row(children: [
       Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
         child: Icon(icon, color: iconColor, size: 20),
       ),
       const SizedBox(width: 14),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy)),
+          Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(6)),
             child: Text('$count', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: iconColor)),
           ),
         ]),
-        Text(subtitle, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38)),
+        Text(subtitle, style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.40))),
       ])),
     ]),
   );
@@ -954,11 +1004,11 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, size: 60, color: AppColors.lightGray),
+      Icon(icon, size: 60, color: Colors.white.withValues(alpha: 0.15)),
       const SizedBox(height: 16),
-      Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.navy)),
+      Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
       const SizedBox(height: 6),
-      Text(subtitle, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38), textAlign: TextAlign.center),
+      Text(subtitle, style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.40)), textAlign: TextAlign.center),
     ]),
   );
 }

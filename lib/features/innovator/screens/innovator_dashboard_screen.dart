@@ -5,7 +5,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
@@ -15,10 +14,6 @@ import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
 import 'dart:typed_data';
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  DRAFT KEY
-// ─────────────────────────────────────────────────────────────────────────────
-const _kDraftKey = 'hiraya_post_innovation_draft';
 
 class InnovatorDashboardScreen extends ConsumerStatefulWidget {
   const InnovatorDashboardScreen({super.key});
@@ -63,7 +58,7 @@ class _InnovatorDashboardState
     });
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: AppColors.midnight,
       body: Row(
         children: [
           _InnovatorSidebar(
@@ -141,65 +136,52 @@ class _InnovatorSidebar extends ConsumerWidget {
     return Container(
       width: 240,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(right: BorderSide(color: AppColors.lightGray)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04), blurRadius: 8),
-        ],
+        color: AppColors.midnight,
+        border: Border(right: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
-            child: Row(
-              children: [
-                Image.asset('assets/images/logo/final-logo.png', height: 36),
-                const SizedBox(width: 10),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('HIRAYA',
-                        style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.navy,
-                            letterSpacing: 2)),
-                    Text('Innovator',
-                        style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 10,
-                            color: AppColors.teal,
-                            fontWeight: FontWeight.w600)),
-                  ],
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [AppColors.golden, AppColors.warmEmber],
+              ).createShader(bounds),
+              child: const Text(
+                'HIRAYA',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: 3,
                 ),
-              ],
+              ),
             ),
           ),
-          const Divider(height: 1, color: AppColors.lightGray),
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
           if (user != null)
             Container(
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.teal.withValues(alpha: 0.06),
+                color: AppColors.teal.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.teal.withValues(alpha: 0.2)),
+                border: Border.all(color: AppColors.teal.withValues(alpha: 0.25)),
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppColors.teal.withValues(alpha: 0.2),
-                    child: Text(
-                      user.firstName.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.teal),
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [AppColors.teal, Color(0xFF0E5A50)]),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        user.firstName.substring(0, 1).toUpperCase(),
+                        style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -208,17 +190,10 @@ class _InnovatorSidebar extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(user.firstName,
-                            style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.navy),
+                            style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
                             overflow: TextOverflow.ellipsis),
                         const Text('Innovator',
-                            style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 11,
-                                color: AppColors.teal)),
+                            style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.teal)),
                       ],
                     ),
                   ),
@@ -238,14 +213,14 @@ class _InnovatorSidebar extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.offWhite,
+                  color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.lightGray),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
                 ),
-                child: const Row(children: [
-                  Icon(Icons.search_rounded, color: Colors.black45, size: 18),
-                  SizedBox(width: 10),
-                  Text('Search', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black54)),
+                child: Row(children: [
+                  Icon(Icons.search_rounded, color: Colors.white.withValues(alpha: 0.40), size: 18),
+                  const SizedBox(width: 10),
+                  Text('Search', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.50))),
                 ]),
               ),
             ),
@@ -258,14 +233,14 @@ class _InnovatorSidebar extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.offWhite,
+                  color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.lightGray),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
                 ),
-                child: const Row(children: [
-                  Icon(Icons.storefront_rounded, color: Colors.black45, size: 18),
-                  SizedBox(width: 10),
-                  Text('Marketplace', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black54)),
+                child: Row(children: [
+                  Icon(Icons.storefront_rounded, color: Colors.white.withValues(alpha: 0.40), size: 18),
+                  const SizedBox(width: 10),
+                  Text('Marketplace', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.50))),
                 ]),
               ),
             ),
@@ -339,17 +314,17 @@ class _SideTab extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.teal.withValues(alpha: 0.1) : Colors.transparent,
+          color: isActive ? AppColors.teal.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          border: isActive ? Border.all(color: AppColors.teal.withValues(alpha: 0.3)) : null,
+          border: isActive ? Border.all(color: AppColors.teal.withValues(alpha: 0.35)) : null,
         ),
         child: Row(children: [
-          Icon(icon, color: isActive ? AppColors.teal : Colors.black38, size: 18),
+          Icon(icon, color: isActive ? AppColors.teal : Colors.white.withValues(alpha: 0.35), size: 18),
           const SizedBox(width: 12),
           Text(label, style: TextStyle(
             fontFamily: 'Poppins', fontSize: 13,
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-            color: isActive ? AppColors.navy : Colors.black54,
+            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.50),
           )),
         ]),
       ),
@@ -369,13 +344,13 @@ class _InnovatorTopBar extends StatelessWidget {
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.lightGray)),
+      decoration: BoxDecoration(
+        color: AppColors.midnight,
+        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
       ),
       child: Row(children: [
-        Text('Welcome back, ${user?.firstName ?? 'Innovator'}! 👋',
-            style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.navy)),
+        Text('Welcome back, ${user?.firstName ?? 'Innovator'}!',
+            style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
         const Spacer(),
         const NotificationBell(),
       ]),
@@ -399,9 +374,9 @@ class _DashboardOverview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Dashboard', style: TextStyle(fontFamily: 'Poppins', fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.navy)),
+          const Text('Dashboard', style: TextStyle(fontFamily: 'Poppins', fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
           const SizedBox(height: 4),
-          const Text('Your innovation activity at a glance', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+          Text('Your innovation activity at a glance', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.45))),
           const SizedBox(height: 24),
           Row(children: [
             _IStatCard(label: 'Total Submissions', value: '${s['total']}', icon: Icons.inventory_2_rounded, color: AppColors.navy, index: 0),
@@ -424,7 +399,7 @@ class _DashboardOverview extends StatelessWidget {
           ]),
           const SizedBox(height: 28),
           Row(children: [
-            const Text('My Innovations', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy)),
+            const Text('My Innovations', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
             const Spacer(),
             TextButton.icon(
               onPressed: onPostNew,
@@ -457,20 +432,19 @@ class _IStatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.lightGray),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.navy)),
-          Text(label, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black38)),
+          Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)),
+          Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white.withValues(alpha: 0.40))),
         ]),
       ).animate(delay: Duration(milliseconds: 60 * index)).fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
     );
@@ -490,21 +464,25 @@ class _MyProductRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.lightGray)),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
       child: Row(children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
           child: Icon(Icons.lightbulb_rounded, color: color, size: 20),
         ),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.navy)),
-          Text(product.category, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black45)),
+          Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+          Text(product.category, style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.45))),
         ])),
         _MiniStat(icon: Icons.favorite_rounded, value: '${product.likes}', color: AppColors.crimson),
         const SizedBox(width: 12),
-        _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views}', color: Colors.black38),
+        _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views}', color: Colors.white38),
         const SizedBox(width: 12),
         _MiniStat(icon: Icons.handshake_rounded, value: '${product.interestCount}', color: AppColors.teal),
         const SizedBox(width: 16),
@@ -593,14 +571,14 @@ class _MyInnovationsState extends State<_MyInnovations> {
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-          color: Colors.white,
+          color: AppColors.midnight,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Text('My Innovations', style: TextStyle(fontFamily: 'Poppins', fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.navy)),
+              const Text('My Innovations', style: TextStyle(fontFamily: 'Poppins', fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
               const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
                 child: Text('${filtered.length}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.teal)),
               ),
             ]),
@@ -610,19 +588,19 @@ class _MyInnovationsState extends State<_MyInnovations> {
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (_) => setState(() {}),
-                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Search your innovations...',
-                  hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
-                  prefixIcon: const Icon(Icons.search, size: 18, color: Colors.black38),
+                  hintStyle: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.35)),
+                  prefixIcon: Icon(Icons.search, size: 18, color: Colors.white.withValues(alpha: 0.35)),
                   suffixIcon: _searchCtrl.text.isNotEmpty
-                      ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () { _searchCtrl.clear(); setState(() {}); })
+                      ? IconButton(icon: Icon(Icons.clear, size: 16, color: Colors.white.withValues(alpha: 0.50)), onPressed: () { _searchCtrl.clear(); setState(() {}); })
                       : null,
                   filled: true,
-                  fillColor: AppColors.offWhite,
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.teal, width: 1.5)),
                 ),
               ),
@@ -637,7 +615,7 @@ class _MyInnovationsState extends State<_MyInnovations> {
             ]),
           ]),
         ),
-        const Divider(height: 1, color: AppColors.lightGray),
+        Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
         Expanded(
           child: filtered.isEmpty
               ? const _EmptyState(
@@ -686,20 +664,20 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.teal.withValues(alpha: 0.1) : AppColors.offWhite,
+          color: isActive ? AppColors.teal.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isActive ? AppColors.teal.withValues(alpha: 0.4) : AppColors.lightGray),
+          border: Border.all(color: isActive ? AppColors.teal.withValues(alpha: 0.40) : Colors.white.withValues(alpha: 0.12)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icon != null) Icon(icon, size: 14, color: isActive ? AppColors.teal : Colors.black45),
+          if (icon != null) Icon(icon, size: 14, color: isActive ? AppColors.teal : Colors.white.withValues(alpha: 0.45)),
           if (icon != null) const SizedBox(width: 6),
           Text(
             isActive ? value : label,
             style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w600,
-                color: isActive ? AppColors.teal : Colors.black54),
+                color: isActive ? AppColors.teal : Colors.white.withValues(alpha: 0.55)),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: isActive ? AppColors.teal : Colors.black38),
+          Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: isActive ? AppColors.teal : Colors.white.withValues(alpha: 0.35)),
         ]),
       ),
     );
@@ -720,23 +698,22 @@ class _ProductDetailRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGray),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
             child: Icon(Icons.lightbulb_rounded, color: color, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navy)),
+            Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
             Text('${product.category} · ${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
-                style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38)),
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.38))),
           ])),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -750,15 +727,15 @@ class _ProductDetailRow extends StatelessWidget {
         ]),
         const SizedBox(height: 12),
         Text(product.description,
-            style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black54, height: 1.5),
+            style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.50), height: 1.5),
             maxLines: 2, overflow: TextOverflow.ellipsis),
         const SizedBox(height: 14),
-        const Divider(height: 1, color: AppColors.lightGray),
+        Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
         const SizedBox(height: 14),
         Row(children: [
           _MiniStat(icon: Icons.favorite_rounded, value: '${product.likes} likes', color: AppColors.crimson),
           const SizedBox(width: 16),
-          _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views} views', color: Colors.black38),
+          _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views} views', color: Colors.white38),
           const SizedBox(width: 16),
           _MiniStat(icon: Icons.handshake_rounded, value: '${product.interestCount} interests', color: AppColors.teal),
           const Spacer(),

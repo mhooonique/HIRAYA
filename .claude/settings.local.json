@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Read(//c/Users/Christyn Dave/.claude/plugins/**)",
+      "Read(//c/Users/Christyn Dave/.claude/**)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/Christyn Dave/Documents/HIRAYA/**)",
+      "Bash(done)",
+      "Read(//c/Users/Christyn Dave/AppData/Local/**)",
+      "Read(//c/Users/Christyn Dave/**)"
+    ]
+  }
+}

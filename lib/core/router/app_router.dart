@@ -105,7 +105,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      GoRoute(path: '/marketplace', builder: (_, __) => const MarketplaceScreen()),
+      GoRoute(
+        path: '/marketplace',
+        builder: (_, state) => MarketplaceScreen(
+          initialCategory: state.uri.queryParameters['category'],
+        ),
+      ),
       GoRoute(path: '/search',      builder: (_, __) => const SearchScreen()),
       GoRoute(path: '/messaging',   builder: (_, __) => const MessagingScreen()),
 

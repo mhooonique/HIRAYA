@@ -1,7 +1,6 @@
 // lib/features/admin/screens/admin_screen.dart
 
 import 'dart:convert';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -111,13 +110,26 @@ class _AdminSidebar extends ConsumerWidget {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
-            child: Row(children: [
-              Image.asset('assets/images/logo/final-logo.png', height: 36),
-              const SizedBox(width: 10),
-              const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('HIRAYA', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2)),
-                Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, color: AppColors.golden, letterSpacing: 1)),
-              ]),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [AppColors.golden, AppColors.warmEmber],
+                ).createShader(bounds),
+                child: const Text(
+                  'HIRAYA',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 3),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: AppColors.crimson.withValues(alpha: 0.35)),
+                ),
+                child: const Text('ADMIN PANEL', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.crimson, letterSpacing: 1.5)),
+              ),
             ]),
           ),
           const Divider(color: Colors.white10, height: 1),
@@ -273,15 +285,25 @@ class _AdminTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: const BoxDecoration(color: Color(0xFF0A1118), border: Border(bottom: BorderSide(color: Colors.white10))),
       child: Row(children: [
-        const Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.crimson.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.30)),
+          ),
+          child: const Text('ADMIN', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.crimson, letterSpacing: 1.5)),
+        ),
+        const SizedBox(width: 12),
+        const Text('Control Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.teal.withValues(alpha: 0.3))),
+          decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.golden.withValues(alpha: 0.25))),
           child: const Row(children: [
-            Icon(Icons.shield_rounded, color: AppColors.teal, size: 14),
+            Icon(Icons.admin_panel_settings_rounded, color: AppColors.golden, size: 14),
             SizedBox(width: 6),
-            Text('dost@admin.com', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.teal, fontWeight: FontWeight.w600)),
+            Text('Super Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden, fontWeight: FontWeight.w600)),
           ]),
         ),
         const SizedBox(width: 8),

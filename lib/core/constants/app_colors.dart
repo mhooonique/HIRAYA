@@ -24,5 +24,15 @@ class AppColors {
   static const Color lightGray = Color(0xFFE0E0E0);
   static const Color darkGray = Color(0xFF333333);
   static const Color charcoal = Color(0xFF1A1A2E);
+
+  // Cinematic Extensions
+  static const Color deepVoid = Color(0xFF050A12);
+  static const Color midnight = Color(0xFF0D1117);
+  static const Color richNavy = Color(0xFF061A2E);
+  static const Color glassWhite = Color(0x1AFFFFFF);
+  static const Color goldSheen = Color(0xFFFFD700);
+  static const Color warmEmber = Color(0xFFFF6B35);
+  static const Color darkSurface = Color(0xFF0F1923);
+  static const Color borderDark = Color(0xFF1E2D3D);
 }
 

@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -11,7 +10,8 @@ import '../widgets/category_filter_bar.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
-  const MarketplaceScreen({super.key});
+  final String? initialCategory;
+  const MarketplaceScreen({super.key, this.initialCategory});
 
   @override
   ConsumerState<MarketplaceScreen> createState() =>
@@ -25,27 +25,56 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
   final FocusNode _searchFocus = FocusNode();
   double _scrollOffset = 0;
   bool _searchFocused = false;
+  bool _filterBarSticky = false;
 
-  late AnimationController _headerGradientCtrl;
-  late Animation<double> _headerGradientAnim;
+  // Desktop hero height 300px, mobile 220px
+  static const double _heroHeightDesktop = 300.0;
+  static const double _heroHeightMobile = 220.0;
+
+  late AnimationController _orbCtrl;
+  late Animation<double> _orbAnim;
+
+  late AnimationController _gradientCtrl;
+  late Animation<double> _gradientAnim;
 
   @override
   void initState() {
     super.initState();
-    _scrollCtrl.addListener(
-        () => setState(() => _scrollOffset = _scrollCtrl.offset));
+
+    _scrollCtrl.addListener(_onScroll);
     _searchFocus.addListener(
         () => setState(() => _searchFocused = _searchFocus.hasFocus));
 
-    _headerGradientCtrl = AnimationController(
+    _orbCtrl = AnimationController(
+      duration: const Duration(seconds: 7),
+      vsync: this,
+    )..repeat(reverse: true);
+    _orbAnim = CurvedAnimation(parent: _orbCtrl, curve: Curves.easeInOut);
+
+    _gradientCtrl = AnimationController(
       duration: const Duration(seconds: 5),
       vsync: this,
     )..repeat(reverse: true);
+    _gradientAnim =
+        CurvedAnimation(parent: _gradientCtrl, curve: Curves.easeInOut);
 
-    _headerGradientAnim = CurvedAnimation(
-      parent: _headerGradientCtrl,
-      curve: Curves.easeInOut,
-    );
+    // Apply initial category filter from nav (e.g. /marketplace?category=Agriculture)
+    if (widget.initialCategory != null && widget.initialCategory!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(marketplaceProvider.notifier).setCategory(widget.initialCategory!);
+      });
+    }
+  }
+
+  void _onScroll() {
+    final offset = _scrollCtrl.offset;
+    final w = MediaQuery.of(context).size.width;
+    final heroH =
+        w > 900 ? _heroHeightDesktop : _heroHeightMobile;
+    setState(() {
+      _scrollOffset = offset;
+      _filterBarSticky = offset > heroH - 10;
+    });
   }
 
   @override
@@ -53,7 +82,8 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     _searchCtrl.dispose();
     _scrollCtrl.dispose();
     _searchFocus.dispose();
-    _headerGradientCtrl.dispose();
+    _orbCtrl.dispose();
+    _gradientCtrl.dispose();
     super.dispose();
   }
 
@@ -63,680 +93,846 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     final notifier = ref.read(marketplaceProvider.notifier);
     final products = state.filtered;
     final auth = ref.watch(authProvider);
+    final w = MediaQuery.of(context).size.width;
+    final isDesktop = w > 900;
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: AppColors.deepVoid,
+      // ── Scroll-to-top FAB ─────────────────────────────────
       floatingActionButton: AnimatedOpacity(
-        opacity: _scrollOffset > 220 ? 1.0 : 0.0,
+        opacity: _scrollOffset > 300 ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 300),
-        child: FloatingActionButton.small(
-          onPressed: () => _scrollCtrl.animateTo(
-            0,
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeOutCubic,
-          ),
-          backgroundColor: AppColors.navy,
-          elevation: 6,
-          child: const Icon(Icons.keyboard_arrow_up_rounded,
-              color: Colors.white, size: 22),
-        )
-            .animate()
-            .scaleXY(
-                begin: 0.6,
-                end: 1.0,
-                curve: Curves.easeOutBack),
-      ),
-      body: NestedScrollView(
-        controller: _scrollCtrl,
-        headerSliverBuilder: (context, innerScrolled) => [
-          SliverAppBar(
-            expandedHeight: 220,
-            floating: false,
-            pinned: true,
-            elevation: _scrollOffset > 10 ? 10 : 0,
-            shadowColor: AppColors.navy.withValues(alpha: 0.45),
-            backgroundColor: AppColors.navy,
-            automaticallyImplyLeading: false,
-            flexibleSpace: FlexibleSpaceBar(
-              background: AnimatedBuilder(
-                animation: _headerGradientAnim,
-                builder: (context, _) {
-                  final t = _headerGradientAnim.value;
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color.lerp(AppColors.navy,
-                              const Color(0xFF06314F), t)!,
-                          Color.lerp(AppColors.teal,
-                              const Color(0xFF0F7A6E), t)!,
-                          Color.lerp(
-                              const Color(0xFF0B526A),
-                              AppColors.navy,
-                              t)!,
-                        ],
-                        stops: [0.0, 0.55 + t * 0.2, 1.0],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Animated grid texture
-                        Positioned.fill(
-                          child: Opacity(
-                            opacity: 0.05,
-                            child: CustomPaint(
-                                painter: _GridPainter()),
-                          ),
-                        ),
-                        // Floating decorative orb — top-right
-                        Positioned(
-                          right: -50,
-                          top: -50,
-                          child: Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.teal
-                                  .withValues(
-                                      alpha: 0.07 + t * 0.07),
-                            ),
-                          ),
-                        ),
-                        // Floating decorative orb — bottom-left
-                        Positioned(
-                          left: -30,
-                          bottom: 10,
-                          child: Container(
-                            width: 130,
-                            height: 130,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(
-                                  alpha: 0.03 + t * 0.04),
-                            ),
-                          ),
-                        ),
-
-                        // ── Hero Logo (right side) ────────
-                        Positioned(
-                          right: 28,
-                          bottom: 28,
-                          child: Opacity(
-                            opacity: 0.18 + t * 0.12,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.teal
-                                        .withValues(
-                                            alpha: 0.35 +
-                                                t * 0.25),
-                                    blurRadius:
-                                        30 + t * 20,
-                                    spreadRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              child: Image.asset(
-                                'assets/images/logo/final-logo.png',
-                                height: 72,
-                              ),
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(
-                                  duration: 800.ms,
-                                  delay: 200.ms)
-                              .scaleXY(
-                                  begin: 0.5,
-                                  end: 1.0,
-                                  curve: Curves.easeOutBack,
-                                  duration: 800.ms),
-                        ),
-
-                        // Header text
-                        Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(
-                                  24, 80, 24, 28),
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            mainAxisAlignment:
-                                MainAxisAlignment.end,
-                            children: [
-                              // Brand pill
-                              Container(
-                                padding:
-                                    const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white
-                                      .withValues(alpha: 0.10),
-                                  borderRadius:
-                                      BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.white
-                                        .withValues(
-                                            alpha: 0.18),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.storefront_rounded,
-                                      color: Colors.white70,
-                                      size: 12,
-                                    ),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'HIRAYA',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 11,
-                                        fontWeight:
-                                            FontWeight.w700,
-                                        color: Colors.white70,
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                      duration: 500.ms,
-                                      delay: 50.ms)
-                                  .slideX(
-                                      begin: -0.15,
-                                      end: 0,
-                                      curve:
-                                          Curves.easeOutCubic),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Marketplace',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                      duration: 650.ms,
-                                      delay: 100.ms)
-                                  .slideX(
-                                      begin: -0.25,
-                                      end: 0,
-                                      curve:
-                                          Curves.easeOutCubic),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Discover Filipino innovations',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 14,
-                                  color: Colors.white60,
-                                  letterSpacing: 0.3,
-                                ),
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                      duration: 650.ms,
-                                      delay: 280.ms)
-                                  .slideX(
-                                      begin: -0.2,
-                                      end: 0,
-                                      curve:
-                                          Curves.easeOutCubic),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.golden, AppColors.warmEmber],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.golden.withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
-            ),
-            // ── NavBar: Logo + Title ──────────────────────
-            title: Row(
-              children: [
-                _AnimatedLogo(onTap: () => context.go('/')),
-                const SizedBox(width: 10),
-                const Text(
-                  'HIRAYA',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 2.5,
-                  ),
-                )
-                    .animate()
-                    .fadeIn(duration: 550.ms, delay: 150.ms)
-                    .slideX(
-                        begin: -0.1,
-                        end: 0,
-                        curve: Curves.easeOutCubic),
-              ],
-            ),
-            // ── NavBar: Actions ───────────────────────────
-            actions: [
-              _AnimatedNotificationBell(onTap: () {}),
-              const SizedBox(width: 8),
-              if (!auth.isLoggedIn)
-                _AnimatedSignInButton(
-                    onTap: () => context.go('/login')),
-              if (!auth.isLoggedIn) const SizedBox(width: 12),
             ],
           ),
-        ],
-        body: RefreshIndicator(
-          onRefresh: notifier.loadProducts,
-          color: AppColors.teal,
-          child: CustomScrollView(
-            slivers: [
-              // ── Search + Sort ──────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      24, 20, 24, 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: AnimatedContainer(
-                          duration:
-                              const Duration(milliseconds: 280),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(14),
-                            border: Border.all(
-                              color: _searchFocused
-                                  ? AppColors.teal
-                                  : AppColors.lightGray,
-                              width: _searchFocused ? 2.0 : 1.0,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _searchFocused
-                                    ? AppColors.teal
-                                        .withValues(alpha: 0.18)
-                                    : Colors.black
-                                        .withValues(alpha: 0.04),
-                                blurRadius:
-                                    _searchFocused ? 18 : 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _searchCtrl,
-                            focusNode: _searchFocus,
-                            onChanged: notifier.setSearch,
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText:
-                                  'Search innovations, innovators...',
-                              hintStyle: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                color: Colors.black26,
-                              ),
-                              prefixIcon: AnimatedSwitcher(
-                                duration: const Duration(
-                                    milliseconds: 200),
-                                transitionBuilder:
-                                    (child, anim) =>
-                                        ScaleTransition(
-                                            scale: anim,
-                                            child: child),
-                                child: Icon(
-                                  Icons.search_rounded,
-                                  key:
-                                      ValueKey(_searchFocused),
-                                  color: _searchFocused
-                                      ? AppColors.teal
-                                      : Colors.black38,
-                                  size: 20,
-                                ),
-                              ),
-                              suffixIcon:
-                                  _searchCtrl.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(
-                                              Icons.close_rounded,
-                                              size: 18,
-                                              color:
-                                                  Colors.black38),
-                                          onPressed: () {
-                                            _searchCtrl.clear();
-                                            notifier
-                                                .setSearch('');
-                                            setState(() {});
-                                          },
-                                        )
-                                      : null,
-                              border: InputBorder.none,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 14),
-                            ),
-                          ),
-                        )
-                            .animate()
-                            .fadeIn(
-                                duration: 500.ms, delay: 200.ms)
-                            .slideY(
-                                begin: 0.12,
-                                end: 0,
-                                curve: Curves.easeOutCubic),
-                      ),
-                      const SizedBox(width: 10),
-                      // Sort button
-                      PopupMenuButton<String>(
-                        onSelected: notifier.setSort,
-                        shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(14)),
-                        elevation: 4,
-                        child: AnimatedContainer(
-                          duration:
-                              const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.all(13),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(14),
-                            border: Border.all(
-                                color: AppColors.lightGray),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: 0.04),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                              Icons.sort_rounded,
-                              color: AppColors.navy,
-                              size: 20),
-                        )
-                            .animate()
-                            .fadeIn(
-                                duration: 500.ms, delay: 300.ms)
-                            .slideY(
-                                begin: 0.12,
-                                end: 0,
-                                curve: Curves.easeOutCubic),
-                        itemBuilder: (_) => [
-                          _sortItem(
-                              'newest',
-                              'Newest First',
-                              Icons.access_time_rounded),
-                          _sortItem('most_liked', 'Most Liked',
-                              Icons.favorite_rounded),
-                          _sortItem(
-                              'most_viewed',
-                              'Most Viewed',
-                              Icons.remove_red_eye_rounded),
-                          _sortItem(
-                              'most_interest',
-                              'Most Interest',
-                              Icons.trending_up_rounded),
-                        ],
-                      ),
-                    ],
+          child: FloatingActionButton.small(
+            onPressed: () => _scrollCtrl.animateTo(
+              0,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutCubic,
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: const Icon(Icons.keyboard_arrow_up_rounded,
+                color: AppColors.navy, size: 22),
+          ),
+        ).animate().scaleXY(begin: 0.6, end: 1.0, curve: Curves.easeOutBack),
+      ),
+
+      body: Stack(
+        children: [
+          // ── Main scrollable content ──────────────────────
+          RefreshIndicator(
+            onRefresh: notifier.loadProducts,
+            color: AppColors.golden,
+            backgroundColor: AppColors.midnight,
+            child: CustomScrollView(
+              controller: _scrollCtrl,
+              slivers: [
+                // ── Cinematic HERO section ─────────────────
+                SliverToBoxAdapter(
+                  child: _HeroSection(
+                    orbAnim: _orbAnim,
+                    gradientAnim: _gradientAnim,
+                    searchCtrl: _searchCtrl,
+                    searchFocus: _searchFocus,
+                    searchFocused: _searchFocused,
+                    onSearch: notifier.setSearch,
+                    onClearSearch: () {
+                      _searchCtrl.clear();
+                      notifier.setSearch('');
+                      setState(() {});
+                    },
+                    selectedCategory: state.selectedCategory,
+                    onClearFilters: () {
+                      _searchCtrl.clear();
+                      notifier.setSearch('');
+                      notifier.setCategory('All');
+                    },
+                    isDesktop: isDesktop,
+                    auth: auth,
+                    onLogoTap: () => context.go('/'),
+                    onSignIn: () => context.go('/login'),
                   ),
                 ),
-              ),
 
-              // ── Category filter ──────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: CategoryFilterBar(
-                    selected: state.selectedCategory,
-                    onSelect: notifier.setCategory,
-                  ),
-                ),
-              ),
-
-              // ── Animated Stats Strip ─────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      24, 0, 24, 16),
+                // ── Category filter bar (non-sticky position) ──
+                SliverToBoxAdapter(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.navy.withValues(alpha: 0.06),
-                          AppColors.teal.withValues(alpha: 0.04),
-                        ],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: AppColors.navy
-                            .withValues(alpha: 0.08),
-                      ),
-                    ),
-                    child: Row(
+                    color: AppColors.deepVoid,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _StatChip(
-                          icon: Icons.lightbulb_rounded,
-                          label: '${products.length}',
-                          sublabel: 'innovations',
-                          color: AppColors.teal,
+                        // Filter bar
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 4),
+                          child: CategoryFilterBar(
+                            selected: state.selectedCategory,
+                            onSelect: notifier.setCategory,
+                          ),
                         ),
-                        const _StatDivider(),
-                        const _StatChip(
-                          icon: Icons.people_rounded,
-                          label: '120+',
-                          sublabel: 'innovators',
-                          color: AppColors.navy,
-                        ),
-                        const _StatDivider(),
-                        const _StatChip(
-                          icon: Icons.category_rounded,
-                          label: '6',
-                          sublabel: 'categories',
-                          color: AppColors.sky,
-                        ),
-                        const Spacer(),
-                        if (state.selectedCategory != 'All' ||
-                            state.searchQuery.isNotEmpty)
-                          _ClearFilterChip(
-                            onTap: () {
+                        // Product count + sort row
+                        Padding(
+                          padding:
+                              const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                          child: _CountAndSortRow(
+                            count: products.length,
+                            selectedSort: state.sortBy,
+                            onSort: notifier.setSort,
+                            hasFilters: state.selectedCategory != 'All' ||
+                                state.searchQuery.isNotEmpty,
+                            onClearFilters: () {
                               _searchCtrl.clear();
                               notifier.setSearch('');
                               notifier.setCategory('All');
                             },
                           ),
+                        ),
                       ],
                     ),
                   ),
-                )
-                    .animate()
-                    .fadeIn(duration: 500.ms, delay: 150.ms)
-                    .slideY(
-                        begin: 0.1,
-                        end: 0,
-                        curve: Curves.easeOutCubic),
+                ),
+
+                // ── Loading skeleton ───────────────────────
+                if (state.isLoading)
+                  SliverPadding(
+                    padding:
+                        const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                    sliver: SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => _SkeletonCard(index: i),
+                        childCount: 6,
+                      ),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: _crossAxisCount(w),
+                        crossAxisSpacing: 20,
+                        mainAxisSpacing: 20,
+                        childAspectRatio: 0.68,
+                      ),
+                    ),
+                  )
+
+                // ── Empty state ────────────────────────────
+                else if (products.isEmpty)
+                  SliverFillRemaining(
+                    child: _EmptyState(
+                      hasFilters: state.selectedCategory != 'All' ||
+                          state.searchQuery.isNotEmpty,
+                      onClearFilters: () {
+                        _searchCtrl.clear();
+                        notifier.setSearch('');
+                        notifier.setCategory('All');
+                      },
+                    ),
+                  )
+
+                // ── Product grid ───────────────────────────
+                else
+                  SliverPadding(
+                    padding:
+                        const EdgeInsets.fromLTRB(20, 0, 20, 48),
+                    sliver: SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => ProductCard(
+                          product: products[index],
+                          index: index,
+                        ),
+                        childCount: products.length,
+                      ),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: _crossAxisCount(w),
+                        crossAxisSpacing: 20,
+                        mainAxisSpacing: 20,
+                        childAspectRatio: 0.68,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // ── Sticky filter bar (docks to top after scrolling past hero) ──
+          if (_filterBarSticky)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _StickyFilterBar(
+                selected: state.selectedCategory,
+                onSelect: notifier.setCategory,
+                count: products.length,
+                selectedSort: state.sortBy,
+                onSort: notifier.setSort,
+                hasFilters: state.selectedCategory != 'All' ||
+                    state.searchQuery.isNotEmpty,
+                onClearFilters: () {
+                  _searchCtrl.clear();
+                  notifier.setSearch('');
+                  notifier.setCategory('All');
+                },
+              ).animate().slideY(
+                    begin: -0.3,
+                    end: 0,
+                    duration: 220.ms,
+                    curve: Curves.easeOutCubic,
+                  ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  int _crossAxisCount(double w) {
+    if (w > 1200) return 4;
+    if (w > 800) return 3;
+    if (w > 500) return 2;
+    return 1;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HERO SECTION — cinematic 300px desktop / 220px mobile
+// ═══════════════════════════════════════════════════════════
+class _HeroSection extends StatelessWidget {
+  final Animation<double> orbAnim;
+  final Animation<double> gradientAnim;
+  final TextEditingController searchCtrl;
+  final FocusNode searchFocus;
+  final bool searchFocused;
+  final void Function(String) onSearch;
+  final VoidCallback onClearSearch;
+  final String selectedCategory;
+  final VoidCallback onClearFilters;
+  final bool isDesktop;
+  final dynamic auth;
+  final VoidCallback onLogoTap;
+  final VoidCallback onSignIn;
+
+  const _HeroSection({
+    required this.orbAnim,
+    required this.gradientAnim,
+    required this.searchCtrl,
+    required this.searchFocus,
+    required this.searchFocused,
+    required this.onSearch,
+    required this.onClearSearch,
+    required this.selectedCategory,
+    required this.onClearFilters,
+    required this.isDesktop,
+    required this.auth,
+    required this.onLogoTap,
+    required this.onSignIn,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final heroHeight = isDesktop ? 300.0 : 220.0;
+    final hPad = isDesktop ? 80.0 : 24.0;
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([orbAnim, gradientAnim]),
+      builder: (context, _) {
+        final o = orbAnim.value;
+        final g = gradientAnim.value;
+
+        return SizedBox(
+          height: heroHeight,
+          child: Stack(
+            children: [
+              // ── Animated gradient background ─────────────
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color.lerp(
+                            AppColors.deepVoid, AppColors.richNavy, g)!,
+                        Color.lerp(AppColors.midnight,
+                            const Color(0xFF071E2E), g)!,
+                        Color.lerp(
+                            AppColors.richNavy, const Color(0xFF0A2240), g)!,
+                      ],
+                      stops: [0.0, 0.5 + g * 0.15, 1.0],
+                    ),
+                  ),
+                ),
               ),
 
-              // ── (legacy stats bar placeholder — kept for alignment) ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24),
-                  child: Row(
-                    children: [
-                      const Spacer(),
-                      if (false) // handled above
-                        GestureDetector(
-                          onTap: () {},
-                          child: Container(
+              // ── Grid texture overlay ──────────────────────
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.025,
+                  child: CustomPaint(painter: _GridPainter()),
+                ),
+              ),
+
+              // ── Animated golden orb — top right ──────────
+              Positioned(
+                right: -50 + o * 25,
+                top: -50 + o * 18,
+                child: Container(
+                  width: 260,
+                  height: 260,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.golden
+                            .withValues(alpha: 0.08 + o * 0.05),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Animated teal orb — bottom left ──────────
+              Positioned(
+                left: -30 + o * 12,
+                bottom: -20 + o * 22,
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.teal.withValues(alpha: 0.07 + o * 0.04),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Floating warm ember orb — center ─────────
+              Positioned(
+                right: 100 + o * 35,
+                bottom: 30 - o * 12,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.warmEmber
+                            .withValues(alpha: 0.05 + o * 0.04),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Sky orb — top left ────────────────────────
+              Positioned(
+                left: 80 + o * 15,
+                top: 20 - o * 8,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.sky.withValues(alpha: 0.06 + o * 0.03),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Bottom gradient fade to body ──────────────
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 60,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        AppColors.deepVoid,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Content ───────────────────────────────────
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPad),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // NavBar row
+                    SizedBox(
+                      height: 70,
+                      child: Row(
+                        children: [
+                          // Logo
+                          GestureDetector(
+                            onTap: onLogoTap,
+                            child: Row(children: [
+                              Image.asset(
+                                'assets/images/logo/final-logo.png',
+                                height: 32,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'HIRAYA',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 2.0,
+                                ),
+                              ),
+                            ]),
+                          ),
+                          const Spacer(),
+                          if (!auth.isLoggedIn)
+                            GestureDetector(
+                              onTap: onSignIn,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppColors.golden,
+                                      AppColors.warmEmber,
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.golden
+                                          .withValues(alpha: 0.30),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
+                                ),
+                                child: const Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.navy,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    // Hero content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Brand pill
+                          Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.crimson
-                                  .withValues(alpha: 0.08),
-                              borderRadius:
-                                  BorderRadius.circular(8),
+                              color: Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.10),
+                              ),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.close_rounded,
-                                    size: 14,
-                                    color: AppColors.crimson),
-                                SizedBox(width: 4),
+                                Icon(Icons.storefront_rounded,
+                                    color: AppColors.golden, size: 12),
+                                SizedBox(width: 5),
                                 Text(
-                                  'Clear filters',
+                                  'INNOVATION MARKETPLACE',
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: 13,
-                                    color: AppColors.crimson,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.golden,
+                                    letterSpacing: 1.5,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        )
-                            .animate()
-                            .fadeIn()
-                            .scale(
-                                begin: const Offset(0.8, 0.8),
-                                curve: Curves.easeOutBack),
-                    ],
-                  ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 500.ms, delay: 50.ms)
+                              .slideX(
+                                  begin: -0.15,
+                                  end: 0,
+                                  curve: Curves.easeOutCubic),
+                          const SizedBox(height: 10),
+
+                          // Main title with gradient shader
+                          ShaderMask(
+                            shaderCallback: (bounds) =>
+                                const LinearGradient(
+                              colors: [
+                                AppColors.golden,
+                                AppColors.warmEmber,
+                                Colors.white,
+                              ],
+                              stops: [0.0, 0.45, 1.0],
+                            ).createShader(bounds),
+                            child: Text(
+                              'Explore Innovations',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: isDesktop ? 36 : 26,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                                height: 1.1,
+                              ),
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 650.ms, delay: 100.ms)
+                              .slideX(
+                                  begin: -0.2,
+                                  end: 0,
+                                  curve: Curves.easeOutCubic),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Discover Filipino innovations ready for the world',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: isDesktop ? 14 : 12,
+                              color: Colors.white.withValues(alpha: 0.55),
+                              letterSpacing: 0.2,
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 650.ms, delay: 250.ms)
+                              .slideX(
+                                  begin: -0.15,
+                                  end: 0,
+                                  curve: Curves.easeOutCubic),
+                          const SizedBox(height: 16),
+
+                          // Glass morphism search bar
+                          _HeroSearchBar(
+                            controller: searchCtrl,
+                            focusNode: searchFocus,
+                            focused: searchFocused,
+                            onChanged: onSearch,
+                            onClear: onClearSearch,
+                          )
+                              .animate()
+                              .fadeIn(duration: 600.ms, delay: 350.ms)
+                              .slideY(
+                                  begin: 0.15,
+                                  end: 0,
+                                  curve: Curves.easeOutCubic),
+
+                          // Active filter chip
+                          if (selectedCategory != 'All') ...[
+                            const SizedBox(height: 10),
+                            _ActiveFilterChip(
+                              category: selectedCategory,
+                              onRemove: onClearFilters,
+                            )
+                                .animate()
+                                .fadeIn(duration: 300.ms)
+                                .scale(
+                                    begin: const Offset(0.85, 0.85),
+                                    curve: Curves.easeOutBack),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-              // ── Loading ──────────────────────────────────
-              if (state.isLoading)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.teal),
-                  ),
-                )
-              // ── Empty state ──────────────────────────────
-              else if (products.isEmpty)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.search_off_rounded,
-                          size: 64,
-                          color: AppColors.lightGray,
-                        )
-                            .animate(
-                                onPlay: (c) =>
-                                    c.repeat(reverse: true))
-                            .scaleXY(
-                                begin: 1.0,
-                                end: 1.08,
-                                duration: 1500.ms,
-                                curve: Curves.easeInOut),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No innovations found',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.navy,
-                          ),
-                        )
-                            .animate()
-                            .fadeIn()
-                            .slideY(begin: 0.2, end: 0),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Try a different category or search term',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: Colors.black38,
-                          ),
-                        )
-                            .animate()
-                            .fadeIn(delay: 100.ms)
-                            .slideY(begin: 0.2, end: 0),
-                      ],
-                    ),
-                  ),
-                )
-              // ── Product Grid ─────────────────────────────
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                      24, 0, 24, 32),
-                  sliver: SliverGrid(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => ProductCard(
-                        product: products[index],
-                        index: index,
-                      ),
-                      childCount: products.length,
-                    ),
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: MediaQuery.of(context)
-                                  .size
-                                  .width >
-                              1200
-                          ? 4
-                          : MediaQuery.of(context).size.width >
-                                  800
-                              ? 3
-                              : MediaQuery.of(context)
-                                          .size
-                                          .width >
-                                      500
-                                  ? 2
-                                  : 1,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 0.72,
-                    ),
-                  ),
-                ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Glass morphism search bar for hero
+// ═══════════════════════════════════════════════════════════
+class _HeroSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool focused;
+  final void Function(String) onChanged;
+  final VoidCallback onClear;
+
+  const _HeroSearchBar({
+    required this.controller,
+    required this.focusNode,
+    required this.focused,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: focused ? 0.10 : 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: focused
+              ? AppColors.golden.withValues(alpha: 0.70)
+              : Colors.white.withValues(alpha: 0.12),
+          width: focused ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: focused
+                ? AppColors.golden.withValues(alpha: 0.15)
+                : Colors.black.withValues(alpha: 0.25),
+            blurRadius: focused ? 20 : 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        onChanged: onChanged,
+        style: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 14,
+          color: Colors.white,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search innovations, innovators...',
+          hintStyle: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            color: Colors.white.withValues(alpha: 0.30),
+          ),
+          prefixIcon: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, anim) =>
+                ScaleTransition(scale: anim, child: child),
+            child: Icon(
+              Icons.search_rounded,
+              key: ValueKey(focused),
+              color: focused
+                  ? AppColors.golden
+                  : Colors.white.withValues(alpha: 0.40),
+              size: 20,
+            ),
+          ),
+          suffixIcon: controller.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: Colors.white.withValues(alpha: 0.45),
+                  ),
+                  onPressed: onClear,
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 14),
         ),
       ),
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Active filter chip shown below search bar
+// ═══════════════════════════════════════════════════════════
+class _ActiveFilterChip extends StatelessWidget {
+  final String category;
+  final VoidCallback onRemove;
+
+  const _ActiveFilterChip(
+      {required this.category, required this.onRemove});
+
+  Color get _color =>
+      AppColors.categoryColors[category] ?? AppColors.teal;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onRemove,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: _color.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _color.withValues(alpha: 0.45)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.filter_list_rounded, size: 12, color: _color),
+            const SizedBox(width: 5),
+            Text(
+              category,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _color,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.close_rounded, size: 12, color: _color),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Count + Sort row
+// ═══════════════════════════════════════════════════════════
+class _CountAndSortRow extends StatelessWidget {
+  final int count;
+  final String selectedSort;
+  final void Function(String) onSort;
+  final bool hasFilters;
+  final VoidCallback onClearFilters;
+
+  const _CountAndSortRow({
+    required this.count,
+    required this.selectedSort,
+    required this.onSort,
+    required this.hasFilters,
+    required this.onClearFilters,
+  });
+
+  String get _sortLabel {
+    switch (selectedSort) {
+      case 'most_liked':
+        return 'Most Liked';
+      case 'most_viewed':
+        return 'Most Viewed';
+      case 'most_interest':
+        return 'Most Interest';
+      default:
+        return 'Newest First';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        // Count badge
+        Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.golden.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color: AppColors.golden.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lightbulb_rounded,
+                  size: 12, color: AppColors.golden),
+              const SizedBox(width: 5),
+              Text(
+                '$count Innovation${count == 1 ? '' : 's'} Found',
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.golden,
+                ),
+              ),
+            ],
+          ),
+        )
+            .animate()
+            .fadeIn(duration: 400.ms, delay: 100.ms)
+            .slideX(begin: -0.1, end: 0, curve: Curves.easeOutCubic),
+
+        const Spacer(),
+
+        // Clear filter chip
+        if (hasFilters) ...[
+          _ClearFilterChip(onTap: onClearFilters),
+          const SizedBox(width: 10),
+        ],
+
+        // Sort dropdown
+        _SortDropdown(
+          selected: selectedSort,
+          label: _sortLabel,
+          onSort: onSort,
+        )
+            .animate()
+            .fadeIn(duration: 400.ms, delay: 150.ms)
+            .slideX(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Sort dropdown with glassmorphism styling
+// ═══════════════════════════════════════════════════════════
+class _SortDropdown extends StatefulWidget {
+  final String selected;
+  final String label;
+  final void Function(String) onSort;
+
+  const _SortDropdown({
+    required this.selected,
+    required this.label,
+    required this.onSort,
+  });
+
+  @override
+  State<_SortDropdown> createState() => _SortDropdownState();
+}
+
+class _SortDropdownState extends State<_SortDropdown> {
+  bool _hovered = false;
 
   PopupMenuItem<String> _sortItem(
       String value, String label, IconData icon) {
@@ -744,103 +940,422 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
       value: value,
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.navy),
+          Icon(icon, size: 15, color: AppColors.golden),
           const SizedBox(width: 10),
-          Text(label,
-              style: const TextStyle(
-                  fontFamily: 'Poppins', fontSize: 13)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 13,
+              color: Colors.white70,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: PopupMenuButton<String>(
+        onSelected: widget.onSort,
+        color: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        elevation: 8,
+        itemBuilder: (_) => [
+          _sortItem('newest', 'Newest First',
+              Icons.access_time_rounded),
+          _sortItem('most_liked', 'Most Liked',
+              Icons.favorite_rounded),
+          _sortItem('most_viewed', 'Most Viewed',
+              Icons.remove_red_eye_rounded),
+          _sortItem('most_interest', 'Most Interest',
+              Icons.trending_up_rounded),
+        ],
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? Colors.white.withValues(alpha: 0.08)
+                : AppColors.darkSurface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _hovered
+                  ? AppColors.golden.withValues(alpha: 0.35)
+                  : Colors.white.withValues(alpha: 0.10),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.20),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.sort_rounded,
+                size: 15,
+                color: Colors.white.withValues(alpha: 0.65),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.70),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 15,
+                color: Colors.white.withValues(alpha: 0.40),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// Stat Chip — used in the animated metrics strip
+// Sticky filter bar — docks to top after hero scrolls away
 // ═══════════════════════════════════════════════════════════
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String sublabel;
-  final Color color;
+class _StickyFilterBar extends StatelessWidget {
+  final String selected;
+  final void Function(String) onSelect;
+  final int count;
+  final String selectedSort;
+  final void Function(String) onSort;
+  final bool hasFilters;
+  final VoidCallback onClearFilters;
 
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    required this.sublabel,
-    required this.color,
+  const _StickyFilterBar({
+    required this.selected,
+    required this.onSelect,
+    required this.count,
+    required this.selectedSort,
+    required this.onSort,
+    required this.hasFilters,
+    required this.onClearFilters,
   });
+
+  String get _sortLabel {
+    switch (selectedSort) {
+      case 'most_liked':
+        return 'Most Liked';
+      case 'most_viewed':
+        return 'Most Viewed';
+      case 'most_interest':
+        return 'Most Interest';
+      default:
+        return 'Newest';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
+    return ClipRect(
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.midnight.withValues(alpha: 0.97),
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.white.withValues(alpha: 0.07),
+            ),
           ),
-          child: Icon(icon, size: 13, color: color),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        const SizedBox(width: 7),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: color,
-                height: 1.1,
-              ),
-            ),
-            Text(
-              sublabel,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10,
-                color: Colors.black38,
-                fontWeight: FontWeight.w500,
+            CategoryFilterBar(
+                selected: selected, onSelect: onSelect),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+              child: Row(
+                children: [
+                  Text(
+                    '$count found',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: AppColors.golden.withValues(alpha: 0.80),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (hasFilters) ...[
+                    _ClearFilterChip(onTap: onClearFilters),
+                    const SizedBox(width: 10),
+                  ],
+                  _SortDropdown(
+                    selected: selectedSort,
+                    label: _sortLabel,
+                    onSort: onSort,
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ],
-    )
-        .animate()
-        .fadeIn(duration: 450.ms)
-        .slideY(begin: 0.15, end: 0, curve: Curves.easeOutCubic);
-  }
-}
-
-class _StatDivider extends StatelessWidget {
-  const _StatDivider();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      width: 1,
-      height: 28,
-      color: AppColors.lightGray,
+      ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// Clear Filter Chip — animated entrance + press effect
+// Empty state illustration
+// ═══════════════════════════════════════════════════════════
+class _EmptyState extends StatelessWidget {
+  final bool hasFilters;
+  final VoidCallback onClearFilters;
+
+  const _EmptyState(
+      {required this.hasFilters, required this.onClearFilters});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Animated illustration container
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.04),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Glow ring
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.golden.withValues(alpha: 0.06),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    hasFilters
+                        ? Icons.search_off_rounded
+                        : Icons.lightbulb_outline_rounded,
+                    size: 52,
+                    color: Colors.white.withValues(alpha: 0.20),
+                  ),
+                ],
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scaleXY(
+                    begin: 1.0,
+                    end: 1.06,
+                    duration: 1600.ms,
+                    curve: Curves.easeInOut),
+            const SizedBox(height: 24),
+            Text(
+              hasFilters
+                  ? 'No innovations found'
+                  : 'No innovations yet',
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0),
+            const SizedBox(height: 8),
+            Text(
+              hasFilters
+                  ? 'Try a different category or search term'
+                  : 'Innovations will appear here once listed',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.40),
+              ),
+              textAlign: TextAlign.center,
+            )
+                .animate()
+                .fadeIn(delay: 100.ms, duration: 400.ms)
+                .slideY(begin: 0.2, end: 0),
+            if (hasFilters) ...[
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: onClearFilters,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 11),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.golden, AppColors.warmEmber],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.golden.withValues(alpha: 0.30),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'Clear Filters',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 200.ms, duration: 400.ms)
+                  .scale(
+                      begin: const Offset(0.85, 0.85),
+                      curve: Curves.easeOutBack),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Skeleton card — mirrors actual ProductCard layout
+// ═══════════════════════════════════════════════════════════
+class _SkeletonCard extends StatelessWidget {
+  final int index;
+  const _SkeletonCard({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderDark),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image placeholder
+          Container(
+            height: 140,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20)),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      _SkelLine(w: 70, h: 18, r: 6),
+                      const SizedBox(width: 8),
+                      _SkelLine(w: 55, h: 18, r: 6),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _SkelLine(w: double.infinity, h: 14, r: 6),
+                  const SizedBox(height: 6),
+                  _SkelLine(w: 160, h: 12, r: 6),
+                  const SizedBox(height: 6),
+                  _SkelLine(w: 130, h: 12, r: 6),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      _SkelLine(w: 40, h: 12, r: 6),
+                      const SizedBox(width: 8),
+                      _SkelLine(w: 40, h: 12, r: 6),
+                      const Spacer(),
+                      _SkelLine(w: 75, h: 26, r: 8),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate(delay: Duration(milliseconds: 80 * index))
+        .fadeIn(duration: 600.ms)
+        .shimmer(
+            duration: 1200.ms,
+            color: Colors.white.withValues(alpha: 0.04));
+  }
+}
+
+class _SkelLine extends StatelessWidget {
+  final double w;
+  final double h;
+  final double r;
+  const _SkelLine({required this.w, required this.h, required this.r});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: w == double.infinity ? null : w,
+        height: h,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(r),
+        ),
+      );
+}
+
+// ═══════════════════════════════════════════════════════════
+// Clear filter chip
 // ═══════════════════════════════════════════════════════════
 class _ClearFilterChip extends StatefulWidget {
   final VoidCallback onTap;
   const _ClearFilterChip({required this.onTap});
 
   @override
-  State<_ClearFilterChip> createState() =>
-      _ClearFilterChipState();
+  State<_ClearFilterChip> createState() => _ClearFilterChipState();
 }
 
 class _ClearFilterChipState extends State<_ClearFilterChip> {
@@ -857,26 +1372,26 @@ class _ClearFilterChipState extends State<_ClearFilterChip> {
         scale: _pressed ? 0.92 : 1.0,
         duration: const Duration(milliseconds: 120),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 6),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: AppColors.crimson.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppColors.crimson.withValues(alpha: 0.25),
+              color: AppColors.crimson.withValues(alpha: 0.28),
             ),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.close_rounded,
-                  size: 13, color: AppColors.crimson),
-              SizedBox(width: 5),
+                  size: 11, color: AppColors.crimson),
+              SizedBox(width: 4),
               Text(
-                'Clear filters',
+                'Clear',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 12,
+                  fontSize: 11,
                   color: AppColors.crimson,
                   fontWeight: FontWeight.w600,
                 ),
@@ -885,17 +1400,35 @@ class _ClearFilterChipState extends State<_ClearFilterChip> {
           ),
         ),
       ),
-    )
-        .animate()
-        .fadeIn()
-        .scale(
-            begin: const Offset(0.8, 0.8),
-            curve: Curves.easeOutBack);
+    ).animate().fadeIn().scale(
+        begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// Animated Logo — pulse glow, hover scale, entrance animation
+// Grid painter for subtle texture overlay
+// ═══════════════════════════════════════════════════════════
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 0.5;
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GridPainter old) => false;
+}
+
+// ═══════════════════════════════════════════════════════════
+// Animated Logo (kept for backwards compatibility)
 // ═══════════════════════════════════════════════════════════
 class _AnimatedLogo extends StatefulWidget {
   final VoidCallback onTap;
@@ -918,8 +1451,8 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
       duration: const Duration(milliseconds: 2200),
       vsync: this,
     )..repeat(reverse: true);
-    _pulse = CurvedAnimation(
-        parent: _pulseCtrl, curve: Curves.easeInOut);
+    _pulse =
+        CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut);
   }
 
   @override
@@ -946,9 +1479,8 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.teal.withValues(
-                      alpha: (_hovered ? 0.65 : 0.22) *
-                          _pulse.value),
+                  color: AppColors.golden.withValues(
+                      alpha: (_hovered ? 0.55 : 0.18) * _pulse.value),
                   blurRadius: _hovered ? 26 : 14,
                   spreadRadius: _hovered ? 5 : 1,
                 ),
@@ -977,9 +1509,67 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Animated Notification Bell — swing, badge bounce, glow pulse
-// ═══════════════════════════════════════════════════════════
+// ignore: unused_element
+class _AnimatedSignInButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _AnimatedSignInButton({required this.onTap});
+
+  @override
+  State<_AnimatedSignInButton> createState() =>
+      _AnimatedSignInButtonState();
+}
+
+class _AnimatedSignInButtonState extends State<_AnimatedSignInButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.golden.withValues(alpha: _hovered ? 1.0 : 0.85),
+                AppColors.warmEmber.withValues(alpha: _hovered ? 1.0 : 0.85),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.golden
+                    .withValues(alpha: _hovered ? 0.45 : 0.25),
+                blurRadius: _hovered ? 20 : 10,
+              ),
+            ],
+          ),
+          child: const Text(
+            'Sign In',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.navy,
+            ),
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 500.ms, delay: 300.ms)
+        .slideX(begin: 0.1, end: 0, curve: Curves.easeOutCubic);
+  }
+}
+
+// ignore: unused_element
 class _AnimatedNotificationBell extends StatefulWidget {
   final VoidCallback onTap;
   const _AnimatedNotificationBell({required this.onTap});
@@ -993,24 +1583,14 @@ class _AnimatedNotificationBellState
     extends State<_AnimatedNotificationBell>
     with TickerProviderStateMixin {
   late AnimationController _ringCtrl;
-  late AnimationController _badgeCtrl;
   late AnimationController _glowCtrl;
-  late AnimationController _rippleCtrl;
-
   late Animation<double> _ringAnim;
-  late Animation<double> _badgeScale;
   late Animation<double> _glowAnim;
-  late Animation<double> _rippleAnim;
-
-  bool _pressed = false;
   bool _hovered = false;
-  final int _count = 3;
 
   @override
   void initState() {
     super.initState();
-
-    // Bell swing
     _ringCtrl = AnimationController(
       duration: const Duration(milliseconds: 650),
       vsync: this,
@@ -1026,34 +1606,15 @@ class _AnimatedNotificationBellState
           tween: Tween(begin: 0.12, end: -0.08), weight: 2),
       TweenSequenceItem(
           tween: Tween(begin: -0.08, end: 0.0), weight: 1),
-    ]).animate(CurvedAnimation(
-        parent: _ringCtrl, curve: Curves.easeInOut));
+    ]).animate(
+        CurvedAnimation(parent: _ringCtrl, curve: Curves.easeInOut));
 
-    // Badge entrance
-    _badgeCtrl = AnimationController(
-      duration: const Duration(milliseconds: 550),
-      vsync: this,
-    );
-    _badgeScale = CurvedAnimation(
-        parent: _badgeCtrl, curve: Curves.elasticOut);
-    Future.delayed(const Duration(milliseconds: 900),
-        () => mounted ? _badgeCtrl.forward() : null);
-
-    // Glow pulse
     _glowCtrl = AnimationController(
       duration: const Duration(milliseconds: 1900),
       vsync: this,
     )..repeat(reverse: true);
-    _glowAnim = CurvedAnimation(
-        parent: _glowCtrl, curve: Curves.easeInOut);
-
-    // Tap ripple
-    _rippleCtrl = AnimationController(
-      duration: const Duration(milliseconds: 420),
-      vsync: this,
-    );
-    _rippleAnim = CurvedAnimation(
-        parent: _rippleCtrl, curve: Curves.easeOut);
+    _glowAnim =
+        CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut);
 
     _scheduleAutoRing();
   }
@@ -1068,199 +1629,6 @@ class _AnimatedNotificationBellState
   @override
   void dispose() {
     _ringCtrl.dispose();
-    _badgeCtrl.dispose();
-    _glowCtrl.dispose();
-    _rippleCtrl.dispose();
-    super.dispose();
-  }
-
-  void _handleTap() {
-    _ringCtrl.forward(from: 0);
-    _rippleCtrl.forward(from: 0);
-    widget.onTap();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: _handleTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          scale: _pressed ? 0.85 : 1.0,
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
-          child: AnimatedBuilder(
-            animation: Listenable.merge(
-                [_ringAnim, _glowAnim, _rippleAnim]),
-            builder: (context, _) {
-              return SizedBox(
-                width: 44,
-                height: 44,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    // Ripple ring on tap
-                    if (_rippleAnim.value > 0)
-                      Positioned.fill(
-                        child: Opacity(
-                          opacity:
-                              (1 - _rippleAnim.value) * 0.6,
-                          child: Transform.scale(
-                            scale:
-                                1.0 + _rippleAnim.value * 1.4,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.teal,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    // Glow + bell
-                    AnimatedContainer(
-                      duration:
-                          const Duration(milliseconds: 200),
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(
-                            alpha: _hovered ? 0.15 : 0.08),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.teal.withValues(
-                                alpha:
-                                    (_hovered ? 0.45 : 0.18) +
-                                        _glowAnim.value * 0.18),
-                            blurRadius: (_hovered ? 18 : 10) +
-                                _glowAnim.value * 8,
-                            spreadRadius: _hovered ? 2 : 0,
-                          ),
-                        ],
-                      ),
-                      child: Transform.rotate(
-                        angle: _ringAnim.value,
-                        alignment: Alignment.topCenter,
-                        child: Icon(
-                          Icons.notifications_rounded,
-                          color: Colors.white,
-                          size: 22,
-                          shadows: [
-                            Shadow(
-                              color: AppColors.teal
-                                  .withValues(alpha: 0.6),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Badge
-                    Positioned(
-                      top: 2,
-                      right: 2,
-                      child: ScaleTransition(
-                        scale: _badgeScale,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: AppColors.crimson,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.crimson
-                                    .withValues(alpha: 0.55),
-                                blurRadius: 6,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$_count',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 8,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 600.ms, delay: 250.ms)
-        .slideX(
-            begin: 0.2,
-            end: 0,
-            curve: Curves.easeOutCubic,
-            duration: 600.ms);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Animated Sign In Button — shimmer sweep, glow, hover scale
-// ═══════════════════════════════════════════════════════════
-class _AnimatedSignInButton extends StatefulWidget {
-  final VoidCallback onTap;
-  const _AnimatedSignInButton({required this.onTap});
-
-  @override
-  State<_AnimatedSignInButton> createState() =>
-      _AnimatedSignInButtonState();
-}
-
-class _AnimatedSignInButtonState
-    extends State<_AnimatedSignInButton>
-    with TickerProviderStateMixin {
-  late AnimationController _shimmerCtrl;
-  late AnimationController _glowCtrl;
-  late Animation<double> _shimmerAnim;
-  late Animation<double> _glowAnim;
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _shimmerCtrl = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat();
-    _shimmerAnim = CurvedAnimation(
-        parent: _shimmerCtrl, curve: Curves.easeInOut);
-
-    _glowCtrl = AnimationController(
-      duration: const Duration(milliseconds: 2400),
-      vsync: this,
-    )..repeat(reverse: true);
-    _glowAnim = CurvedAnimation(
-        parent: _glowCtrl, curve: Curves.easeInOut);
-  }
-
-  @override
-  void dispose() {
-    _shimmerCtrl.dispose();
     _glowCtrl.dispose();
     super.dispose();
   }
@@ -1272,162 +1640,44 @@ class _AnimatedSignInButtonState
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          scale: _pressed ? 0.91 : (_hovered ? 1.06 : 1.0),
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutBack,
-          child: AnimatedBuilder(
-            animation: Listenable.merge(
-                [_shimmerAnim, _glowAnim]),
-            builder: (context, _) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 18, vertical: 9),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: _hovered
-                        ? [
-                            const Color(0xFF1A9E8F),
-                            AppColors.teal,
-                          ]
-                        : [
-                            AppColors.teal,
-                            AppColors.teal
-                                .withValues(alpha: 0.85),
-                          ],
+        onTap: () {
+          _ringCtrl.forward(from: 0);
+          widget.onTap();
+        },
+        child: AnimatedBuilder(
+          animation: Listenable.merge([_ringAnim, _glowAnim]),
+          builder: (context, _) => SizedBox(
+            width: 44,
+            height: 44,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white
+                    .withValues(alpha: _hovered ? 0.10 : 0.05),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.golden.withValues(
+                        alpha: (_hovered ? 0.40 : 0.12) +
+                            _glowAnim.value * 0.15),
+                    blurRadius: (_hovered ? 18.0 : 10.0) +
+                        _glowAnim.value * 8,
                   ),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.white.withValues(
-                        alpha: 0.12 +
-                            _shimmerAnim.value * 0.28),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.teal.withValues(
-                          alpha: (_hovered ? 0.60 : 0.22) +
-                              _glowAnim.value * 0.18),
-                      blurRadius: _hovered
-                          ? 22
-                          : 10 + _glowAnim.value * 6,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                ],
+              ),
+              child: Transform.rotate(
+                angle: _ringAnim.value,
+                alignment: Alignment.topCenter,
+                child: const Icon(
+                  Icons.notifications_rounded,
+                  color: Colors.white70,
+                  size: 20,
                 ),
-                child: Stack(
-                  children: [
-                    // Shimmer sweep
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(8),
-                        child: Opacity(
-                          opacity: 0.22,
-                          child: Transform.translate(
-                            offset: Offset(
-                              -90 +
-                                  (_shimmerAnim.value * 180),
-                              0,
-                            ),
-                            child: Container(
-                              width: 40,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.white.withValues(
-                                        alpha: 0),
-                                    Colors.white.withValues(
-                                        alpha: 0.9),
-                                    Colors.white.withValues(
-                                        alpha: 0),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Label
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.login_rounded,
-                            color: Colors.white, size: 15),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontSize: 13,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                        AnimatedSize(
-                          duration: const Duration(
-                              milliseconds: 200),
-                          child: _hovered
-                              ? const Padding(
-                                  padding: EdgeInsets.only(
-                                      left: 4),
-                                  child: Icon(
-                                    Icons
-                                        .arrow_forward_rounded,
-                                    color: Colors.white,
-                                    size: 13,
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
+              ),
+            ),
           ),
         ),
       ),
-    )
-        .animate()
-        .fadeIn(duration: 650.ms, delay: 300.ms)
-        .slideX(
-            begin: 0.25,
-            end: 0,
-            curve: Curves.easeOutCubic,
-            duration: 650.ms);
+    );
   }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Grid Background Painter
-// ═══════════════════════════════════════════════════════════
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 0.5;
-    const spacing = 40.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(
-          Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(
-          Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter old) => false;
 }
