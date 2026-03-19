@@ -15,7 +15,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../widgets/share_qr_section.dart';
 import '../../reviews/widgets/reviews_widget.dart';
 
-// ── Provider: fetch product directly from API (supports pending/rejected) ─────
+
 final _productDetailProvider =
     FutureProvider.family<ProductModel?, int>((ref, id) async {
   final api = ref.read(apiServiceProvider);
@@ -25,13 +25,13 @@ final _productDetailProvider =
       return ProductModel.fromJson(res['data'] as Map<String, dynamic>);
     }
   } catch (_) {}
-  // fallback to cache only if API fails
   return ref
       .read(marketplaceProvider)
       .products
       .cast<ProductModel?>()
       .firstWhere((p) => p?.id == id, orElse: () => null);
 });
+
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final int productId;
   const ProductDetailScreen({super.key, required this.productId});
@@ -82,6 +82,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   void _goBack(BuildContext context, String role) {
     if (role == 'admin') {
       context.go('/admin');
+    } else if (role == 'innovator') {
+      context.go('/innovator/dashboard');
     } else if (context.canPop()) {
       context.pop();
     } else {
@@ -93,10 +95,30 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   Widget build(BuildContext context) {
     final productAsync = ref.watch(_productDetailProvider(widget.productId));
     final product = productAsync.value;
+<<<<<<< HEAD
     final authState = ref.watch(authProvider);
     final isLoggedIn = authState.isLoggedIn;
     final isAdmin = authState.user?.role == 'admin';
 
+=======
+
+    final isDark        = ref.watch(themeProvider) == ThemeMode.dark;
+    final scaffoldBg    = isDark ? const Color(0xFF0D1117) : AppColors.offWhite;
+    final cardBg        = isDark ? const Color(0xFF1A2233) : Colors.white;
+    final borderCol     = isDark ? const Color(0xFF2A3448) : AppColors.lightGray;
+    final primaryText   = isDark ? Colors.white : AppColors.navy;
+    final secondaryText = isDark ? Colors.white54 : Colors.black54;
+    final subtleText    = isDark ? Colors.white38 : Colors.black45;
+
+    final authState   = ref.watch(authProvider);
+    final isLoggedIn  = authState.isLoggedIn;
+    final role        = authState.user?.role ?? '';
+    final isAdmin     = role == 'admin';
+    final isInnovator = role == 'innovator';
+    final isClient    = isLoggedIn && role == 'client';
+    // Restricted = admin/innovator → no like/interest/message/bookmark
+    final isRestricted = isAdmin || isInnovator;
+>>>>>>> origin/master
 
     if (product == null) {
       return Scaffold(
@@ -142,7 +164,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       backgroundColor: AppColors.deepVoid,
       body: CustomScrollView(
         slivers: [
+<<<<<<< HEAD
           // ── Cinematic SliverAppBar hero ──────────────────
+=======
+          // ── Hero AppBar ───────────────────────────────────────────────────
+>>>>>>> origin/master
           SliverAppBar(
             expandedHeight: 340,
             pinned: true,
@@ -150,11 +176,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             elevation: 0,
             leading: _BackButton(onTap: () => context.go('/marketplace')),
             actions: [
-              // Admin back to dashboard button
+              // Admin dashboard button
               if (isAdmin)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Center(
+<<<<<<< HEAD
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
@@ -181,14 +208,76 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             ),
                           ),
                         ],
+=======
+                    child: GestureDetector(
+                      onTap: () => context.go('/admin'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.black38,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white30)),
+                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 14),
+                          SizedBox(width: 6),
+                          Text('Admin Dashboard', style: TextStyle(fontFamily: 'Poppins',
+                              fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ]),
+>>>>>>> origin/master
                       ),
                     ),
                   ),
                 ),
+<<<<<<< HEAD
               // Bookmark
               Container(
                 margin: const EdgeInsets.only(right: 4),
                 child: IconButton(
+=======
+              // Innovator dashboard button
+              if (isInnovator)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => context.go('/innovator/dashboard'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.black38,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white30)),
+                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.dashboard_rounded, color: Colors.white, size: 14),
+                          SizedBox(width: 6),
+                          Text('My Dashboard', style: TextStyle(fontFamily: 'Poppins',
+                              fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              // Image count — clients/guests only
+              if (!isRestricted && product.images.length > 1)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: Colors.black45,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.photo_library_rounded, color: Colors.white, size: 13),
+                        const SizedBox(width: 4),
+                        Text('${product.images.length}',
+                            style: const TextStyle(fontFamily: 'Poppins',
+                                fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                      ]),
+                    ),
+                  ),
+                ),
+              // Bookmark — clients only
+              if (isClient)
+                IconButton(
+>>>>>>> origin/master
                   icon: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
@@ -204,6 +293,23 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   onPressed: () =>
                       setState(() => _bookmarked = !_bookmarked),
                 ),
+<<<<<<< HEAD
+=======
+              // Share — everyone
+              IconButton(
+                icon: const Icon(Icons.share_rounded, color: Colors.white),
+                onPressed: () async {
+                  final url = '${html.window.location.origin}/product/${product.id}';
+                  await html.window.navigator.clipboard?.writeText(url);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Product link copied!',
+                        style: TextStyle(fontFamily: 'Poppins')),
+                    backgroundColor: AppColors.teal, behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                },
+>>>>>>> origin/master
               ),
               IconButton(
                 icon: const Icon(Icons.share_rounded,
@@ -219,7 +325,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             ),
           ),
 
+<<<<<<< HEAD
           // ── Body content ─────────────────────────────────
+=======
+          // ── Body ─────────────────────────────────────────────────────────
+>>>>>>> origin/master
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -265,8 +375,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       ]),
                     ).animate().fadeIn(),
 
-                  // Innovator card — message button hidden for admin
+                  // Innovator card
                   GestureDetector(
+<<<<<<< HEAD
                     onTap: () =>
                         context.go('/profile/${product.innovatorId}'),
                     child: _GlassCard(
@@ -298,6 +409,59 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                                 ),
                               ),
                             ),
+=======
+                    onTap: () => context.push('/profile/${product.innovatorId}'),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardBg, borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderCol),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 8, offset: const Offset(0, 2))],
+                      ),
+                      child: Row(children: [
+                        UserAvatar(
+                          name: product.innovatorName,
+                          avatarBase64: product.innovatorAvatarBase64,
+                          radius: 24,
+                          backgroundColor: color.withValues(alpha: 0.15),
+                          foregroundColor: color,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(product.innovatorName, style: TextStyle(fontFamily: 'Poppins',
+                                fontSize: 15, fontWeight: FontWeight.w700, color: primaryText)),
+                            Text('@${product.innovatorUsername}', style: TextStyle(
+                                fontFamily: 'Poppins', fontSize: 13, color: subtleText)),
+                          ],
+                        )),
+                        // Admin/Innovator → View Profile
+                        // Client → Message
+                        // Guest → Message (redirects to login)
+                        if (isRestricted)
+                          OutlinedButton.icon(
+                            onPressed: () => context.push('/profile/${product.innovatorId}'),
+                            icon: const Icon(Icons.person_search_rounded, size: 16),
+                            label: const Text('View Profile', style: TextStyle(
+                                fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.sky,
+                              side: const BorderSide(color: AppColors.sky),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          )
+                        else
+                          OutlinedButton.icon(
+                            onPressed: () => context.push(isLoggedIn ? '/messaging' : '/login'),
+                            icon: const Icon(Icons.message_rounded, size: 16),
+                            label: const Text('Message', style: TextStyle(fontFamily: 'Poppins',
+                                fontSize: 13, fontWeight: FontWeight.w600)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: color, side: BorderSide(color: color),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+>>>>>>> origin/master
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -338,6 +502,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ),
                   ).animate().fadeIn(duration: 400.ms),
 
+<<<<<<< HEAD
                   // Video section
                   if (product.videoBase64 != null &&
                       product.videoBase64!.isNotEmpty) ...[
@@ -374,6 +539,121 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   // Details grid
                   const _SectionHeader(title: 'Details'),
                   const SizedBox(height: 14),
+=======
+                  // Guest sign-in banner
+                  if (!isLoggedIn) ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => context.go('/login'),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.sky.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.sky.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.info_outline_rounded, color: AppColors.sky, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text.rich(TextSpan(
+                              style: const TextStyle(fontFamily: 'Poppins',
+                                  fontSize: 12, color: AppColors.sky),
+                              children: const [
+                                TextSpan(text: 'Join as a CLIENT '),
+                                TextSpan(text: 'to like, message, bookmark, and express interest.',
+                                    style: TextStyle(fontWeight: FontWeight.w600)),
+                              ],
+                            )),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              color: AppColors.sky, size: 14),
+                        ]),
+                      ),
+                    ).animate().fadeIn(),
+                  ],
+
+                  // ── Big Gallery ───────────────────────────────────────────
+                  if (product.images.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildLabel('Gallery', Icons.photo_library_rounded, primaryText),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SizedBox(
+                        height: 600,
+                        child: PageView.builder(
+                          controller: _pageCtrl,
+                          onPageChanged: (i) => setState(() => _currentPage = i),
+                          itemCount: product.images.length,
+                          itemBuilder: (_, i) {
+                            try {
+                              return GestureDetector(
+                                onTap: () => _openImageViewer(context, product.images, i),
+                                child: Image.memory(
+                                  base64Decode(product.images[i]),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                ),
+                              );
+                            } catch (_) {
+                              return Container(
+                                color: color.withValues(alpha: 0.1),
+                                child: Icon(Icons.image_rounded, color: color, size: 48),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(product.images.length,
+                        (i) => AnimatedContainer(
+                          duration: 200.ms,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: _currentPage == i ? 20 : 6, height: 6,
+                          decoration: BoxDecoration(
+                            color: _currentPage == i ? color : color.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        )),
+                    ),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Text('Tap image to view fullscreen',
+                          style: TextStyle(fontFamily: 'Poppins', fontSize: 11,
+                              color: isDark ? Colors.white38 : Colors.black38)),
+                    ),
+                  ],
+
+                  // Video
+                  if (product.videoBase64 != null && product.videoBase64!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildLabel('Video', Icons.videocam_rounded, primaryText),
+                    const SizedBox(height: 12),
+                    _VideoCard(videoBase64: product.videoBase64!,
+                        filename: product.videoFilename ?? 'video.mp4'),
+                  ],
+
+                  const SizedBox(height: 24),
+                  _buildLabel('About this Innovation', Icons.lightbulb_rounded, primaryText),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(color: cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderCol)),
+                    child: Text(product.description, style: TextStyle(fontFamily: 'Poppins',
+                        fontSize: 14, color: secondaryText, height: 1.7)),
+                  ).animate(delay: 100.ms).fadeIn(),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('Details', Icons.info_outline_rounded, primaryText),
+                  const SizedBox(height: 12),
+>>>>>>> origin/master
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -412,6 +692,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ],
                   ).animate(delay: 200.ms).fadeIn(),
 
+<<<<<<< HEAD
                   // External link section
                   if (product.externalLink != null &&
                       product.externalLink!.isNotEmpty) ...[
@@ -422,6 +703,21 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       onTap: () => launchUrl(Uri.parse(product.externalLink!),
                           mode: LaunchMode.externalApplication),
                       child: _GlassCard(
+=======
+                  if (product.externalLink != null && product.externalLink!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildLabel('External Link', Icons.link_rounded, primaryText),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => launchUrl(Uri.parse(product.externalLink!),
+                          mode: LaunchMode.externalApplication),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: cardBg,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: borderCol),
+                        ),
+>>>>>>> origin/master
                         child: Row(children: [
                           Container(
                             padding: const EdgeInsets.all(10),
@@ -473,11 +769,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   ],
 
                   const SizedBox(height: 32),
+                  // Reviews — clients only (must be logged in)
                   ReviewsSection(productId: product.id),
                   const SizedBox(height: 32),
                   ShareQrSection(product: product),
 
-                  // Admin dashboard shortcut at bottom
+                  // Admin dashboard button
                   if (isAdmin) ...[
                     const SizedBox(height: 20),
                     SizedBox(
@@ -497,6 +794,28 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       ),
                     ),
                   ],
+
+                  // Innovator dashboard button
+                  if (isInnovator) ...[
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/innovator/dashboard'),
+                        icon: const Icon(Icons.dashboard_rounded,
+                            size: 16, color: AppColors.teal),
+                        label: const Text('Back to Innovator Dashboard',
+                            style: TextStyle(fontFamily: 'Poppins', fontSize: 13,
+                                fontWeight: FontWeight.w600, color: AppColors.teal)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.teal),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 40),
                 ],
               ),
@@ -505,8 +824,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         ],
       ),
 
+<<<<<<< HEAD
       // ── Bottom action bar ─────────────────────────────────
       bottomNavigationBar: Container(
+=======
+      // Bottom bar — clients only (full interaction)
+      bottomNavigationBar: !isClient ? null : Container(
+>>>>>>> origin/master
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         decoration: BoxDecoration(
           color: AppColors.midnight,
@@ -523,6 +847,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             ),
           ],
         ),
+<<<<<<< HEAD
         child: isLoggedIn
             ? Row(children: [
                 // Like button
@@ -704,8 +1029,95 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           color: AppColors.navy)),
                 ),
               ),
+=======
+        child: Row(children: [
+          // Like
+          GestureDetector(
+            onTap: () async {
+              setState(() => _liked = !_liked);
+              final ok = await ref.read(marketplaceProvider.notifier).likeProduct(product.id);
+              if (!ok && context.mounted) {
+                setState(() => _liked = !_liked);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: const Text('Could not update like.',
+                      style: TextStyle(fontFamily: 'Poppins')),
+                  backgroundColor: AppColors.crimson, behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ));
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: _liked ? AppColors.crimson.withValues(alpha: 0.1)
+                    : isDark ? const Color(0xFF1A2233) : AppColors.offWhite,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _liked ? AppColors.crimson : borderCol),
+              ),
+              child: Row(children: [
+                Icon(_liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: _liked ? AppColors.crimson : Colors.black38, size: 20),
+                const SizedBox(width: 6),
+                Text('${product.likes + (_liked ? 1 : 0)}',
+                    style: TextStyle(fontFamily: 'Poppins', fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _liked ? AppColors.crimson : Colors.black38)),
+              ]),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Express Interest
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _interestSent ? null : () async {
+                final ok = await ref
+                    .read(marketplaceProvider.notifier)
+                    .expressInterest(product.id);
+                if (!context.mounted) return;
+                if (ok) {
+                  setState(() => _interestSent = true);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Interest expressed! The innovator will be notified.',
+                        style: TextStyle(fontFamily: 'Poppins')),
+                    backgroundColor: AppColors.teal, behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Could not send interest. Please try again.',
+                        style: TextStyle(fontFamily: 'Poppins')),
+                    backgroundColor: AppColors.crimson, behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _interestSent ? AppColors.lightGray : color,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: _interestSent ? 0 : 4,
+              ),
+              icon: Icon(_interestSent ? Icons.check_rounded : Icons.handshake_rounded,
+                  color: Colors.white, size: 18),
+              label: Text(_interestSent ? 'Interest Sent!' : 'Express Interest',
+                  style: const TextStyle(fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white)),
+            ),
+          ),
+        ]),
+>>>>>>> origin/master
       ),
     );
+  }
+
+  Widget _buildLabel(String title, IconData icon, Color textColor) {
+    return Row(children: [
+      Icon(icon, size: 18, color: textColor),
+      const SizedBox(width: 8),
+      Text(title, style: TextStyle(fontFamily: 'Poppins', fontSize: 18,
+          fontWeight: FontWeight.w800, color: textColor)),
+    ]);
   }
 
   Widget _buildImageGallery(ProductModel product, Color color) {
@@ -1236,6 +1648,7 @@ class _VideoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+<<<<<<< HEAD
       decoration: BoxDecoration(
         color: AppColors.midnight,
         borderRadius: BorderRadius.circular(16),
@@ -1248,11 +1661,18 @@ class _VideoCard extends StatelessWidget {
             offset: const Offset(0, 4),
           ),
         ],
+=======
+      decoration: BoxDecoration(color: Colors.black,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 12, offset: const Offset(0, 4))],
+>>>>>>> origin/master
       ),
       clipBehavior: Clip.antiAlias,
       child: AspectRatio(
         aspectRatio: 16 / 9,
         child: Stack(children: [
+<<<<<<< HEAD
           // Dark gradient background
           Container(
             decoration: const BoxDecoration(
@@ -1336,11 +1756,47 @@ class _VideoCard extends StatelessWidget {
               ),
             ),
           ),
+=======
+          Container(decoration: const BoxDecoration(gradient: LinearGradient(
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+          ))),
+          Positioned(top: 12, left: 12,
+            child: Icon(Icons.videocam_rounded,
+                color: Colors.white.withValues(alpha: 0.2), size: 28)),
+          Center(child: GestureDetector(
+            onTap: () {
+              try {
+                final bytes = base64Decode(videoBase64);
+                final blob = html.Blob([bytes], 'video/mp4');
+                final url = html.Url.createObjectUrlFromBlob(blob);
+                html.window.open(url, '_blank');
+                Future.delayed(const Duration(seconds: 5),
+                    () => html.Url.revokeObjectUrl(url));
+              } catch (_) {}
+            },
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 72, height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white54, width: 2),
+                ),
+                child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40)),
+              const SizedBox(height: 12),
+              Text(filename, style: const TextStyle(fontFamily: 'Poppins',
+                  fontSize: 13, color: Colors.white70)),
+              const SizedBox(height: 4),
+              const Text('Tap to play in browser', style: TextStyle(
+                  fontFamily: 'Poppins', fontSize: 11, color: Colors.white38)),
+            ]),
+          )),
+>>>>>>> origin/master
         ]),
       ),
     ).animate(delay: 150.ms).fadeIn().slideY(begin: 0.1, end: 0);
   }
 }
+
 // ── Shared Widgets ────────────────────────────────────────────────────────────
 class _HeroStat extends StatelessWidget {
   final IconData icon;
@@ -1388,7 +1844,11 @@ class _HeroStat extends StatelessWidget {
   }
 }
 
+<<<<<<< HEAD
 class _DetailChip extends StatelessWidget {
+=======
+class _DetailChip extends ConsumerWidget {
+>>>>>>> origin/master
   final IconData icon;
   final String label;
   final String value;
