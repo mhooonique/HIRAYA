@@ -110,6 +110,7 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.golden.withValues(alpha: 0.4)),
                     ),
+<<<<<<< HEAD
                     child: const Row(
                       children: [
                         Icon(Icons.info_outline_rounded, color: AppColors.golden, size: 18),
@@ -118,6 +119,98 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
                           child: Text(
                             'This is a showcase post. Sign in to interact with real innovations.',
                             style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden),
+=======
+                    child: const Row(children: [
+                      Icon(Icons.info_outline_rounded, color: AppColors.golden, size: 18),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'This is a showcase post. Sign in to interact with real innovations.',
+                          style: TextStyle(fontFamily: 'Poppins', fontSize: 12,
+                              color: AppColors.golden),
+                        ),
+                      ),
+                    ]),
+                  ).animate().fadeIn(),
+
+                  // Innovator card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderCol),
+                    ),
+                    child: Row(children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: color.withValues(alpha: 0.15),
+                        child: Text(
+                          p.innovatorName.isNotEmpty
+                              ? p.innovatorName[0].toUpperCase() : 'I',
+                          style: TextStyle(fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w700, color: color, fontSize: 18),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(p.innovatorName, style: TextStyle(fontFamily: 'Poppins',
+                              fontSize: 15, fontWeight: FontWeight.w700, color: primaryText)),
+                          Text('@${p.innovatorUsername}', style: TextStyle(
+                              fontFamily: 'Poppins', fontSize: 13,
+                              color: isDark ? Colors.white38 : Colors.black45)),
+                        ],
+                      )),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.teal.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+                        ),
+                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.verified_rounded, color: AppColors.teal, size: 12),
+                          SizedBox(width: 4),
+                          Text('Verified', style: TextStyle(fontFamily: 'Poppins',
+                              fontSize: 11, color: AppColors.teal,
+                              fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                    ]),
+                  ).animate().fadeIn(duration: 400.ms),
+
+                  // Guest sign-in banner
+                  if (!isLoggedIn) ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => context.go('/login'),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.sky.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: AppColors.sky.withValues(alpha: 0.4)),
+                        ),
+                        child: const Row(children: [
+                          Icon(Icons.info_outline_rounded,
+                              color: AppColors.sky, size: 18),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text.rich(TextSpan(
+                              style: TextStyle(fontFamily: 'Poppins',
+                                  fontSize: 12, color: AppColors.sky),
+                              children: [
+                                TextSpan(text: 'Join as a CLIENT'),
+                                TextSpan(
+                                    text: 'to like, message, bookmark, and express interest.',
+                                    style: TextStyle(fontWeight: FontWeight.w600)),
+                              ],
+                            )),
+>>>>>>> origin/master
                           ),
                         ),
                       ],

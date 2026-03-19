@@ -105,7 +105,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           if (size.width > 900)
             Expanded(
               flex: 2,
+<<<<<<< HEAD
               child: _LeftPanel(orbCtrl: _orbCtrl, gradientCtrl: _gradientCtrl),
+=======
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end:   Alignment.bottomRight,
+                    colors: [AppColors.navy, Color(0xFF064663), AppColors.teal],
+                  ),
+                ),
+                child: Stack(children: [
+                  Positioned.fill(child: Opacity(opacity: 0.05, child: CustomPaint(painter: _GridPainter()))),
+                  Positioned(top: -60, right: -60, child: Container(
+                    width: 250, height: 250,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.teal.withValues(alpha: 0.15)),
+                  )),
+                  Positioned(bottom: -40, left: -40, child: Container(
+                    width: 200, height: 200,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.sky.withValues(alpha: 0.1)),
+                  )),
+                  Padding(
+                    padding: const EdgeInsets.all(48),
+                    child: Column(
+                      mainAxisAlignment:  MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.asset('assets/images/logo/final-logo.png', height: 80),
+                        const SizedBox(height: 24),
+                        const Text('Digital Platform', style: TextStyle(fontFamily: 'Poppins', fontSize: 48, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 8)),
+                        const SizedBox(height: 12),
+                        const Text('Where Innovation\nMeets Opportunity', style: TextStyle(fontFamily: 'Poppins', fontSize: 20, color: Colors.white60, height: 1.5)),
+                        const SizedBox(height: 48),
+                        const Text('Welcome back!', style: TextStyle(fontFamily: 'Poppins', fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.golden)),
+                        const SizedBox(height: 8),
+                        const Text('Sign in to continue your innovation journey.', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.white54)),
+                      ],
+                    ),
+                  ),
+                ]),
+              ).animate().fadeIn(duration: 600.ms),
+>>>>>>> origin/master
             ),
 
           // ── Right — login Form ─────────────────────────────────────────
