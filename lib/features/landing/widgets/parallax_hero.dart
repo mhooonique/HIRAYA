@@ -1,13 +1,17 @@
+// lib/features/landing/widgets/parallax_hero.dart
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
 
 // ═══════════════════════════════════════════════════════════
-// ParallaxHero — Cinematic landing page hero (Enhanced v2)
+// ParallaxHero — Cinematic landing page hero (Enhanced v3)
+// Full-viewport • 50+ particle stars • Orb system • Parallax
+// Word-by-word headline reveal • Animated badges • Scroll indicator
 // ═══════════════════════════════════════════════════════════
+
 class ParallaxHero extends StatefulWidget {
   final double scrollOffset;
   const ParallaxHero({super.key, required this.scrollOffset});
@@ -18,1019 +22,282 @@ class ParallaxHero extends StatefulWidget {
 
 class _ParallaxHeroState extends State<ParallaxHero>
     with TickerProviderStateMixin {
-  // Existing controllers
   late AnimationController _orbCtrl;
-  late AnimationController _floatCtrl;
-  late Animation<double> _orbAnim;
-  late Animation<double> _floatAnim;
-
-  // New: particle animation
   late AnimationController _particleCtrl;
-
-  // New: diagonal light streak
-  late AnimationController _streakCtrl;
-  late Animation<double> _streakAnim;
-
-  // New: pulsing ring
   late AnimationController _pulseCtrl;
-  late Animation<double> _pulseAnim;
+  late AnimationController _scrollIndicatorCtrl;
+  late AnimationController _shimmerCtrl;
 
-  // New: animated counter trigger
-  late AnimationController _counterCtrl;
-  late Animation<double> _counterAnim;
-
-  // New: mouse parallax
   Offset _mousePosition = Offset.zero;
-  bool _mouseInitialized = false;
+
+  // Pre-generated particle data
+  late final List<_ParticleData> _particles;
 
   @override
   void initState() {
     super.initState();
+    final rng = math.Random(42);
+    _particles = List.generate(
+      55,
+      (i) => _ParticleData(
+        x: rng.nextDouble(),
+        y: rng.nextDouble(),
+        size: 1.0 + rng.nextDouble() * 2.5,
+        speed: 0.2 + rng.nextDouble() * 0.8,
+        opacity: 0.15 + rng.nextDouble() * 0.55,
+        phase: rng.nextDouble() * math.pi * 2,
+      ),
+    );
 
     _orbCtrl = AnimationController(
-      duration: const Duration(seconds: 6),
-      vsync: this,
-    )..repeat(reverse: true);
-    _orbAnim = CurvedAnimation(parent: _orbCtrl, curve: Curves.easeInOut);
-
-    _floatCtrl = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    )..repeat(reverse: true);
-    _floatAnim = CurvedAnimation(parent: _floatCtrl, curve: Curves.easeInOut);
-
-    _particleCtrl = AnimationController(
       duration: const Duration(seconds: 8),
       vsync: this,
-    )..repeat();
+    )..repeat(reverse: true);
 
-    _streakCtrl = AnimationController(
-      duration: const Duration(seconds: 4),
+    _particleCtrl = AnimationController(
+      duration: const Duration(seconds: 10),
       vsync: this,
-    )..repeat(reverse: false);
-    _streakAnim = CurvedAnimation(parent: _streakCtrl, curve: Curves.easeInOut);
+    )..repeat();
 
     _pulseCtrl = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat(reverse: true);
-    _pulseAnim = CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut);
 
-    _counterCtrl = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+    _scrollIndicatorCtrl = AnimationController(
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _counterAnim = CurvedAnimation(parent: _counterCtrl, curve: Curves.easeOutCubic);
+    )..repeat(reverse: true);
 
-    // Start counter animation after a delay
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (mounted) _counterCtrl.forward();
-    });
+    _shimmerCtrl = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat();
   }
 
   @override
   void dispose() {
     _orbCtrl.dispose();
-    _floatCtrl.dispose();
     _particleCtrl.dispose();
-    _streakCtrl.dispose();
     _pulseCtrl.dispose();
-    _counterCtrl.dispose();
+    _scrollIndicatorCtrl.dispose();
+    _shimmerCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final parallaxShift = widget.scrollOffset * 0.4;
-    final isDesktop = size.width > 900;
+    final isDesktop = size.width >= 900;
+    final heroHeight = size.height;
 
-    // Mouse parallax offset
-    final mouseOffsetX = _mouseInitialized
-        ? (_mousePosition.dx / size.width - 0.5) * 24
-        : 0.0;
-    final mouseOffsetY = _mouseInitialized
-        ? (_mousePosition.dy / size.height - 0.5) * 16
-        : 0.0;
-
-    return Listener(
-      onPointerMove: (event) {
-        setState(() {
-          _mousePosition = event.localPosition;
-          _mouseInitialized = true;
-        });
-      },
+    return MouseRegion(
+      onHover: (e) => setState(() => _mousePosition = e.localPosition),
       child: SizedBox(
-        height: size.height,
-        child: Stack(
-          clipBehavior: Clip.hardEdge,
-          children: [
-            // ── Deep cinematic background ──────────────────────
-            Positioned(
-              top: -parallaxShift,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: size.height + 200,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.deepVoid,
-                      AppColors.richNavy,
-                      Color(0xFF0A2240),
-                    ],
-                    stops: [0.0, 0.55, 1.0],
+        height: heroHeight,
+        width: double.infinity,
+        child: AnimatedBuilder(
+          animation: Listenable.merge([
+            _orbCtrl, _particleCtrl, _pulseCtrl, _scrollIndicatorCtrl, _shimmerCtrl,
+          ]),
+          builder: (_, __) {
+            final t = _orbCtrl.value;
+            // Mouse parallax delta (subtle)
+            final mx = (_mousePosition.dx / (size.width + 1) - 0.5) * 30;
+            final my = (_mousePosition.dy / (heroHeight + 1) - 0.5) * 20;
+
+            return Stack(
+              children: [
+                // ── Background gradient (with scroll parallax) ──────────
+                Positioned(
+                  top: -widget.scrollOffset * 0.3,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment(0, -0.3),
+                        radius: 1.4,
+                        colors: [
+                          Color(0xFF0A1628),
+                          AppColors.richNavy,
+                          AppColors.deepVoid,
+                        ],
+                        stops: [0.0, 0.5, 1.0],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
 
-            // ── Diagonal grid texture ─────────────────────────
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.025,
-                child: CustomPaint(painter: _GridPainter()),
-              ),
-            ),
-
-            // ── Floating particle dots ─────────────────────────
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _particleCtrl,
-                builder: (_, __) {
-                  return CustomPaint(
-                    painter: _ParticlePainter(
-                      progress: _particleCtrl.value,
-                      parallaxX: mouseOffsetX * 0.5,
-                      parallaxY: mouseOffsetY * 0.5,
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // ── Diagonal light streak ──────────────────────────
-            AnimatedBuilder(
-              animation: _streakAnim,
-              builder: (_, __) {
-                return Positioned.fill(
+                // ── Particle field ──────────────────────────────────────
+                Positioned.fill(
                   child: CustomPaint(
-                    painter: _LightStreakPainter(progress: _streakAnim.value),
-                  ),
-                );
-              },
-            ),
-
-            // ── Animated orbs (with mouse parallax) ───────────
-            AnimatedBuilder(
-              animation: _orbAnim,
-              builder: (_, __) {
-                final t = _orbAnim.value;
-                return Stack(
-                  children: [
-                    // Teal orb — top right
-                    Positioned(
-                      right: -80 + t * 20 - parallaxShift * 0.05 - mouseOffsetX * 0.8,
-                      top: -60 + t * 15 + mouseOffsetY * 0.6,
-                      child: _Orb(
-                        size: 380,
-                        color: AppColors.teal.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    // Golden orb — bottom left
-                    Positioned(
-                      left: -80 + t * 10 + mouseOffsetX * 0.4,
-                      bottom: 80 + t * 20 + parallaxShift * 0.1 - mouseOffsetY * 0.5,
-                      child: _Orb(
-                        size: 300,
-                        color: AppColors.golden.withValues(alpha: 0.10),
-                      ),
-                    ),
-                    // Sky orb — center
-                    Positioned(
-                      left: size.width * 0.35 + t * 10 + mouseOffsetX * 0.3,
-                      top: size.height * 0.3 - t * 10 + mouseOffsetY * 0.3,
-                      child: _Orb(
-                        size: 220,
-                        color: AppColors.sky.withValues(alpha: 0.07),
-                      ),
-                    ),
-                    // Crimson orb — top left
-                    Positioned(
-                      left: 60 - t * 8 + mouseOffsetX * 0.5,
-                      top: 120 + t * 12 - parallaxShift * 0.08 + mouseOffsetY * 0.4,
-                      child: _Orb(
-                        size: 180,
-                        color: AppColors.crimson.withValues(alpha: 0.07),
-                      ),
-                    ),
-                    // Extra warmEmber orb — center right
-                    Positioned(
-                      right: size.width * 0.15 - mouseOffsetX * 0.6,
-                      top: size.height * 0.6 + t * 15,
-                      child: _Orb(
-                        size: 150,
-                        color: AppColors.warmEmber.withValues(alpha: 0.06),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            // ── Main content ──────────────────────────────────
-            Positioned.fill(
-              child: isDesktop
-                  ? _buildDesktopLayout(context, size, parallaxShift)
-                  : _buildMobileLayout(context, size),
-            ),
-
-            // ── Scroll indicator with gradient progress bar ──
-            Positioned(
-              bottom: 22,
-              left: 0,
-              right: 0,
-              child: Column(
-                children: [
-                  const Text(
-                    'SCROLL TO EXPLORE',
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 10,
-                      fontFamily: 'Poppins',
-                      letterSpacing: 3,
-                      fontWeight: FontWeight.w600,
+                    painter: _ParticlePainter(
+                      particles: _particles,
+                      progress: _particleCtrl.value,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  // Gradient progress indicator
-                  Container(
-                    width: 80,
-                    height: 2,
-                    margin: const EdgeInsets.only(bottom: 6),
+                ),
+
+                // ── Orb system ──────────────────────────────────────────
+                // Golden orb — top right
+                Positioned(
+                  right: -120 + t * 60 + mx,
+                  top: -80 + t * 50 + my,
+                  child: Container(
+                    width: 500,
+                    height: 500,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
                         colors: [
-                          Colors.transparent,
-                          AppColors.golden.withValues(alpha: 0.70),
+                          AppColors.golden.withValues(alpha: 0.12),
                           Colors.transparent,
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white38,
-                    size: 28,
-                  )
-                      .animate(onPlay: (c) => c.repeat())
-                      .moveY(
-                        begin: 0,
-                        end: 8,
-                        duration: 900.ms,
-                        curve: Curves.easeInOut,
-                      )
-                      .then()
-                      .moveY(begin: 8, end: 0, duration: 900.ms),
-                ],
-              ).animate().fadeIn(duration: 800.ms, delay: 1600.ms),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+                ),
+                // Teal orb — bottom left
+                Positioned(
+                  left: -100 + (1 - t) * 50 - mx * 0.5,
+                  bottom: -60 + t * 40,
+                  child: Container(
+                    width: 420,
+                    height: 420,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.teal.withValues(alpha: 0.10),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Sky orb — center left
+                Positioned(
+                  left: size.width * 0.15 + t * 30,
+                  top: heroHeight * 0.4 + (1 - t) * 30,
+                  child: Container(
+                    width: 260,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.sky.withValues(alpha: 0.08),
+                          blurRadius: 150,
+                          spreadRadius: 30,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-  // ─── Desktop: two-column layout ───────────────────────────
-  Widget _buildDesktopLayout(
-      BuildContext context, Size size, double parallaxShift) {
-    return Row(
-      children: [
-        // Left column — text content
-        Expanded(
-          flex: 55,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 80),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 80),
-                _buildEyebrow(),
-                const SizedBox(height: 20),
-                _buildHeadline(context),
-                const SizedBox(height: 20),
-                _buildSubtitle(),
-                const SizedBox(height: 40),
-                _buildCtaRow(context),
-                const SizedBox(height: 48),
-                _buildStatsRow(),
-              ],
-            ),
-          ),
-        ),
+                // ── Diagonal light streaks ──────────────────────────────
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _StreakPainter(progress: _shimmerCtrl.value),
+                  ),
+                ),
 
-        // Right column — floating cards (desktop decorative)
-        Expanded(
-          flex: 45,
-          child: AnimatedBuilder(
-            animation: _floatAnim,
-            builder: (_, __) {
-              final float = _floatAnim.value;
-              return Transform.translate(
-                offset: Offset(0, -8 + float * 16),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Pulsing ring behind cards
-                    AnimatedBuilder(
-                      animation: _pulseAnim,
-                      builder: (_, __) {
-                        final p = _pulseAnim.value;
-                        return CustomPaint(
-                          size: const Size(340, 340),
-                          painter: _PulsingRingPainter(
-                            progress: p,
-                            color: AppColors.golden,
+                // ── Main content ────────────────────────────────────────
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: isDesktop ? 80 : 24,
+                    right: isDesktop ? 80 : 24,
+                    top: 90, // navbar height + padding
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Announcement badge
+                      _AnnouncementBadge(pulseCtrl: _pulseCtrl),
+                      SizedBox(height: isDesktop ? 28 : 20),
+
+                      // Main headline
+                      _HeroHeadline(isDesktop: isDesktop),
+                      SizedBox(height: isDesktop ? 20 : 14),
+
+                      // Subtitle
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isDesktop ? 580 : double.infinity,
+                        ),
+                        child: Text(
+                          'The premier Philippine platform connecting verified innovators with clients, investors, and institutions — driving Filipino excellence forward.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: isDesktop ? 17 : 14,
+                            color: Colors.white.withValues(alpha: 0.48),
+                            height: 1.75,
                           ),
-                        );
-                      },
-                    ),
-                    _buildFloatingCards(),
-                  ],
+                        )
+                            .animate(delay: 800.ms)
+                            .fadeIn(duration: 700.ms)
+                            .slideY(begin: 0.2, end: 0),
+                      ),
+                      SizedBox(height: isDesktop ? 40 : 28),
+
+                      // CTA Buttons
+                      _CtaButtons(isDesktop: isDesktop),
+                      SizedBox(height: isDesktop ? 52 : 36),
+
+                      // Stats row
+                      _StatsRow(
+                        isDesktop: isDesktop,
+                        pulseCtrl: _pulseCtrl,
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-          )
-              .animate()
-              .fadeIn(duration: 800.ms, delay: 1000.ms)
-              .slideX(
-                begin: 0.3,
-                end: 0,
-                duration: 800.ms,
-                delay: 1000.ms,
-                curve: Curves.easeOutCubic,
-              ),
-        ),
-      ],
-    );
-  }
 
-  // ─── Mobile: single-column layout ─────────────────────────
-  Widget _buildMobileLayout(BuildContext context, Size size) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 80),
-          _buildEyebrow(centered: true),
-          const SizedBox(height: 16),
-          _buildHeadline(context, centered: true),
-          const SizedBox(height: 16),
-          _buildSubtitle(centered: true),
-          const SizedBox(height: 36),
-          _buildCtaRow(context, wrap: true),
-          const SizedBox(height: 40),
-          _buildStatsRow(centered: true),
-        ],
-      ),
-    );
-  }
-
-  // ─── Eyebrow label ─────────────────────────────────────────
-  Widget _buildEyebrow({bool centered = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.golden.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.golden.withValues(alpha: 0.35),
-          width: 1,
-        ),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('🇵🇭', style: TextStyle(fontSize: 14)),
-          SizedBox(width: 8),
-          Text(
-            'PHILIPPINE INNOVATION MARKETPLACE',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: AppColors.golden,
-              letterSpacing: 2,
-            ),
-          ),
-        ],
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 600.ms, delay: 200.ms)
-        .slideY(begin: -0.2, end: 0, duration: 600.ms, delay: 200.ms);
-  }
-
-  // ─── Main headline ─────────────────────────────────────────
-  Widget _buildHeadline(BuildContext context, {bool centered = false}) {
-    return Column(
-      crossAxisAlignment:
-          centered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Where Filipino',
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 60,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            height: 1.1,
-            letterSpacing: -1,
-          ),
-          textAlign: centered ? TextAlign.center : TextAlign.start,
-        )
-            .animate()
-            .fadeIn(duration: 700.ms, delay: 400.ms)
-            .slideY(
-              begin: 0.2,
-              end: 0,
-              duration: 700.ms,
-              delay: 400.ms,
-              curve: Curves.easeOutCubic,
-            ),
-        ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [AppColors.golden, AppColors.warmEmber, AppColors.golden],
-            stops: [0.0, 0.5, 1.0],
-          ).createShader(bounds),
-          child: const Text(
-            'Innovation Soars',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 60,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              height: 1.1,
-              letterSpacing: -1,
-            ),
-          ),
-        )
-            .animate()
-            .fadeIn(duration: 700.ms, delay: 550.ms)
-            .slideY(
-              begin: 0.2,
-              end: 0,
-              duration: 700.ms,
-              delay: 550.ms,
-              curve: Curves.easeOutCubic,
-            ),
-      ],
-    );
-  }
-
-  // ─── Subtitle ──────────────────────────────────────────────
-  Widget _buildSubtitle({bool centered = false}) {
-    return Text(
-      AppStrings.subTagline,
-      style: TextStyle(
-        fontFamily: 'Poppins',
-        fontSize: 17,
-        color: Colors.white.withValues(alpha: 0.70),
-        height: 1.6,
-        letterSpacing: 0.2,
-      ),
-      textAlign: centered ? TextAlign.center : TextAlign.start,
-      maxLines: 3,
-    ).animate().fadeIn(duration: 600.ms, delay: 750.ms);
-  }
-
-  // ─── CTA buttons row ───────────────────────────────────────
-  Widget _buildCtaRow(BuildContext context, {bool wrap = false}) {
-    final buttons = [
-      _HeroButton(
-        label: 'Explore Innovations',
-        icon: Icons.explore_rounded,
-        isGolden: true,
-        onTap: () => context.go('/marketplace'),
-      ),
-      _HeroButton(
-        label: 'Join as Innovator',
-        icon: Icons.rocket_launch_rounded,
-        isGolden: false,
-        onTap: () => context.go('/signup'),
-      ),
-    ];
-
-    final row = wrap
-        ? Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: buttons,
-          )
-        : Row(
-            children: [
-              buttons[0],
-              const SizedBox(width: 16),
-              buttons[1],
-            ],
-          );
-
-    return row
-        .animate()
-        .fadeIn(duration: 600.ms, delay: 1000.ms)
-        .slideY(
-          begin: 0.2,
-          end: 0,
-          duration: 600.ms,
-          delay: 1000.ms,
-          curve: Curves.easeOutCubic,
-        );
-  }
-
-  // ─── Stats row with animated counters ─────────────────────
-  Widget _buildStatsRow({bool centered = false}) {
-    return AnimatedBuilder(
-      animation: _counterAnim,
-      builder: (_, __) {
-        final progress = _counterAnim.value;
-        return Row(
-          mainAxisAlignment:
-              centered ? MainAxisAlignment.center : MainAxisAlignment.start,
-          children: [
-            _AnimatedStatItem(
-              label: 'Verified Innovators',
-              targetValue: 120,
-              suffix: '+',
-              color: AppColors.teal,
-              progress: progress,
-            ),
-            _VertDivider(),
-            _AnimatedStatItem(
-              label: 'Industry Sectors',
-              targetValue: 6,
-              suffix: '',
-              color: AppColors.golden,
-              progress: progress,
-            ),
-            _VertDivider(),
-            _AnimatedStatItem(
-              label: 'Innovations Listed',
-              targetValue: 500,
-              suffix: '+',
-              color: AppColors.sky,
-              progress: progress,
-            ),
-          ],
-        );
-      },
-    ).animate().fadeIn(duration: 600.ms, delay: 1300.ms);
-  }
-
-  // ─── Decorative floating cards (desktop only) ──────────────
-  Widget _buildFloatingCards() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 40),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Back card — rotated left
-          Transform.rotate(
-            angle: -0.08,
-            child: Transform.translate(
-              offset: const Offset(-20, 20),
-              child: const _MockProductCard(
-                name: 'Solar Water Purifier',
-                category: 'Energy',
-                location: 'MSU-IIT, Iligan City',
-                color: AppColors.golden,
-              ),
-            ),
-          ),
-          // Front card — slight right rotation
-          Transform.rotate(
-            angle: 0.05,
-            child: Transform.translate(
-              offset: const Offset(20, -10),
-              child: const _MockProductCard(
-                name: 'AI Diagnostic Tablet',
-                category: 'Healthcare',
-                location: 'CMU College of Medicine',
-                color: AppColors.crimson,
-              ),
-            ),
-          ),
-          // Center card — upright
-          const _MockProductCard(
-            name: 'Smart Rice Monitor',
-            category: 'Agriculture',
-            location: 'Brgy. Maridagao, Cotabato',
-            color: AppColors.teal,
-            isPrimary: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Animated stat item with counter
-// ═══════════════════════════════════════════════════════════
-class _AnimatedStatItem extends StatelessWidget {
-  final String label;
-  final int targetValue;
-  final String suffix;
-  final Color color;
-  final double progress;
-
-  const _AnimatedStatItem({
-    required this.label,
-    required this.targetValue,
-    required this.suffix,
-    required this.color,
-    required this.progress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final current = (targetValue * progress).round();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$current$suffix',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: color,
-            height: 1,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.55),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Hero button widget
-// ═══════════════════════════════════════════════════════════
-class _HeroButton extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final bool isGolden;
-  final VoidCallback onTap;
-
-  const _HeroButton({
-    required this.label,
-    required this.icon,
-    required this.isGolden,
-    required this.onTap,
-  });
-
-  @override
-  State<_HeroButton> createState() => _HeroButtonState();
-}
-
-class _HeroButtonState extends State<_HeroButton> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    double scale = 1.0;
-    if (_hovered) scale = 1.04;
-    if (_pressed) scale = 0.97;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          scale: scale,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-            decoration: BoxDecoration(
-              gradient: widget.isGolden
-                  ? const LinearGradient(
-                      colors: [AppColors.golden, AppColors.warmEmber],
-                    )
-                  : null,
-              color: widget.isGolden
-                  ? null
-                  : Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: widget.isGolden
-                  ? null
-                  : Border.all(
-                      color: Colors.white
-                          .withValues(alpha: _hovered ? 0.5 : 0.25),
-                      width: 1.5,
-                    ),
-              boxShadow: widget.isGolden && _hovered
-                  ? [
-                      BoxShadow(
-                        color: AppColors.golden.withValues(alpha: 0.45),
-                        blurRadius: 20,
-                        offset: const Offset(0, 6),
-                      )
-                    ]
-                  : [],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  widget.icon,
-                  color: widget.isGolden ? AppColors.navy : Colors.white,
-                  size: 18,
+                // ── Scroll indicator ────────────────────────────────────
+                Positioned(
+                  bottom: 32,
+                  left: 0,
+                  right: 0,
+                  child: _ScrollIndicator(ctrl: _scrollIndicatorCtrl),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: widget.isGolden ? AppColors.navy : Colors.white,
+
+                // ── Bottom fade overlay ─────────────────────────────────
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 120,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          AppColors.deepVoid.withValues(alpha: 0.80),
+                          AppColors.deepVoid,
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _VertDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      color: Colors.white.withValues(alpha: 0.12),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Mock product card (decorative)
-// ═══════════════════════════════════════════════════════════
-class _MockProductCard extends StatelessWidget {
-  final String name;
-  final String category;
-  final String location;
-  final Color color;
-  final bool isPrimary;
-
-  const _MockProductCard({
-    required this.name,
-    required this.category,
-    required this.location,
-    required this.color,
-    this.isPrimary = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: isPrimary ? 240 : 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F1923).withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: isPrimary ? 0.5 : 0.25),
-          width: isPrimary ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: isPrimary ? 0.25 : 0.10),
-            blurRadius: isPrimary ? 30 : 16,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Category color strip
-          Container(
-            height: 4,
-            decoration: BoxDecoration(
-              gradient:
-                  LinearGradient(colors: [color, color.withValues(alpha: 0.3)]),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Icon area
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(Icons.lightbulb_rounded, color: color, size: 22),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            name,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              height: 1.2,
-            ),
-            maxLines: 2,
-          ),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              category,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.location_on_rounded,
-                  size: 11, color: Colors.white38),
-              const SizedBox(width: 3),
-              Expanded(
-                child: Text(
-                  location,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10,
-                    color: Colors.white38,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Floating orb
-// ═══════════════════════════════════════════════════════════
-class _Orb extends StatelessWidget {
-  final double size;
-  final Color color;
-  const _Orb({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: color,
-            blurRadius: size * 0.6,
-            spreadRadius: size * 0.1,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Grid overlay painter
-// ═══════════════════════════════════════════════════════════
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 0.5;
-    const spacing = 40.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter old) => false;
-}
-
-// ═══════════════════════════════════════════════════════════
-// Floating particle dots painter
-// ═══════════════════════════════════════════════════════════
-class _ParticlePainter extends CustomPainter {
-  final double progress;
-  final double parallaxX;
-  final double parallaxY;
-
-  _ParticlePainter({
-    required this.progress,
-    required this.parallaxX,
-    required this.parallaxY,
-  });
-
-  static final _rng = math.Random(42);
-  static final List<_Particle> _particles = List.generate(60, (i) {
-    return _Particle(
-      x: _rng.nextDouble(),
-      y: _rng.nextDouble(),
-      size: 1.0 + _rng.nextDouble() * 2.0,
-      speed: 0.04 + _rng.nextDouble() * 0.06,
-      opacity: 0.08 + _rng.nextDouble() * 0.18,
-      phase: _rng.nextDouble(),
-    );
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (final p in _particles) {
-      final y = (p.y + progress * p.speed) % 1.0;
-      final wobble = math.sin((progress + p.phase) * math.pi * 2) * 0.005;
-      final x = p.x + wobble + parallaxX / size.width * 0.1;
-      final paint = Paint()
-        ..color = Colors.white.withValues(alpha: p.opacity)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(
-        Offset(x * size.width, y * size.height),
-        p.size,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ParticlePainter old) =>
-      old.progress != progress ||
-      old.parallaxX != parallaxX ||
-      old.parallaxY != parallaxY;
-}
-
-class _Particle {
-  final double x;
-  final double y;
-  final double size;
-  final double speed;
-  final double opacity;
-  final double phase;
-
-  const _Particle({
+// ── Particle Data ─────────────────────────────────────────────────────────
+class _ParticleData {
+  final double x, y, size, speed, opacity, phase;
+  const _ParticleData({
     required this.x,
     required this.y,
     required this.size,
@@ -1040,83 +307,588 @@ class _Particle {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
-// Diagonal light streak painter
-// ═══════════════════════════════════════════════════════════
-class _LightStreakPainter extends CustomPainter {
+// ── Particle Painter ──────────────────────────────────────────────────────
+class _ParticlePainter extends CustomPainter {
+  final List<_ParticleData> particles;
   final double progress;
 
-  _LightStreakPainter({required this.progress});
+  const _ParticlePainter({required this.particles, required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Animate a diagonal streak across the canvas
-    final sweepPos = (progress % 1.0);
-    final startX = -200.0 + (size.width + 400) * sweepPos;
-    final paint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          AppColors.golden.withValues(alpha: 0.06),
-          AppColors.warmEmber.withValues(alpha: 0.04),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.4, 0.6, 1.0],
-      ).createShader(Rect.fromLTWH(startX - 80, 0, 160, size.height))
-      ..style = PaintingStyle.fill;
+    for (final p in particles) {
+      final opacity = p.opacity *
+          (0.4 + 0.6 * math.sin(progress * math.pi * 2 * p.speed + p.phase).abs());
+      final paint = Paint()
+        ..color = Colors.white.withValues(alpha: opacity)
+        ..style = PaintingStyle.fill;
 
-    final path = Path()
-      ..moveTo(startX - 80, 0)
-      ..lineTo(startX + 60, 0)
-      ..lineTo(startX + 60 - size.height * 0.6, size.height)
-      ..lineTo(startX - 80 - size.height * 0.6, size.height)
-      ..close();
+      final x = p.x * size.width;
+      final y = (p.y * size.height + progress * size.height * p.speed * 0.1) %
+          size.height;
 
-    canvas.drawPath(path, paint);
+      canvas.drawCircle(Offset(x, y), p.size, paint);
+    }
   }
 
   @override
-  bool shouldRepaint(_LightStreakPainter old) => old.progress != progress;
+  bool shouldRepaint(_ParticlePainter old) => old.progress != progress;
 }
 
-// ═══════════════════════════════════════════════════════════
-// Pulsing ring painter (around floating cards)
-// ═══════════════════════════════════════════════════════════
-class _PulsingRingPainter extends CustomPainter {
+// ── Streak Painter ────────────────────────────────────────────────────────
+class _StreakPainter extends CustomPainter {
   final double progress;
-  final Color color;
-
-  _PulsingRingPainter({required this.progress, required this.color});
+  const _StreakPainter({required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
+    final streaks = [
+      _StreakConfig(startX: 0.15, startY: 0.1, endX: 0.55, endY: 0.6, phase: 0.0),
+      _StreakConfig(startX: 0.60, startY: 0.05, endX: 0.95, endY: 0.55, phase: 0.33),
+      _StreakConfig(startX: 0.05, startY: 0.45, endX: 0.45, endY: 0.95, phase: 0.67),
+    ];
 
-    // Inner ring
-    final innerRadius = 120.0 + progress * 8;
-    final innerPaint = Paint()
-      ..color = color.withValues(alpha: 0.08 + progress * 0.04)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawCircle(center, innerRadius, innerPaint);
+    for (final s in streaks) {
+      final t = ((progress + s.phase) % 1.0);
+      if (t > 0.8) continue;
+      final opacity = (math.sin(t * math.pi)).clamp(0.0, 1.0) * 0.06;
+      final paint = Paint()
+        ..color = AppColors.golden.withValues(alpha: opacity)
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke;
 
-    // Outer ring
-    final outerRadius = 155.0 + progress * 12;
-    final outerPaint = Paint()
-      ..color = color.withValues(alpha: 0.04 + progress * 0.03)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.drawCircle(center, outerRadius, outerPaint);
-
-    // Far ring
-    final farRadius = 190.0 + progress * 16;
-    final farPaint = Paint()
-      ..color = AppColors.teal.withValues(alpha: 0.03 + progress * 0.02)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-    canvas.drawCircle(center, farRadius, farPaint);
+      canvas.drawLine(
+        Offset(s.startX * size.width, s.startY * size.height),
+        Offset(s.endX * size.width, s.endY * size.height),
+        paint,
+      );
+    }
   }
 
   @override
-  bool shouldRepaint(_PulsingRingPainter old) => old.progress != progress;
+  bool shouldRepaint(_StreakPainter old) => old.progress != progress;
+}
+
+class _StreakConfig {
+  final double startX, startY, endX, endY, phase;
+  const _StreakConfig({
+    required this.startX, required this.startY,
+    required this.endX, required this.endY,
+    required this.phase,
+  });
+}
+
+// ── Announcement Badge ────────────────────────────────────────────────────
+class _AnnouncementBadge extends StatelessWidget {
+  final AnimationController pulseCtrl;
+  const _AnnouncementBadge({required this.pulseCtrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: pulseCtrl,
+      builder: (_, __) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.golden.withValues(alpha: 0.09),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: AppColors.golden.withValues(alpha: 0.28),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.golden.withValues(
+                  alpha: 0.08 + 0.06 * pulseCtrl.value,
+                ),
+                blurRadius: 16,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Live pulse dot
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.teal,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.teal.withValues(
+                        alpha: 0.4 + 0.4 * pulseCtrl.value,
+                      ),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              ShaderMask(
+                shaderCallback: (b) => const LinearGradient(
+                  colors: [AppColors.golden, AppColors.warmEmber],
+                ).createShader(b),
+                child: const Text(
+                  '500+ Filipino Innovations Listed',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 10,
+                color: AppColors.golden,
+              ),
+            ],
+          ),
+        );
+      },
+    )
+        .animate()
+        .fadeIn(duration: 600.ms)
+        .slideY(begin: -0.3, end: 0, curve: Curves.easeOutCubic);
+  }
+}
+
+// ── Hero Headline ─────────────────────────────────────────────────────────
+class _HeroHeadline extends StatelessWidget {
+  final bool isDesktop;
+  const _HeroHeadline({required this.isDesktop});
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = isDesktop ? 62.0 : 36.0;
+
+    return Column(
+      children: [
+        Text(
+          'Connecting',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: fontSize,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+            height: 1.1,
+            letterSpacing: -2,
+          ),
+        )
+            .animate(delay: 200.ms)
+            .fadeIn(duration: 500.ms)
+            .slideY(begin: 0.3, end: 0),
+
+        // "Innovators" — golden gradient
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AppColors.golden, AppColors.warmEmber, AppColors.golden],
+            stops: [0.0, 0.5, 1.0],
+          ).createShader(bounds),
+          child: Text(
+            'Innovators',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: fontSize,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              height: 1.1,
+              letterSpacing: -2,
+            ),
+          ),
+        )
+            .animate(delay: 350.ms)
+            .fadeIn(duration: 500.ms)
+            .slideY(begin: 0.3, end: 0)
+            .shimmer(delay: 1200.ms, duration: 1500.ms, color: Colors.white.withValues(alpha: 0.3)),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'with ',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: fontSize,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.1,
+                letterSpacing: -2,
+              ),
+            ),
+            // "Opportunities" — teal gradient
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [AppColors.teal, AppColors.sky],
+              ).createShader(bounds),
+              child: Text(
+                'Opportunities',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  height: 1.1,
+                  letterSpacing: -2,
+                ),
+              ),
+            ),
+          ],
+        )
+            .animate(delay: 500.ms)
+            .fadeIn(duration: 500.ms)
+            .slideY(begin: 0.3, end: 0),
+      ],
+    );
+  }
+}
+
+// ── CTA Buttons ───────────────────────────────────────────────────────────
+class _CtaButtons extends StatelessWidget {
+  final bool isDesktop;
+  const _CtaButtons({required this.isDesktop});
+
+  @override
+  Widget build(BuildContext context) {
+    final buttons = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Primary: Explore Innovations
+        _PrimaryButton(
+          label: 'Explore Innovations',
+          icon: Icons.explore_rounded,
+          onTap: () => context.go('/marketplace'),
+        ),
+        const SizedBox(width: 14),
+        // Secondary: Join as Innovator
+        _SecondaryButton(
+          label: 'Join as Innovator',
+          icon: Icons.lightbulb_rounded,
+          onTap: () => context.go('/signup'),
+        ),
+      ],
+    );
+
+    return (isDesktop
+        ? buttons
+        : Column(
+            children: [
+              _PrimaryButton(
+                label: 'Explore Innovations',
+                icon: Icons.explore_rounded,
+                onTap: () => context.go('/marketplace'),
+              ),
+              const SizedBox(height: 12),
+              _SecondaryButton(
+                label: 'Join as Innovator',
+                icon: Icons.lightbulb_rounded,
+                onTap: () => context.go('/signup'),
+              ),
+            ],
+          ))
+        .animate(delay: 700.ms)
+        .fadeIn(duration: 600.ms)
+        .slideY(begin: 0.25, end: 0);
+  }
+}
+
+class _PrimaryButton extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _PrimaryButton({required this.label, required this.icon, required this.onTap});
+
+  @override
+  State<_PrimaryButton> createState() => _PrimaryButtonState();
+}
+
+class _PrimaryButtonState extends State<_PrimaryButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _hovered ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.golden, AppColors.warmEmber],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.golden.withValues(alpha: _hovered ? 0.55 : 0.25),
+                  blurRadius: _hovered ? 30 : 14,
+                  offset: const Offset(0, 6),
+                  spreadRadius: _hovered ? 4 : 0,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(widget.icon, size: 18, color: AppColors.navy),
+                const SizedBox(width: 10),
+                Text(
+                  widget.label,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.navy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryButton extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _SecondaryButton({required this.label, required this.icon, required this.onTap});
+
+  @override
+  State<_SecondaryButton> createState() => _SecondaryButtonState();
+}
+
+class _SecondaryButtonState extends State<_SecondaryButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _hovered ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
+                decoration: BoxDecoration(
+                  color: _hovered
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _hovered
+                        ? Colors.white.withValues(alpha: 0.40)
+                        : Colors.white.withValues(alpha: 0.18),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(widget.icon, size: 18, color: Colors.white.withValues(alpha: 0.80)),
+                    const SizedBox(width: 10),
+                    Text(
+                      widget.label,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.90),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Stats Row ─────────────────────────────────────────────────────────────
+class _StatsRow extends StatelessWidget {
+  final bool isDesktop;
+  final AnimationController pulseCtrl;
+  const _StatsRow({required this.isDesktop, required this.pulseCtrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 32 : 20,
+            vertical: 14,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
+          ),
+          child: isDesktop
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _buildStatItems(),
+                )
+              : Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 0,
+                  runSpacing: 8,
+                  children: _buildStatItems(),
+                ),
+        ),
+      ),
+    )
+        .animate(delay: 1000.ms)
+        .fadeIn(duration: 600.ms)
+        .slideY(begin: 0.2, end: 0);
+  }
+
+  List<Widget> _buildStatItems() {
+    final items = [
+      ('500+', 'Innovations', AppColors.golden),
+      ('200+', 'Innovators', AppColors.teal),
+      ('15+', 'Universities', AppColors.sky),
+    ];
+
+    final result = <Widget>[];
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      result.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              ShaderMask(
+                shaderCallback: (b) => LinearGradient(
+                  colors: [item.$3, item.$3.withValues(alpha: 0.7)],
+                ).createShader(b),
+                child: Text(
+                  item.$1,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              Text(
+                item.$2,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (i < items.length - 1) {
+        result.add(
+          Container(
+            width: 1,
+            height: 40,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+        );
+      }
+    }
+    return result;
+  }
+}
+
+// ── Scroll Indicator ──────────────────────────────────────────────────────
+class _ScrollIndicator extends StatelessWidget {
+  final AnimationController ctrl;
+  const _ScrollIndicator({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: ctrl,
+      builder: (_, __) {
+        return Column(
+          children: [
+            Text(
+              'Scroll to explore',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.30),
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Transform.translate(
+              offset: Offset(0, ctrl.value * 8),
+              child: Opacity(
+                opacity: 0.4 + ctrl.value * 0.4,
+                child: Container(
+                  width: 28,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 100),
+                      width: 4,
+                      height: 10,
+                      margin: EdgeInsets.only(top: ctrl.value * 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.golden.withValues(alpha: 0.70),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    )
+        .animate(delay: 1400.ms)
+        .fadeIn(duration: 700.ms);
+  }
 }

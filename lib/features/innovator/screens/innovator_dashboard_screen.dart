@@ -149,7 +149,7 @@ class _InnovatorSidebar extends ConsumerWidget {
                 colors: [AppColors.golden, AppColors.warmEmber],
               ).createShader(bounds),
               child: const Text(
-                'HIRAYA',
+                'Digital Platform',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 18,
@@ -172,7 +172,6 @@ class _InnovatorSidebar extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-<<<<<<< HEAD
                   Container(
                     width: 36, height: 36,
                     decoration: BoxDecoration(
@@ -185,14 +184,6 @@ class _InnovatorSidebar extends ConsumerWidget {
                         style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                     ),
-=======
-                  UserAvatar(
-                    name:         user.firstName,
-                    avatarBase64: user.avatarBase64,
-                    radius:       18,
-                    backgroundColor: AppColors.teal.withValues(alpha: 0.2),
-                    foregroundColor: AppColors.teal,
->>>>>>> origin/master
                   ),
                   const SizedBox(width: 10),
                   Expanded(

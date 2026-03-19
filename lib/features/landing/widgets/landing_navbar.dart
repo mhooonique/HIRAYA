@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LandingNavbar — Premium: frosted glass, magnetic hover, shimmer CTA,
-// staggered dropdown, scroll-progress glow bar, mobile slide drawer.
+// LandingNavbar — Complete redesign: glassmorphic frosted glass, golden shimmer
+// logo "Digital Platform", scroll-progress bar at bottom, animated categories
+// dropdown (list with colored left borders), mobile slide drawer.
+// Brand display name: "Digital Platform" (internal code name: HIRAYA unchanged).
 // ─────────────────────────────────────────────────────────────────────────────
 
 class LandingNavbar extends StatefulWidget {
@@ -78,7 +80,6 @@ class _LandingNavbarState extends State<LandingNavbar>
         },
         onAboutTap: widget.onAboutTap,
       ),
-<<<<<<< HEAD
     );
     overlay.insert(entry);
     _mobileDrawerOverlay = entry;
@@ -87,60 +88,57 @@ class _LandingNavbarState extends State<LandingNavbar>
   @override
   Widget build(BuildContext context) {
     final isScrolled = widget.scrollOffset > 50;
-    final isMobile = MediaQuery.of(context).size.width <= 768;
+    final width = MediaQuery.of(context).size.width;
+    final isMobile = width <= 900;
+    final isCompactDesktop = !isMobile && width < 1220;
+    final horizontalPad = isMobile ? 16.0 : (isCompactDesktop ? 24.0 : 32.0);
 
-    final navBody = SizedBox(
-      height: 70,
+    final navContent = SizedBox(
+      height: 68,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32),
+        padding: EdgeInsets.symmetric(horizontal: horizontalPad),
         child: Row(
           children: [
             _AnimatedLogo(shimmerCtrl: _shimmerCtrl, isMobile: isMobile),
             const Spacer(),
             if (!isMobile) ...[
-              _NavLink(
-=======
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _NavLink(label: 'Home', onTap: () => context.go('/'))
+                      .animate(delay: 100.ms)
+                      .fadeIn(duration: 350.ms)
+                      .slideX(begin: 0.15, end: 0, curve: Curves.easeOutCubic),
+                  _NavLink(
+                    label: 'Marketplace',
+                    onTap: () => context.go('/marketplace'),
+                  )
+                      .animate(delay: 200.ms)
+                      .fadeIn(duration: 350.ms)
+                      .slideX(begin: 0.15, end: 0, curve: Curves.easeOutCubic),
+                  _CategoriesDropdown(onCategoriesTap: widget.onCategoriesTap)
+                      .animate(delay: 300.ms)
+                      .fadeIn(duration: 350.ms)
+                      .slideX(begin: 0.15, end: 0, curve: Curves.easeOutCubic),
+                  if (!isCompactDesktop)
+                    _NavLink(
+                      label: 'About',
+                      onTap: widget.onAboutTap ?? () => context.go('/'),
+                    )
+                        .animate(delay: 400.ms)
+                        .fadeIn(duration: 350.ms)
+                        .slideX(begin: 0.15, end: 0, curve: Curves.easeOutCubic),
+                ],
               ),
-              const SizedBox(height: 24),
-              Row(children: [
-                Image.asset('assets/images/logo/final-logo.png', height: 32),
-                const SizedBox(width: 10),
-                const Text('DIGITAL PLATFORM', style: TextStyle(
-                  fontFamily: 'Poppins', color: Colors.white,
-                  fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 2,
-                )),
-              ]),
-              const SizedBox(height: 24),
-              const Divider(color: Colors.white10),
-              const SizedBox(height: 8),
-              _MobileMenuItem(
-                icon: Icons.storefront_rounded,
->>>>>>> origin/master
-                label: 'Marketplace',
-                onTap: () => context.go('/marketplace'),
-                showDot: true,
-              ),
-              _NavLink(
-                label: 'About',
-                onTap: widget.onAboutTap ?? () => context.go('/'),
-              ),
-              _CategoriesDropdown(onCategoriesTap: widget.onCategoriesTap),
-              const SizedBox(width: 16),
-              _SignInButton(onTap: () => context.go('/login')),
-              const SizedBox(width: 8),
-              _CTAButton(onTap: () => context.go('/signup')),
+              SizedBox(width: isCompactDesktop ? 8 : 20),
+              if (!isCompactDesktop)
+                _LoginButton(onTap: () => context.go('/login'))
+                    .animate(delay: 500.ms)
+                    .fadeIn(duration: 300.ms),
+              if (!isCompactDesktop) const SizedBox(width: 10),
+              _GetStartedButton(onTap: () => context.go('/signup'))
+                  .animate(delay: 600.ms)
+                  .fadeIn(duration: 300.ms),
             ] else
               _HamburgerButton(onTap: () => _openMobileDrawer(context)),
           ],
@@ -148,24 +146,29 @@ class _LandingNavbarState extends State<LandingNavbar>
       ),
     );
 
+    final blurredNav = isScrolled
+        ? ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: navContent,
+            ),
+          )
+        : navContent;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ── Scroll progress bar ────────────────────────────────
-        _ScrollProgressBar(controller: _progressCtrl),
-
-        // ── Main navbar ────────────────────────────────────────
         AnimatedContainer(
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
             color: isScrolled
-                ? AppColors.deepVoid.withValues(alpha: 0.88)
+                ? const Color(0xFF050A12).withValues(alpha: 0.92)
                 : Colors.transparent,
             border: isScrolled
                 ? Border(
                     bottom: BorderSide(
-                      color: AppColors.golden.withValues(alpha: 0.12),
+                      color: Colors.white.withValues(alpha: 0.08),
                       width: 1,
                     ),
                   )
@@ -173,34 +176,19 @@ class _LandingNavbarState extends State<LandingNavbar>
             boxShadow: isScrolled
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.30),
-                      blurRadius: 20,
-                    ),
-                    BoxShadow(
-                      color: AppColors.golden.withValues(alpha: 0.04),
-                      blurRadius: 40,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 24,
                     ),
                   ]
                 : [],
           ),
-          child: isScrolled
-              ? ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                    child: navBody,
-                  ),
-                )
-              : navBody,
+          child: blurredNav,
         ),
+        _ScrollProgressBar(controller: _progressCtrl),
       ],
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Scroll progress bar with animated shimmer at leading edge
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ScrollProgressBar extends StatelessWidget {
   final AnimationController controller;
@@ -212,31 +200,39 @@ class _ScrollProgressBar extends StatelessWidget {
       animation: controller,
       builder: (_, __) => LayoutBuilder(
         builder: (context, constraints) {
-          final fillWidth = constraints.maxWidth * controller.value;
+          final fallbackWidth = MediaQuery.sizeOf(context).width;
+          final maxWidth = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : fallbackWidth;
+          final safeWidth = maxWidth > 0 ? maxWidth : 0.0;
+          final fillWidth = safeWidth * controller.value;
+          final glowLeft = (fillWidth - 16).clamp(
+            0.0,
+            safeWidth > 16 ? safeWidth - 16 : 0.0,
+          );
+
+          if (safeWidth <= 0) {
+            return const SizedBox(height: 2);
+          }
+
           return SizedBox(
+            width: safeWidth,
             height: 2,
             child: Stack(
               children: [
-                // Track
                 Container(color: Colors.white.withValues(alpha: 0.04)),
-                // Fill
                 Container(
                   width: fillWidth,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        AppColors.golden,
-                        AppColors.warmEmber,
-                        AppColors.golden,
-                      ],
+                      colors: [AppColors.golden, AppColors.warmEmber, AppColors.golden],
                       stops: [0.0, 0.5, 1.0],
                     ),
                   ),
                 ),
-                // Shimmer glow dot at leading edge
                 if (controller.value > 0.01)
                   Positioned(
-                    left: (fillWidth - 16).clamp(0.0, constraints.maxWidth),
+                    left: glowLeft,
                     top: -4,
                     child: Container(
                       width: 16,
@@ -260,10 +256,6 @@ class _ScrollProgressBar extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Animated Logo — one-shot shimmer + hover glow + tap bounce
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _AnimatedLogo extends StatefulWidget {
   final AnimationController shimmerCtrl;
   final bool isMobile;
@@ -276,22 +268,28 @@ class _AnimatedLogo extends StatefulWidget {
 class _AnimatedLogoState extends State<_AnimatedLogo>
     with SingleTickerProviderStateMixin {
   bool _hovered = false;
-  late AnimationController _glowCtrl;
-  late Animation<double> _glowAnim;
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulseScale;
+  late Animation<double> _pulseOpacity;
 
   @override
   void initState() {
     super.initState();
-    _glowCtrl = AnimationController(
+    _pulseCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-    _glowAnim = CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut);
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+    _pulseScale = Tween<double>(begin: 1.0, end: 2.4).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
+    );
+    _pulseOpacity = Tween<double>(begin: 0.80, end: 0.0).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
+    );
   }
 
   @override
   void dispose() {
-    _glowCtrl.dispose();
+    _pulseCtrl.dispose();
     super.dispose();
   }
 
@@ -303,86 +301,118 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: () => context.go('/'),
-        child: AnimatedBuilder(
-          animation: Listenable.merge([widget.shimmerCtrl, _glowAnim]),
-          builder: (_, __) {
-            final t = widget.shimmerCtrl.value;
-            final g = _glowAnim.value;
-            return Row(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: _hovered ? 1.06 : 1.0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutBack,
+              child: Image.asset(
+                'assets/images/logo/final-logo.png',
+                height: widget.isMobile ? 30 : 36,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Row(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo image with hover glow ring
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutBack,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: _hovered
-                        ? [
-                            BoxShadow(
-                              color: AppColors.golden.withValues(
-                                  alpha: (0.30 + g * 0.25)),
-                              blurRadius: 20 + g * 10,
-                              spreadRadius: 2,
+                AnimatedBuilder(
+                  animation: widget.shimmerCtrl,
+                  builder: (_, __) {
+                    final t = widget.shimmerCtrl.value;
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ShaderMask(
+                          shaderCallback: (bounds) => LinearGradient(
+                            begin: Alignment(-1.5 + t * 3.5, 0),
+                            end: Alignment(-0.2 + t * 3.5, 0),
+                            colors: const [
+                              AppColors.golden,
+                              AppColors.goldSheen,
+                              Color(0xFFFFEF90),
+                              AppColors.warmEmber,
+                              AppColors.golden,
+                            ],
+                            stops: const [0.0, 0.25, 0.50, 0.75, 1.0],
+                          ).createShader(bounds),
+                          child: Text(
+                            'Digital',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.white,
+                              fontSize: widget.isMobile ? 16 : 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
                             ),
-                          ]
-                        : [],
-                  ),
-                  child: AnimatedScale(
-                    scale: _hovered ? 1.08 : 1.0,
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutBack,
-                    child: Image.asset(
-                      'assets/images/logo/final-logo.png',
-                      height: widget.isMobile ? 32 : 38,
-                    ),
-                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Platform',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Colors.white,
+                            fontSize: widget.isMobile ? 16 : 20,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(width: 8),
-                // Wordmark with shimmer sweep
-                ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
-                    begin: Alignment(-1.5 + t * 3, 0),
-                    end: Alignment(-0.5 + t * 3, 0),
-                    colors: const [
-                      AppColors.golden,
-                      AppColors.goldSheen,
-                      Color(0xFFFFEF80),
-                      AppColors.golden,
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AnimatedBuilder(
+                        animation: _pulseCtrl,
+                        builder: (_, __) => Transform.scale(
+                          scale: _pulseScale.value,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.golden
+                                  .withValues(alpha: _pulseOpacity.value),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.golden,
+                        ),
+                      ),
                     ],
-                    stops: const [0.0, 0.35, 0.50, 1.0],
-                  ).createShader(bounds),
-                  child: AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 200),
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: Colors.white,
-                      fontSize: widget.isMobile ? 18 : 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 3,
-                    ),
-                    child: const Text('HIRAYA'),
                   ),
                 ),
               ],
-            );
-          },
-        ),
+            ),
+          ],
+        )
+            .animate()
+            .fadeIn(duration: 500.ms, curve: Curves.easeOutCubic)
+            .slideX(begin: -0.3, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Nav link — pill hover bg + sliding underline + text animation
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _NavLink extends StatefulWidget {
   final String label;
   final VoidCallback? onTap;
-  final bool showDot;
-  const _NavLink({required this.label, this.onTap, this.showDot = false});
+  const _NavLink({required this.label, this.onTap});
 
   @override
   State<_NavLink> createState() => _NavLinkState();
@@ -401,10 +431,7 @@ class _NavLinkState extends State<_NavLink>
       vsync: this,
       duration: const Duration(milliseconds: 240),
     );
-    _underlineAnim = CurvedAnimation(
-      parent: _underlineCtrl,
-      curve: Curves.easeOutCubic,
-    );
+    _underlineAnim = CurvedAnimation(parent: _underlineCtrl, curve: Curves.easeOutCubic);
   }
 
   @override
@@ -413,94 +440,60 @@ class _NavLinkState extends State<_NavLink>
     super.dispose();
   }
 
-  void _onEnter(_) {
-    setState(() => _hovered = true);
-    _underlineCtrl.forward();
-  }
-
-  void _onExit(_) {
-    setState(() => _hovered = false);
-    _underlineCtrl.reverse();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: _onEnter,
-      onExit: _onExit,
+      onEnter: (_) {
+        setState(() => _hovered = true);
+        _underlineCtrl.forward();
+      },
+      onExit: (_) {
+        setState(() => _hovered = false);
+        _underlineCtrl.reverse();
+      },
       child: GestureDetector(
         onTap: widget.onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: _hovered
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: _hovered
-                    ? Colors.white.withValues(alpha: 0.09)
-                    : Colors.transparent,
-                width: 1,
-              ),
-            ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Label + dot
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 180),
-                      style: TextStyle(
-                        color: _hovered
-                            ? AppColors.golden
-                            : Colors.white.withValues(alpha: 0.80),
-                        fontFamily: 'Poppins',
-                        fontWeight:
-                            _hovered ? FontWeight.w600 : FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                      child: Text(widget.label),
-                    ),
-                    if (widget.showDot)
-                      Positioned(
-                        top: -3,
-                        right: -8,
-                        child: _PulsingDot(),
-                      ),
-                  ],
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 180),
+                  style: TextStyle(
+                    color: _hovered ? Colors.white : Colors.white.withValues(alpha: 0.70),
+                    fontFamily: 'Poppins',
+                    fontWeight: _hovered ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                  child: Text(widget.label),
                 ),
                 const SizedBox(height: 3),
-                // Sliding underline
                 AnimatedBuilder(
                   animation: _underlineAnim,
-                  builder: (_, __) => Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      height: 2,
-                      width: _underlineAnim.value * 52,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.golden, AppColors.warmEmber],
-                        ),
-                        borderRadius: BorderRadius.circular(1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.golden.withValues(alpha: 0.55),
-                            blurRadius: 5,
+                  builder: (_, __) {
+                    final maxW = (widget.label.length * 8.4).clamp(30.0, 120.0);
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        height: 2,
+                        width: _underlineAnim.value * maxW,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.golden, AppColors.warmEmber],
                           ),
-                        ],
+                          borderRadius: BorderRadius.circular(1),
+                          boxShadow: _hovered
+                              ? [BoxShadow(color: AppColors.golden.withValues(alpha: 0.55), blurRadius: 5)]
+                              : [],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -511,91 +504,15 @@ class _NavLinkState extends State<_NavLink>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pulsing red dot for Marketplace link
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _PulsingDot extends StatefulWidget {
-  @override
-  State<_PulsingDot> createState() => _PulsingDotState();
-}
-
-class _PulsingDotState extends State<_PulsingDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-  late Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-    _scale = Tween<double>(begin: 1.0, end: 2.2).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
-    _opacity = Tween<double>(begin: 0.8, end: 0.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 10,
-      height: 10,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: _ctrl,
-            builder: (_, __) => Transform.scale(
-              scale: _scale.value,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.crimson.withValues(alpha: _opacity.value),
-                ),
-              ),
-            ),
-          ),
-          Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.crimson,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sign In button — border outline → golden fill on hover
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _SignInButton extends StatefulWidget {
+class _LoginButton extends StatefulWidget {
   final VoidCallback onTap;
-  const _SignInButton({required this.onTap});
+  const _LoginButton({required this.onTap});
 
   @override
-  State<_SignInButton> createState() => _SignInButtonState();
+  State<_LoginButton> createState() => _LoginButtonState();
 }
 
-class _SignInButtonState extends State<_SignInButton> {
+class _LoginButtonState extends State<_LoginButton> {
   bool _hovered = false;
 
   @override
@@ -611,34 +528,25 @@ class _SignInButtonState extends State<_SignInButton> {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
-            color: _hovered
-                ? AppColors.golden.withValues(alpha: 0.12)
-                : Colors.transparent,
+            color: _hovered ? AppColors.teal.withValues(alpha: 0.10) : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
             border: Border.all(
-              color: _hovered
-                  ? AppColors.golden
-                  : Colors.white.withValues(alpha: 0.30),
+              color: _hovered ? AppColors.teal : AppColors.teal.withValues(alpha: 0.60),
               width: 1.5,
             ),
             boxShadow: _hovered
-                ? [
-                    BoxShadow(
-                      color: AppColors.golden.withValues(alpha: 0.20),
-                      blurRadius: 14,
-                    ),
-                  ]
+                ? [BoxShadow(color: AppColors.teal.withValues(alpha: 0.22), blurRadius: 14)]
                 : [],
           ),
           child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 220),
+            duration: const Duration(milliseconds: 200),
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
               fontSize: 14,
-              color: _hovered ? AppColors.golden : Colors.white,
+              color: _hovered ? Colors.white : Colors.white.withValues(alpha: 0.85),
             ),
-            child: const Text('Sign In'),
+            child: const Text('Login'),
           ),
         ),
       ),
@@ -646,19 +554,15 @@ class _SignInButtonState extends State<_SignInButton> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Get Started CTA — pulsing glow + shimmer sweep on hover
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _CTAButton extends StatefulWidget {
+class _GetStartedButton extends StatefulWidget {
   final VoidCallback onTap;
-  const _CTAButton({required this.onTap});
+  const _GetStartedButton({required this.onTap});
 
   @override
-  State<_CTAButton> createState() => _CTAButtonState();
+  State<_GetStartedButton> createState() => _GetStartedButtonState();
 }
 
-class _CTAButtonState extends State<_CTAButton>
+class _GetStartedButtonState extends State<_GetStartedButton>
     with TickerProviderStateMixin {
   bool _hovered = false;
   late AnimationController _glowCtrl;
@@ -669,16 +573,10 @@ class _CTAButtonState extends State<_CTAButton>
   @override
   void initState() {
     super.initState();
-    _glowCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..repeat(reverse: true);
+    _glowCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))
+      ..repeat(reverse: true);
     _glowAnim = CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut);
-
-    _shimmerCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
+    _shimmerCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
     _shimmerAnim = CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOut);
   }
 
@@ -689,44 +587,41 @@ class _CTAButtonState extends State<_CTAButton>
     super.dispose();
   }
 
-  void _onEnter(_) {
-    setState(() => _hovered = true);
-    _shimmerCtrl.forward(from: 0);
-  }
-
-  void _onExit(_) {
-    setState(() => _hovered = false);
-    _shimmerCtrl.reverse();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: _onEnter,
-      onExit: _onExit,
+      onEnter: (_) {
+        setState(() => _hovered = true);
+        _shimmerCtrl.forward(from: 0);
+      },
+      onExit: (_) {
+        setState(() => _hovered = false);
+        _shimmerCtrl.reverse();
+      },
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedBuilder(
           animation: Listenable.merge([_glowAnim, _shimmerAnim]),
           builder: (_, child) {
-            final glowStrength = 0.25 + _glowAnim.value * 0.35;
+            final baseGlow = 0.22 + _glowAnim.value * 0.28;
             return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 220),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.golden, AppColors.warmEmber],
-                ),
+                gradient: const LinearGradient(colors: [AppColors.golden, AppColors.warmEmber]),
                 borderRadius: BorderRadius.circular(9),
+                border: _hovered
+                    ? Border.all(color: AppColors.teal.withValues(alpha: 0.70), width: 1.5)
+                    : null,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.golden.withValues(alpha: glowStrength),
-                    blurRadius: _hovered
-                        ? 26
-                        : 12 + _glowAnim.value * 8,
+                    color: AppColors.golden.withValues(alpha: _hovered ? 0.45 : baseGlow),
+                    blurRadius: _hovered ? 28 : 12 + _glowAnim.value * 8,
                     spreadRadius: _hovered ? 2 : 0,
                   ),
+                  if (_hovered)
+                    BoxShadow(color: AppColors.teal.withValues(alpha: 0.30), blurRadius: 20, spreadRadius: 1),
                 ],
               ),
               child: ClipRRect(
@@ -734,20 +629,16 @@ class _CTAButtonState extends State<_CTAButton>
                 child: Stack(
                   children: [
                     child!,
-                    // Shimmer sweep overlay
                     Positioned.fill(
                       child: Transform.translate(
-                        offset: Offset(
-                          -80 + _shimmerAnim.value * (80 + 160),
-                          0,
-                        ),
+                        offset: Offset(-80 + _shimmerAnim.value * 260, 0),
                         child: Container(
                           width: 60,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
                                 Colors.white.withValues(alpha: 0.0),
-                                Colors.white.withValues(alpha: 0.25),
+                                Colors.white.withValues(alpha: 0.28),
                                 Colors.white.withValues(alpha: 0.0),
                               ],
                               stops: const [0.0, 0.5, 1.0],
@@ -763,22 +654,13 @@ class _CTAButtonState extends State<_CTAButton>
           },
           child: const Text(
             'Get Started',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: AppColors.navy,
-            ),
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.navy),
           ),
         ),
       ),
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Hamburger button — animated lines
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _HamburgerButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -804,24 +686,18 @@ class _HamburgerButtonState extends State<_HamburgerButton> {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: _hovered
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.transparent,
+            color: _hovered ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: _hovered
-                  ? Colors.white.withValues(alpha: 0.15)
-                  : Colors.transparent,
-            ),
+            border: Border.all(color: _hovered ? Colors.white.withValues(alpha: 0.15) : Colors.transparent),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _MenuLine(hovered: _hovered, offset: -1),
+              _MenuLine(hovered: _hovered, shorter: false),
               const SizedBox(height: 5),
-              _MenuLine(hovered: _hovered, offset: 0, shorter: true),
+              _MenuLine(hovered: _hovered, shorter: true),
               const SizedBox(height: 5),
-              _MenuLine(hovered: _hovered, offset: 1),
+              _MenuLine(hovered: _hovered, shorter: false),
             ],
           ),
         ),
@@ -832,13 +708,8 @@ class _HamburgerButtonState extends State<_HamburgerButton> {
 
 class _MenuLine extends StatelessWidget {
   final bool hovered;
-  final double offset;
   final bool shorter;
-  const _MenuLine({
-    required this.hovered,
-    required this.offset,
-    this.shorter = false,
-  });
+  const _MenuLine({required this.hovered, required this.shorter});
 
   @override
   Widget build(BuildContext context) {
@@ -846,12 +717,7 @@ class _MenuLine extends StatelessWidget {
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       height: 2,
-      width: hovered
-          ? (shorter ? 14 : 20)
-          : (shorter ? 16 : 22),
-      margin: EdgeInsets.only(
-        left: hovered ? (offset.abs() * 4) : 0,
-      ),
+      width: hovered ? (shorter ? 14 : 20) : (shorter ? 16 : 22),
       decoration: BoxDecoration(
         color: hovered ? AppColors.golden : Colors.white.withValues(alpha: 0.80),
         borderRadius: BorderRadius.circular(2),
@@ -859,10 +725,6 @@ class _MenuLine extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Categories dropdown
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _CategoriesDropdown extends StatefulWidget {
   final VoidCallback? onCategoriesTap;
@@ -879,56 +741,20 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
   late AnimationController _dropdownCtrl;
   late Animation<double> _dropdownAnim;
 
-  static const _categories = [
-    {
-      'label': 'Agriculture',
-      'icon': Icons.grass_rounded,
-      'count': '87',
-      'color': AppColors.teal,
-    },
-    {
-      'label': 'Healthcare',
-      'icon': Icons.medical_services_rounded,
-      'count': '64',
-      'color': AppColors.crimson,
-    },
-    {
-      'label': 'Energy',
-      'icon': Icons.bolt_rounded,
-      'count': '52',
-      'color': AppColors.golden,
-    },
-    {
-      'label': 'Construction',
-      'icon': Icons.foundation_rounded,
-      'count': '41',
-      'color': AppColors.navy,
-    },
-    {
-      'label': 'Product Design',
-      'icon': Icons.design_services_rounded,
-      'count': '78',
-      'color': AppColors.sky,
-    },
-    {
-      'label': 'Information Technology',
-      'icon': Icons.computer_rounded,
-      'count': '93',
-      'color': Color(0xFF4B8EF0),
-    },
+  static const List<Map<String, dynamic>> _categories = [
+    {'label': 'Agriculture', 'icon': Icons.grass_rounded, 'color': AppColors.teal},
+    {'label': 'Healthcare', 'icon': Icons.medical_services_rounded, 'color': AppColors.crimson},
+    {'label': 'Energy', 'icon': Icons.bolt_rounded, 'color': AppColors.golden},
+    {'label': 'Construction', 'icon': Icons.foundation_rounded, 'color': AppColors.navy},
+    {'label': 'Product Design', 'icon': Icons.design_services_rounded, 'color': AppColors.sky},
+    {'label': 'Information Technology', 'icon': Icons.computer_rounded, 'color': Color(0xFF1B4B8A)},
   ];
 
   @override
   void initState() {
     super.initState();
-    _dropdownCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 280),
-    );
-    _dropdownAnim = CurvedAnimation(
-      parent: _dropdownCtrl,
-      curve: Curves.easeOutCubic,
-    );
+    _dropdownCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _dropdownAnim = CurvedAnimation(parent: _dropdownCtrl, curve: Curves.easeOutCubic);
   }
 
   @override
@@ -949,12 +775,9 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
       return;
     }
     widget.onCategoriesTap?.call();
-
     final RenderBox button = context.findRenderObject()! as RenderBox;
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject()! as RenderBox;
-    final buttonOffset =
-        button.localToGlobal(Offset.zero, ancestor: overlay);
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final buttonOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     final buttonSize = button.size;
 
     _overlayEntry = OverlayEntry(
@@ -968,8 +791,8 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
             ),
           ),
           Positioned(
-            top: buttonOffset.dy + buttonSize.height + 8,
-            left: buttonOffset.dx - 80,
+            top: buttonOffset.dy + buttonSize.height + 6,
+            left: buttonOffset.dx - 60,
             child: _CategoryDropdownPanel(
               animation: _dropdownAnim,
               categories: _categories,
@@ -986,7 +809,6 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
         ],
       ),
     );
-
     Overlay.of(context).insert(_overlayEntry!);
     _dropdownCtrl.forward(from: 0);
     setState(() {});
@@ -1011,22 +833,8 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
         onTap: () => _openDropdown(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: (_hovered || _isOpen)
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: (_hovered || _isOpen)
-                    ? Colors.white.withValues(alpha: 0.09)
-                    : Colors.transparent,
-                width: 1,
-              ),
-            ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1037,13 +845,9 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
                     AnimatedDefaultTextStyle(
                       duration: const Duration(milliseconds: 180),
                       style: TextStyle(
-                        color: (_hovered || _isOpen)
-                            ? AppColors.golden
-                            : Colors.white.withValues(alpha: 0.80),
+                        color: (_hovered || _isOpen) ? Colors.white : Colors.white.withValues(alpha: 0.70),
                         fontFamily: 'Poppins',
-                        fontWeight: (_hovered || _isOpen)
-                            ? FontWeight.w600
-                            : FontWeight.w500,
+                        fontWeight: (_hovered || _isOpen) ? FontWeight.w600 : FontWeight.w500,
                         fontSize: 14,
                       ),
                       child: const Text('Categories'),
@@ -1051,35 +855,26 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
                     const SizedBox(width: 4),
                     AnimatedRotation(
                       turns: _isOpen ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 250),
+                      duration: const Duration(milliseconds: 260),
                       curve: Curves.easeOutCubic,
                       child: Icon(
                         Icons.keyboard_arrow_down_rounded,
                         size: 16,
-                        color: (_hovered || _isOpen)
-                            ? AppColors.golden
-                            : Colors.white.withValues(alpha: 0.60),
+                        color: (_hovered || _isOpen) ? Colors.white : Colors.white.withValues(alpha: 0.55),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 3),
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 220),
                   height: 2,
-                  width: (_hovered || _isOpen) ? 64 : 0,
+                  width: (_hovered || _isOpen) ? 72 : 0,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.golden, AppColors.warmEmber],
-                    ),
+                    gradient: const LinearGradient(colors: [AppColors.golden, AppColors.warmEmber]),
                     borderRadius: BorderRadius.circular(1),
                     boxShadow: (_hovered || _isOpen)
-                        ? [
-                            BoxShadow(
-                              color: AppColors.golden.withValues(alpha: 0.55),
-                              blurRadius: 5,
-                            ),
-                          ]
+                        ? [BoxShadow(color: AppColors.golden.withValues(alpha: 0.55), blurRadius: 5)]
                         : [],
                   ),
                 ),
@@ -1091,10 +886,6 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Categories dropdown panel — glassmorphism dark bg, staggered item entrance
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _CategoryDropdownPanel extends StatelessWidget {
   final Animation<double> animation;
@@ -1116,31 +907,21 @@ class _CategoryDropdownPanel extends StatelessWidget {
       builder: (_, child) => Opacity(
         opacity: animation.value,
         child: Transform.translate(
-          offset: Offset(0, -14 * (1 - animation.value)),
+          offset: Offset(0, -16 * (1 - animation.value)),
           child: child,
         ),
       ),
       child: Material(
         color: Colors.transparent,
         child: Container(
-          width: 400,
+          width: 320,
           decoration: BoxDecoration(
             color: const Color(0xFF080F1A).withValues(alpha: 0.97),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: AppColors.golden.withValues(alpha: 0.15),
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.golden.withValues(alpha: 0.14)),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.60),
-                blurRadius: 40,
-                offset: const Offset(0, 12),
-              ),
-              BoxShadow(
-                color: AppColors.golden.withValues(alpha: 0.05),
-                blurRadius: 60,
-              ),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.65), blurRadius: 44, offset: const Offset(0, 14)),
+              BoxShadow(color: AppColors.golden.withValues(alpha: 0.05), blurRadius: 60),
             ],
           ),
           child: ClipRRect(
@@ -1148,9 +929,8 @@ class _CategoryDropdownPanel extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                   child: Row(
                     children: [
                       Container(
@@ -1159,109 +939,55 @@ class _CategoryDropdownPanel extends StatelessWidget {
                           color: AppColors.golden.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(7),
                         ),
-                        child: const Icon(
-                          Icons.category_rounded,
-                          color: AppColors.golden,
-                          size: 13,
-                        ),
+                        child: const Icon(Icons.category_rounded, color: AppColors.golden, size: 12),
                       ),
                       const SizedBox(width: 10),
                       const Text(
                         'BROWSE CATEGORIES',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.golden,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${categories.length} categories',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 9,
-                            color: Colors.white.withValues(alpha: 0.40),
-                          ),
-                        ),
+                        style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.golden, letterSpacing: 1.5),
                       ),
                     ],
                   ),
                 ),
-
                 Container(
                   height: 1,
                   margin: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Colors.white.withValues(alpha: 0.08),
-                        Colors.transparent,
-                      ],
+                      colors: [Colors.transparent, Colors.white.withValues(alpha: 0.08), Colors.transparent],
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-
-                // 2x3 Grid with staggered entrance
+                const SizedBox(height: 6),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.7,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 7,
-                    ),
-                    itemCount: categories.length,
-                    itemBuilder: (_, i) {
-                      final cat = categories[i];
-                      return _CategoryGridItem(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: categories.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final cat = entry.value;
+                      return _CategoryListItem(
                         label: cat['label'] as String,
                         icon: cat['icon'] as IconData,
-                        count: cat['count'] as String,
                         color: cat['color'] as Color,
                         onTap: () => onSelect(cat['label'] as String),
                       )
-                          .animate(delay: Duration(milliseconds: i * 45))
-                          .fadeIn(duration: 300.ms)
-                          .slideY(
-                            begin: 0.12,
-                            end: 0,
-                            curve: Curves.easeOutCubic,
-                            duration: 280.ms,
-                          );
-                    },
+                          .animate(delay: Duration(milliseconds: i * 50))
+                          .fadeIn(duration: 280.ms)
+                          .slideY(begin: 0.10, end: 0, curve: Curves.easeOutCubic, duration: 260.ms);
+                    }).toList(),
                   ),
                 ),
-
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Container(
                   height: 1,
                   margin: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Colors.white.withValues(alpha: 0.08),
-                        Colors.transparent,
-                      ],
+                      colors: [Colors.transparent, Colors.white.withValues(alpha: 0.08), Colors.transparent],
                     ),
                   ),
                 ),
-
                 _ViewAllRow(onTap: onViewAll),
               ],
             ),
@@ -1272,30 +998,18 @@ class _CategoryDropdownPanel extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Category grid item — hover glow + icon brightening
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _CategoryGridItem extends StatefulWidget {
+class _CategoryListItem extends StatefulWidget {
   final String label;
   final IconData icon;
-  final String count;
   final Color color;
   final VoidCallback onTap;
-
-  const _CategoryGridItem({
-    required this.label,
-    required this.icon,
-    required this.count,
-    required this.color,
-    required this.onTap,
-  });
+  const _CategoryListItem({required this.label, required this.icon, required this.color, required this.onTap});
 
   @override
-  State<_CategoryGridItem> createState() => _CategoryGridItemState();
+  State<_CategoryListItem> createState() => _CategoryListItemState();
 }
 
-class _CategoryGridItemState extends State<_CategoryGridItem> {
+class _CategoryListItemState extends State<_CategoryListItem> {
   bool _hovered = false;
 
   @override
@@ -1309,101 +1023,57 @@ class _CategoryGridItemState extends State<_CategoryGridItem> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          margin: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(
-            color: _hovered
-                ? widget.color.withValues(alpha: 0.14)
-                : Colors.white.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(11),
-            border: Border.all(
-              color: _hovered
-                  ? widget.color.withValues(alpha: 0.45)
-                  : Colors.white.withValues(alpha: 0.07),
-              width: 1,
-            ),
-            boxShadow: _hovered
-                ? [
-                    BoxShadow(
-                      color: widget.color.withValues(alpha: 0.25),
-                      blurRadius: 16,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : [],
+            color: _hovered ? widget.color.withValues(alpha: 0.10) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
-<<<<<<< HEAD
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 30,
-                height: 30,
+                width: 3,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: widget.color.withValues(
-                      alpha: _hovered ? 0.22 : 0.10),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: _hovered
-                      ? [
-                          BoxShadow(
-                            color: widget.color.withValues(alpha: 0.30),
-                            blurRadius: 8,
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Icon(
-                  widget.icon,
-                  size: 15,
-                  color: widget.color.withValues(
-                      alpha: _hovered ? 1.0 : 0.55),
-=======
-              Image.asset('assets/images/logo/final-logo.png', height: isMobile ? 32 : 40),
-              const SizedBox(width: 10),
-              Text(
-                'DIGITAL PLATFORM',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Colors.white,
-                  fontSize: isMobile ? 18 : 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 3,
->>>>>>> origin/master
+                  color: _hovered ? widget.color : widget.color.withValues(alpha: 0.35),
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), bottomLeft: Radius.circular(10)),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: _hovered ? 0.20 : 0.08),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Icon(widget.icon, size: 14, color: widget.color.withValues(alpha: _hovered ? 1.0 : 0.60)),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 180),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: _hovered
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.75),
-                      ),
-                      child: Text(
-                        widget.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 180),
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 9,
-                        color: _hovered
-                            ? widget.color.withValues(alpha: 0.85)
-                            : Colors.white.withValues(alpha: 0.35),
-                      ),
-                      child: Text('${widget.count} innovations'),
-                    ),
-                  ],
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 180),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    fontWeight: _hovered ? FontWeight.w600 : FontWeight.w500,
+                    color: _hovered ? Colors.white : Colors.white.withValues(alpha: 0.72),
+                  ),
+                  child: Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
+              ),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _hovered ? 1.0 : 0.0,
+                child: AnimatedSlide(
+                  offset: _hovered ? Offset.zero : const Offset(-0.3, 0),
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Icon(Icons.arrow_forward_ios_rounded, size: 11, color: widget.color),
+                  ),
                 ),
               ),
             ],
@@ -1413,10 +1083,6 @@ class _CategoryGridItemState extends State<_CategoryGridItem> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// View All row
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ViewAllRow extends StatefulWidget {
   final VoidCallback onTap;
@@ -1439,10 +1105,8 @@ class _ViewAllRowState extends State<_ViewAllRow> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          color: _hovered
-              ? AppColors.golden.withValues(alpha: 0.07)
-              : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+          color: _hovered ? AppColors.golden.withValues(alpha: 0.06) : Colors.transparent,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1452,9 +1116,7 @@ class _ViewAllRowState extends State<_ViewAllRow> {
                   fontFamily: 'Poppins',
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: _hovered
-                      ? AppColors.golden
-                      : Colors.white.withValues(alpha: 0.50),
+                  color: _hovered ? AppColors.golden : Colors.white.withValues(alpha: 0.45),
                 ),
                 child: const Text('View All Categories'),
               ),
@@ -1466,9 +1128,7 @@ class _ViewAllRowState extends State<_ViewAllRow> {
                 child: Icon(
                   Icons.arrow_forward_rounded,
                   size: 14,
-                  color: _hovered
-                      ? AppColors.golden
-                      : Colors.white.withValues(alpha: 0.35),
+                  color: _hovered ? AppColors.golden : Colors.white.withValues(alpha: 0.30),
                 ),
               ),
             ],
@@ -1480,13 +1140,12 @@ class _ViewAllRowState extends State<_ViewAllRow> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mobile Drawer Overlay — slides from right
+// Mobile Drawer Overlay
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _MobileDrawerOverlay extends StatefulWidget {
   final VoidCallback onClose;
   final VoidCallback? onAboutTap;
-
   const _MobileDrawerOverlay({required this.onClose, this.onAboutTap});
 
   @override
@@ -1500,28 +1159,21 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
   late Animation<double> _fadeAnim;
   bool _categoriesExpanded = false;
 
-  static const _categories = [
-    {'label': 'Agriculture', 'icon': Icons.grass_rounded},
-    {'label': 'Healthcare', 'icon': Icons.medical_services_rounded},
-    {'label': 'Energy', 'icon': Icons.bolt_rounded},
-    {'label': 'Construction', 'icon': Icons.foundation_rounded},
-    {'label': 'Product Design', 'icon': Icons.design_services_rounded},
-    {'label': 'Information Technology', 'icon': Icons.computer_rounded},
+  static const List<Map<String, dynamic>> _categories = [
+    {'label': 'Agriculture', 'icon': Icons.grass_rounded, 'color': AppColors.teal},
+    {'label': 'Healthcare', 'icon': Icons.medical_services_rounded, 'color': AppColors.crimson},
+    {'label': 'Energy', 'icon': Icons.bolt_rounded, 'color': AppColors.golden},
+    {'label': 'Construction', 'icon': Icons.foundation_rounded, 'color': AppColors.navy},
+    {'label': 'Product Design', 'icon': Icons.design_services_rounded, 'color': AppColors.sky},
+    {'label': 'Information Technology', 'icon': Icons.computer_rounded, 'color': Color(0xFF1B4B8A)},
   ];
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 340),
-    );
-    _slideAnim = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
-    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.5)),
-    );
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _slideAnim = Tween<double>(begin: 1.0, end: 0.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.5)));
     _ctrl.forward();
   }
 
@@ -1531,9 +1183,7 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
     super.dispose();
   }
 
-  void _close() {
-    _ctrl.reverse().then((_) => widget.onClose());
-  }
+  void _close() => _ctrl.reverse().then((_) => widget.onClose());
 
   void _navigateTo(BuildContext context, String path) {
     _close();
@@ -1545,22 +1195,21 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final panelWidth = (screenWidth * 0.82).clamp(0.0, 340.0);
+    final panelWidth = (screenWidth * 0.82).clamp(0.0, 360.0);
 
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (_, child) => Stack(
         children: [
-          // Scrim
           Positioned.fill(
             child: GestureDetector(
               onTap: _close,
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.60 * _fadeAnim.value),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8 * _fadeAnim.value, sigmaY: 8 * _fadeAnim.value),
+                child: Container(color: Colors.black.withValues(alpha: 0.55 * _fadeAnim.value)),
               ),
             ),
           ),
-          // Slide panel
           Positioned(
             top: 0,
             bottom: 0,
@@ -1568,7 +1217,7 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
             width: panelWidth,
             child: Transform.translate(
               offset: Offset(panelWidth * _slideAnim.value, 0),
-              child: child,
+              child: Opacity(opacity: _fadeAnim.value.clamp(0.0, 1.0), child: child),
             ),
           ),
         ],
@@ -1582,44 +1231,32 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
       width: panelWidth,
       decoration: BoxDecoration(
         color: AppColors.richNavy,
-        border: Border(
-          left: BorderSide(
-            color: AppColors.golden.withValues(alpha: 0.15),
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.55),
-            blurRadius: 40,
-            offset: const Offset(-6, 0),
-          ),
-        ],
+        border: Border(left: BorderSide(color: AppColors.golden.withValues(alpha: 0.14), width: 1)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.60), blurRadius: 44, offset: const Offset(-8, 0))],
       ),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 16, 16),
               child: Row(
                 children: [
-                  Image.asset('assets/images/logo/final-logo.png', height: 32),
+                  Image.asset('assets/images/logo/final-logo.png', height: 30),
                   const SizedBox(width: 10),
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [AppColors.golden, AppColors.warmEmber],
-                    ).createShader(bounds),
-                    child: const Text(
-                      'HIRAYA',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2,
-                      ),
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [AppColors.golden, AppColors.goldSheen, AppColors.warmEmber],
+                          ).createShader(bounds),
+                          child: const Text('Digital', style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text('Platform', style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+                      ],
                     ),
                   ),
                   const Spacer(),
@@ -1631,65 +1268,42 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
                       ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        color: Colors.white.withValues(alpha: 0.60),
-                        size: 18,
-                      ),
+                      child: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.65), size: 18),
                     ),
                   ),
                 ],
               ),
             ),
-
             Container(
               height: 1,
               margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    AppColors.golden.withValues(alpha: 0.25),
-                    Colors.transparent,
-                  ],
-                ),
+                gradient: LinearGradient(colors: [Colors.transparent, AppColors.golden.withValues(alpha: 0.22), Colors.transparent]),
               ),
             ),
             const SizedBox(height: 8),
-
-            // Nav items
             Expanded(
               child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _MobileNavItem(
-                      icon: Icons.storefront_rounded,
-                      label: 'Marketplace',
-                      onTap: () => _navigateTo(context, '/marketplace'),
-                    ),
+                    _MobileNavItem(icon: Icons.home_rounded, label: 'Home', onTap: () => _navigateTo(context, '/'), delay: 60),
+                    _MobileNavItem(icon: Icons.storefront_rounded, label: 'Marketplace', onTap: () => _navigateTo(context, '/marketplace'), delay: 120),
                     _MobileNavItem(
                       icon: Icons.info_outline_rounded,
                       label: 'About',
-                      onTap: () {
-                        _close();
-                        Future.delayed(
-                          const Duration(milliseconds: 180),
-                          () => widget.onAboutTap?.call(),
-                        );
-                      },
+                      onTap: () { _close(); Future.delayed(const Duration(milliseconds: 180), () => widget.onAboutTap?.call()); },
+                      delay: 180,
                     ),
                     _MobileCategoryAccordion(
                       expanded: _categoriesExpanded,
-                      onToggle: () => setState(
-                        () => _categoriesExpanded = !_categoriesExpanded,
-                      ),
+                      onToggle: () => setState(() => _categoriesExpanded = !_categoriesExpanded),
                       categories: _categories,
-                      onSelectCategory: (label) =>
-                          _navigateTo(context, '/marketplace?category=$label'),
+                      onSelectCategory: (label) => _navigateTo(context, '/marketplace?category=$label'),
+                      delay: 240,
                     ),
                     const SizedBox(height: 16),
                     Divider(color: Colors.white.withValues(alpha: 0.08)),
@@ -1698,20 +1312,13 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
                       padding: const EdgeInsets.only(left: 4),
                       child: Text(
                         'Where Filipino Innovation Soars',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.30),
-                          fontStyle: FontStyle.italic,
-                        ),
+                        style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white.withValues(alpha: 0.28), fontStyle: FontStyle.italic),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-
-            // Auth buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
@@ -1721,21 +1328,13 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
                     child: OutlinedButton(
                       onPressed: () => _navigateTo(context, '/login'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.golden,
-                        side: BorderSide(
-                            color: AppColors.golden.withValues(alpha: 0.50)),
+                        foregroundColor: Colors.white,
+                        side: BorderSide(color: AppColors.teal.withValues(alpha: 0.70), width: 1.5),
+                        backgroundColor: AppColors.teal.withValues(alpha: 0.05),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
+                      child: const Text('Login', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 15)),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -1743,9 +1342,7 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
                     width: double.infinity,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.golden, AppColors.warmEmber],
-                        ),
+                        gradient: const LinearGradient(colors: [AppColors.golden, AppColors.warmEmber]),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: ElevatedButton(
@@ -1754,18 +1351,9 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text(
-                          'Get Started',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: AppColors.navy,
-                          ),
-                        ),
+                        child: const Text('Get Started', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.navy)),
                       ),
                     ),
                   ),
@@ -1779,19 +1367,12 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mobile nav item
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _MobileNavItem extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _MobileNavItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
+  final int delay;
+  const _MobileNavItem({required this.icon, required this.label, required this.onTap, this.delay = 0});
 
   @override
   State<_MobileNavItem> createState() => _MobileNavItemState();
@@ -1804,57 +1385,40 @@ class _MobileNavItemState extends State<_MobileNavItem> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
+      onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: _pressed
-              ? AppColors.golden.withValues(alpha: 0.08)
-              : Colors.transparent,
+          color: _pressed ? AppColors.golden.withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           children: [
-            Icon(widget.icon,
-                color: Colors.white.withValues(alpha: 0.55), size: 20),
+            Icon(widget.icon, color: Colors.white.withValues(alpha: 0.50), size: 20),
             const SizedBox(width: 14),
-            Text(
-              widget.label,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text(widget.label, style: const TextStyle(fontFamily: 'Poppins', color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
-    );
+    )
+        .animate(delay: Duration(milliseconds: widget.delay))
+        .fadeIn(duration: 300.ms)
+        .slideX(begin: 0.15, end: 0, duration: 280.ms, curve: Curves.easeOutCubic);
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mobile category accordion
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MobileCategoryAccordion extends StatelessWidget {
   final bool expanded;
   final VoidCallback onToggle;
   final List<Map<String, dynamic>> categories;
   final ValueChanged<String> onSelectCategory;
-
+  final int delay;
   const _MobileCategoryAccordion({
-    required this.expanded,
-    required this.onToggle,
-    required this.categories,
-    required this.onSelectCategory,
+    required this.expanded, required this.onToggle, required this.categories,
+    required this.onSelectCategory, this.delay = 0,
   });
 
   @override
@@ -1869,43 +1433,21 @@ class _MobileCategoryAccordion extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 2),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: expanded
-                  ? AppColors.golden.withValues(alpha: 0.06)
-                  : Colors.transparent,
+              color: expanded ? AppColors.golden.withValues(alpha: 0.06) : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.category_outlined,
-                  color: expanded
-                      ? AppColors.golden.withValues(alpha: 0.80)
-                      : Colors.white.withValues(alpha: 0.55),
-                  size: 20,
-                ),
+                Icon(Icons.category_outlined, color: expanded ? AppColors.golden.withValues(alpha: 0.80) : Colors.white.withValues(alpha: 0.50), size: 20),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: Text(
-                    'Categories',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: expanded ? AppColors.golden : Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: Text('Categories', style: TextStyle(fontFamily: 'Poppins', color: expanded ? AppColors.golden : Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
                 ),
                 AnimatedRotation(
                   turns: expanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 240),
                   curve: Curves.easeOutCubic,
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 18,
-                    color: expanded
-                        ? AppColors.golden
-                        : Colors.white.withValues(alpha: 0.40),
-                  ),
+                  child: Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: expanded ? AppColors.golden : Colors.white.withValues(alpha: 0.38)),
                 ),
               ],
             ),
@@ -1916,43 +1458,35 @@ class _MobileCategoryAccordion extends StatelessWidget {
           curve: Curves.easeOutCubic,
           child: expanded
               ? Padding(
-                  padding:
-                      const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+                  padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
                   child: Column(
-                    children: categories
-                        .map((cat) => _MobileCategorySubItem(
-                              label: cat['label'] as String,
-                              icon: cat['icon'] as IconData,
-                              onTap: () => onSelectCategory(
-                                  cat['label'] as String),
-                            ))
-                        .toList(),
+                    children: categories.map((cat) => _MobileCategorySubItem(
+                      label: cat['label'] as String,
+                      icon: cat['icon'] as IconData,
+                      color: cat['color'] as Color,
+                      onTap: () => onSelectCategory(cat['label'] as String),
+                    )).toList(),
                   ),
                 )
               : const SizedBox.shrink(),
         ),
       ],
-    );
+    )
+        .animate(delay: Duration(milliseconds: delay))
+        .fadeIn(duration: 300.ms)
+        .slideX(begin: 0.15, end: 0, duration: 280.ms, curve: Curves.easeOutCubic);
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mobile category sub-item
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MobileCategorySubItem extends StatefulWidget {
   final String label;
   final IconData icon;
+  final Color color;
   final VoidCallback onTap;
-  const _MobileCategorySubItem({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
+  const _MobileCategorySubItem({required this.label, required this.icon, required this.color, required this.onTap});
 
   @override
-  State<_MobileCategorySubItem> createState() =>
-      _MobileCategorySubItemState();
+  State<_MobileCategorySubItem> createState() => _MobileCategorySubItemState();
 }
 
 class _MobileCategorySubItemState extends State<_MobileCategorySubItem> {
@@ -1962,35 +1496,23 @@ class _MobileCategorySubItemState extends State<_MobileCategorySubItem> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
+      onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         margin: const EdgeInsets.symmetric(vertical: 1),
         decoration: BoxDecoration(
-          color: _pressed
-              ? AppColors.golden.withValues(alpha: 0.06)
-              : Colors.transparent,
+          color: _pressed ? widget.color.withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            Icon(widget.icon,
-                size: 15, color: Colors.white.withValues(alpha: 0.40)),
+            Container(width: 3, height: 16, decoration: BoxDecoration(color: widget.color.withValues(alpha: 0.70), borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 10),
-            Text(
-              widget.label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.70),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+            Icon(widget.icon, size: 15, color: widget.color.withValues(alpha: 0.55)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(widget.label, style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.68)))),
           ],
         ),
       ),

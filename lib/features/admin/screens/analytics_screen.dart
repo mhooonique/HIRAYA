@@ -974,7 +974,7 @@ class _ExportButton extends ConsumerWidget {
   void _exportCsv(AnalyticsState s) {
     final buf = StringBuffer();
 
-    buf.writeln('HIRAYA Analytics Export');
+    buf.writeln('Digital Platform Analytics Export');
     buf.writeln('Generated,${DateTime.now().toIso8601String()}');
     buf.writeln();
 

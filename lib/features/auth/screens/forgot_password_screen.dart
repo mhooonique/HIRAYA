@@ -236,19 +236,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // HIRAYA logo
+                    // Digital Platform logo
                     ShaderMask(
                       shaderCallback: (bounds) => const LinearGradient(
                         colors: [AppColors.golden, AppColors.warmEmber],
                       ).createShader(bounds),
                       child: const Text(
-                        'HIRAYA',
+                        'Digital Platform',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 32,
+                          fontSize: 24,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
-                          letterSpacing: 3,
+                          letterSpacing: 1,
                         ),
                       ),
                     ),
@@ -300,7 +300,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                     ),
                     const Spacer(),
                     Text(
-                      '© 2025 HIRAYA Innovation Marketplace',
+                      '© 2025 Digital Platform',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 11,

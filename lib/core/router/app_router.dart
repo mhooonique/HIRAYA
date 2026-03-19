@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
-import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
-import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/unified_auth_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/auth/screens/otp_screen.dart';
 import '../../features/auth/screens/pending_approval_screen.dart';
@@ -37,7 +36,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loggedIn = auth.isLoggedIn;
       final role     = auth.user?.role ?? '';
 
-      // Google new-user → go to signup
+      // Google new-user → go to unified signup flow
       if (auth.needsGoogleSignup && location != '/signup') return '/signup';
 
       // Signed up but awaiting admin approval → pending screen
@@ -63,6 +62,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final isGuestOnly = location == '/login' ||
           location == '/signup' ||
+          location == '/signup/details' ||
           location == '/forgot-password' ||
           location == '/pending' ||
           location.startsWith('/reset-password');
@@ -83,7 +83,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // ── Public ──────────────────────────────────────────────────────────────
       GoRoute(path: '/',            builder: (_, __) => const LandingScreen()),
-      GoRoute(path: '/marketplace', builder: (_, __) => const MarketplaceScreen()),
+      GoRoute(
+        path: '/marketplace',
+        builder: (_, state) => MarketplaceScreen(
+          initialCategory: state.uri.queryParameters['category'],
+        ),
+      ),
       GoRoute(path: '/search',      builder: (_, __) => const SearchScreen()),
 
       GoRoute(
@@ -111,9 +116,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Auth ────────────────────────────────────────────────────────────────
-      GoRoute(path: '/login',           builder: (_, __) => const LoginScreen()),
-      GoRoute(path: '/signup',          builder: (_, __) => const SignupScreen()),
-      GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(path: '/login',           builder: (_, __) => const UnifiedAuthScreen(initialMode: AuthMode.login)),
+      GoRoute(path: '/signup',          builder: (_, __) => const UnifiedAuthScreen(initialMode: AuthMode.signup)),
+      GoRoute(path: '/signup/details',  builder: (_, __) => const SignupScreen()),
+      GoRoute(path: '/forgot-password', builder: (_, __) => const UnifiedAuthScreen(initialMode: AuthMode.forgotPassword)),
       GoRoute(path: '/pending',         builder: (_, __) => const PendingApprovalScreen()),
 
       GoRoute(
@@ -138,27 +144,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-<<<<<<< HEAD
-      GoRoute(
-        path: '/marketplace',
-        builder: (_, state) => MarketplaceScreen(
-          initialCategory: state.uri.queryParameters['category'],
-        ),
-      ),
-      GoRoute(path: '/search',      builder: (_, __) => const SearchScreen()),
-      GoRoute(path: '/messaging',   builder: (_, __) => const MessagingScreen()),
-
-      GoRoute(
-        path: '/product/:id',
-        builder: (context, state) {
-          final id = int.tryParse(state.pathParameters['id'] ?? '0') ?? 0;
-          return ProductDetailScreen(productId: id);
-        },
-      ),
-
-=======
       // ── Protected ───────────────────────────────────────────────────────────
->>>>>>> origin/master
       GoRoute(path: '/admin',               builder: (_, __) => const AdminScreen()),
       GoRoute(path: '/innovator/dashboard', builder: (_, __) => const InnovatorDashboardScreen()),
       GoRoute(path: '/client/dashboard',    builder: (_, __) => const ClientDashboardScreen()),

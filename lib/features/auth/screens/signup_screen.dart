@@ -90,15 +90,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
   @override
   void dispose() {
-<<<<<<< HEAD
-    for (final c in [_firstNameCtrl, _lastNameCtrl, _middleNameCtrl, _suffixCtrl,
-                     _usernameCtrl, _emailCtrl, _passwordCtrl, _confirmPassCtrl, _phoneCtrl]) {
-      c.dispose();
-    }
-=======
     for (final c in [_firstNameCtrl, _lastNameCtrl, _middleNameCtrl,
                      _usernameCtrl, _emailCtrl, _passwordCtrl, _confirmPassCtrl, _phoneCtrl]) c.dispose();
->>>>>>> origin/master
     for (final c in _otpControllers) c.dispose();
     for (final f in _otpFocusNodes)  f.dispose();
     _orbCtrl.dispose();
@@ -375,7 +368,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
   String _stepSubtitle(int step) {
     switch (step) {
-      case 1: return 'How will you use HIRAYA?';
+      case 1: return 'How will you use Digital Platform?';
       case 2: return 'Tell us about yourself';
       case 3: return 'Secure your account';
       case 4: return 'Verify your phone number';
@@ -392,7 +385,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     final displayStep = (_data.isGoogleSignup && _step >= 4) ? _step - 1 : _step;
     final progress    = _step / _totalSteps;
 
-<<<<<<< HEAD
     return Scaffold(
       backgroundColor: AppColors.deepVoid,
       body: Row(
@@ -407,30 +399,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                 stepTitle: _stepTitle(_step),
                 stepSubtitle: _stepSubtitle(_step),
               ),
-=======
-    return Theme(
-      // Force light theme on signup — hardcoded white fields + dark text
-      data: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Poppins',
-        colorScheme: const ColorScheme.light(primary: _teal),
-      ),
-      child: Scaffold(
-      backgroundColor: _bg,
-      body: SafeArea(
-        child: Column(children: [
-          _buildHeader(total),
-          if (_stepError != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              color: Colors.red.shade50,
-              child: Row(children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 18),
-                const SizedBox(width: 8),
-                Expanded(child: Text(_stepError!, style: const TextStyle(color: Colors.red, fontSize: 13))),
-              ]),
->>>>>>> origin/master
             ),
 
           // Right form panel
@@ -508,20 +476,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
           ),
         ],
       ),
-    ));
+    );
   }
 
-<<<<<<< HEAD
   Widget _buildProgressHeader(int displayStep, double progress, AuthState auth) {
-=======
-  Widget _buildHeader(int total) {
+
     // Step labels — password step (3) is skipped for Google signups
     final allLabels = _data.isGoogleSignup
         ? const ['Role', 'Info', 'Phone', 'KYC', 'Terms', 'Review']
         : const ['Role', 'Info', 'Pass', 'Phone', 'KYC', 'Terms', 'Review'];
     final displayStep = (_data.isGoogleSignup && _step >= 4) ? _step - 1 : _step;
 
->>>>>>> origin/master
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       decoration: BoxDecoration(
@@ -533,7 +498,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // ── Top nav row ──────────────────────────────────────────────
         Row(children: [
-<<<<<<< HEAD
           GestureDetector(
             onTap: _back,
             child: Container(
@@ -585,71 +549,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-=======
-          IconButton(onPressed: _back, icon: const Icon(Icons.arrow_back_ios, color: _white, size: 18)),
-          const Spacer(),
-          TextButton(
-            onPressed: () => context.go('/login'),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54, fontSize: 13)),
-          ),
-        ]),
-        const SizedBox(height: 12),
-
-        // ── Step circles with labels ─────────────────────────────────
-        Row(
-          children: List.generate(total * 2 - 1, (i) {
-            if (i.isOdd) {
-              // Connector line between circles
-              final leftStepDone = (i ~/ 2) + 1 < displayStep;
-              return Expanded(
-                child: Container(
-                  height: 2,
-                  color: leftStepDone ? _teal : Colors.white24,
-                ),
-              );
-            }
-            final stepNum  = i ~/ 2 + 1;
-            final isDone   = stepNum < displayStep;
-            final isActive = stepNum == displayStep;
-            final label    = allLabels[i ~/ 2];
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  width: 30, height: 30,
-                  decoration: BoxDecoration(
-                    color:  isDone || isActive ? _teal : Colors.transparent,
-                    shape:  BoxShape.circle,
-                    border: Border.all(
-                      color: isDone || isActive ? _teal : Colors.white38,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: isDone
-                        ? const Icon(Icons.check, color: _white, size: 14)
-                        : Text(
-                            '$stepNum',
-                            style: TextStyle(
-                              color:      isActive ? _white : Colors.white54,
-                              fontSize:   11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color:      isActive ? _teal : (isDone ? Colors.white70 : Colors.white38),
-                    fontSize:   9,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
-                  ),
-                ),
-              ],
->>>>>>> origin/master
             );
           }),
         ),
@@ -689,7 +588,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   Widget _buildStep1() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      _StepHeading(title: 'Choose Your Role', subtitle: 'Select how you will use the HIRAYA platform.')
+      _StepHeading(title: 'Choose Your Role', subtitle: 'Select how you will use Digital Platform.')
           .animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
       const SizedBox(height: 24),
 
@@ -788,43 +687,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       const SizedBox(height: 12),
       _DarkField(controller: _lastNameCtrl,   label: 'Last Name *',   icon: Icons.person_outline),
       const SizedBox(height: 12),
-<<<<<<< HEAD
       _DarkField(controller: _middleNameCtrl, label: 'Middle Name',   hint: 'Optional'),
       const SizedBox(height: 12),
-      _DarkField(controller: _suffixCtrl,     label: 'Suffix',        hint: 'Jr., Sr., III (Optional)'),
-      const SizedBox(height: 12),
       _DarkField(controller: _usernameCtrl,   label: 'Username *',    icon: Icons.alternate_email),
-=======
-      TextField(controller: _middleNameCtrl, decoration: _field('Middle Name', hint: 'Optional')),
-      const SizedBox(height: 12),
-      DropdownButtonFormField<String>(
-        value: _selectedSuffix,
-        decoration: _field('Suffix').copyWith(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-        hint: const Text('None (Optional)', style: TextStyle(color: Colors.black45, fontSize: 14)),
-        items: const [
-          DropdownMenuItem(value: null,   child: Text('None')),
-          DropdownMenuItem(value: 'Jr.',  child: Text('Jr.')),
-          DropdownMenuItem(value: 'Sr.',  child: Text('Sr.')),
-          DropdownMenuItem(value: 'II',   child: Text('II')),
-          DropdownMenuItem(value: 'III',  child: Text('III')),
-          DropdownMenuItem(value: 'IV',   child: Text('IV')),
-          DropdownMenuItem(value: 'V',    child: Text('V')),
-        ],
-        onChanged: (v) => setState(() => _selectedSuffix = v),
-        dropdownColor: _white,
-        borderRadius: BorderRadius.circular(12),
-        style: const TextStyle(color: Colors.black87, fontSize: 14, fontFamily: 'Poppins'),
-      ),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _usernameCtrl,
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]'))],
-        decoration: _field('Username *', icon: Icons.alternate_email,
-          helper: '4–30 characters · letters, numbers, and underscores only'),
-      ),
->>>>>>> origin/master
       const SizedBox(height: 12),
       _DarkField(
         controller: _emailCtrl,
@@ -1219,14 +1084,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       const SizedBox(height: 24),
       _DarkConsentTile(
         title: 'Privacy Policy',
-        subtitle: 'I have read and agree to the HIRAYA Privacy Policy and Terms of Service.',
+        subtitle: 'I have read and agree to the Digital Platform Privacy Policy and Terms of Service.',
         value: _data.privacyAccepted,
         onChanged: (v) => setState(() => _data.privacyAccepted = v ?? false),
       ),
       const SizedBox(height: 12),
       _DarkConsentTile(
         title: 'Data Processing Consent',
-        subtitle: 'I consent to HIRAYA collecting and processing my personal data including KYC documents under RA 10173.',
+        subtitle: 'I consent to Digital Platform collecting and processing my personal data including KYC documents under RA 10173.',
         value: _data.dataConsentAccepted,
         onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false),
       ),
@@ -1357,11 +1222,11 @@ class _SignupLeftPanel extends StatelessWidget {
                       shaderCallback: (b) => const LinearGradient(
                         colors: [AppColors.golden, AppColors.warmEmber],
                       ).createShader(b),
-                      child: const Text('HIRAYA',
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 4)),
+                      child: const Text('Digital Platform',
+                        style: TextStyle(fontFamily: 'Poppins', fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1)),
                     ),
                     const SizedBox(height: 4),
-                    Text('Innovation Marketplace',
+                    Text('Where Filipino Innovation Soars',
                       style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.35), letterSpacing: 2)),
 
                     const Spacer(),
@@ -1414,7 +1279,7 @@ class _SignupLeftPanel extends StatelessWidget {
                     ]),
                     const Spacer(),
 
-                    Text('© 2025 HIRAYA Innovation Marketplace',
+                    Text('© 2025 Digital Platform',
                       style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white.withValues(alpha: 0.20))),
                   ],
                 ),

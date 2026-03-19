@@ -7,6 +7,9 @@ import '../widgets/landing_navbar.dart';
 import '../widgets/innovation_carousel.dart';
 import '../widgets/cta_section.dart';
 import '../widgets/landing_footer.dart';
+import '../widgets/how_it_works_section.dart';
+import '../widgets/innovation_labs_section.dart';
+import '../widgets/stats_counter_section.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -71,16 +74,25 @@ class _LandingScreenState extends State<LandingScreen> {
             // 2. Category Grid
             CategoryGrid(key: _categoryKey),
 
-            // 3. Innovation Carousel
+            // 3. Stats Counter
+            const StatsCounterSection(),
+
+            // 4. Innovation Carousel (Featured Innovations)
             const InnovationCarousel(),
 
-            // 4. Features Section ("Why HIRAYA?")
+            // 5. Features Section ("Why Digital Platform?")
             FeaturesSection(key: _featuresKey),
 
-            // 5. CTA Section
+            // 5.1 Innovation Labs (additional creative section)
+            const InnovationLabsSection(),
+
+            // 6. How It Works
+            const HowItWorksSection(),
+
+            // 7. CTA Section
             const CtaSection(),
 
-            // 6. Footer
+            // 8. Footer
             const LandingFooter(),
           ],
         ),

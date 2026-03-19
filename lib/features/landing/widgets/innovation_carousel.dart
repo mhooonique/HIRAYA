@@ -1,12 +1,17 @@
+// lib/features/landing/widgets/innovation_carousel.dart
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 
 // ═══════════════════════════════════════════════════════════
-// InnovationCarousel — Featured innovations (Enhanced v2)
+// InnovationCarousel — Featured innovations (Enhanced v3)
+// Full-width with side peek • Auto-scroll • Rich landscape cards
+// Stats row • Trending badge • Hover overlay reveal
 // ═══════════════════════════════════════════════════════════
+
 class InnovationCarousel extends StatefulWidget {
   const InnovationCarousel({super.key});
 
@@ -16,15 +21,13 @@ class InnovationCarousel extends StatefulWidget {
 
 class _InnovationCarouselState extends State<InnovationCarousel>
     with TickerProviderStateMixin {
-  final PageController _pageController =
-      PageController(viewportFraction: 0.82);
+  final PageController _pageController = PageController(viewportFraction: 0.88);
   int _currentPage = 0;
   Timer? _timer;
   bool _isPaused = false;
 
-  // Orb animation for header
   late AnimationController _orbCtrl;
-  late Animation<double> _orbAnim;
+  late AnimationController _glowCtrl;
 
   static const List<Map<String, dynamic>> _slides = [
     {
@@ -32,10 +35,12 @@ class _InnovationCarouselState extends State<InnovationCarousel>
       'category': 'Agriculture',
       'color': AppColors.teal,
       'innovator': 'Brgy. Maridagao, Cotabato',
-      'tag': 'Award-winning Innovation',
+      'tag': 'Award-Winning',
       'icon': Icons.grass_rounded,
-      'desc':
-          'IoT-powered sensors that track soil moisture, temperature, and crop health in real-time — helping farmers maximize yield sustainably.',
+      'desc': 'IoT-powered sensors track soil moisture, temperature, and crop health in real-time — helping farmers maximize yield sustainably.',
+      'views': '1.2k',
+      'likes': '248',
+      'rating': 4.8,
     },
     {
       'title': 'Solar-Powered Water Purifier',
@@ -44,72 +49,76 @@ class _InnovationCarouselState extends State<InnovationCarousel>
       'innovator': 'MSU-IIT, Iligan',
       'tag': 'Community Impact',
       'icon': Icons.wb_sunny_rounded,
-      'desc':
-          'A portable solar desalination unit providing clean drinking water to off-grid coastal communities across Mindanao.',
+      'desc': 'Portable solar desalination providing clean drinking water to off-grid coastal communities across Mindanao.',
+      'views': '890',
+      'likes': '312',
+      'rating': 4.9,
     },
     {
       'title': 'AI-Assisted Diagnostic Tablet',
       'category': 'Healthcare',
       'color': AppColors.crimson,
       'innovator': 'CMU College of Medicine',
-      'tag': 'Breakthrough Technology',
+      'tag': 'Breakthrough Tech',
       'icon': Icons.medical_services_rounded,
-      'desc':
-          'Machine learning-powered medical tablet enabling rural health workers to pre-screen patients for common diseases without a specialist.',
+      'desc': 'ML-powered tablet enabling rural health workers to pre-screen patients without a specialist — saving lives in remote areas.',
+      'views': '2.1k',
+      'likes': '475',
+      'rating': 4.7,
     },
     {
       'title': 'Bamboo-Composite Structural Panel',
       'category': 'Construction',
       'color': AppColors.sky,
       'innovator': 'Bukidnon State University',
-      'tag': 'Sustainable Materials',
+      'tag': 'Sustainable',
       'icon': Icons.foundation_rounded,
-      'desc':
-          'High-strength bamboo composite panels offering earthquake-resilient, eco-friendly alternatives to conventional building materials.',
+      'desc': 'High-strength bamboo composite panels — earthquake-resilient, eco-friendly alternatives to conventional building materials.',
+      'views': '654',
+      'likes': '189',
+      'rating': 4.6,
+    },
+    {
+      'title': 'Adaptive Learning Platform',
+      'category': 'Information Technology',
+      'color': Color(0xFF3A8FD5),
+      'innovator': 'UP Diliman, QC',
+      'tag': 'EdTech',
+      'icon': Icons.computer_rounded,
+      'desc': 'AI-driven personalized learning system that adapts to each student\'s pace and learning style for K-12 education.',
+      'views': '3.4k',
+      'likes': '621',
+      'rating': 4.9,
     },
   ];
 
   @override
   void initState() {
     super.initState();
-
     _orbCtrl = AnimationController(
-      duration: const Duration(seconds: 6),
+      duration: const Duration(seconds: 7),
       vsync: this,
     )..repeat(reverse: true);
-    _orbAnim = CurvedAnimation(parent: _orbCtrl, curve: Curves.easeInOut);
 
-    _startAutoScroll();
+    _glowCtrl = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _startTimer();
   }
 
-  void _startAutoScroll() {
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (_isPaused || !mounted) return;
-      final next = (_currentPage + 1) % _slides.length;
-      _pageController.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 700),
-        curve: Curves.easeInOutCubic,
-      );
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!_isPaused && mounted) {
+        final next = (_currentPage + 1) % _slides.length;
+        _pageController.animateToPage(
+          next,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+        );
+      }
     });
-  }
-
-  void _goTo(int index) {
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeInOutCubic,
-    );
-  }
-
-  void _prev() {
-    final prev = (_currentPage - 1 + _slides.length) % _slides.length;
-    _goTo(prev);
-  }
-
-  void _next() {
-    final next = (_currentPage + 1) % _slides.length;
-    _goTo(next);
   }
 
   @override
@@ -117,264 +126,363 @@ class _InnovationCarouselState extends State<InnovationCarousel>
     _timer?.cancel();
     _pageController.dispose();
     _orbCtrl.dispose();
+    _glowCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 900;
+    final w = MediaQuery.of(context).size.width;
+    final isDesktop = w >= 900;
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.richNavy, AppColors.deepVoid],
-        ),
-      ),
-      child: Column(
-        children: [
-          // ── Hero section header ────────────────────────────
-          _buildSectionHeader(context),
-
-          const SizedBox(height: 52),
-
-          // ── Carousel with pause on hover ──────────────────
-          MouseRegion(
-            onEnter: (_) => setState(() => _isPaused = true),
-            onExit: (_) => setState(() => _isPaused = false),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Page view
-                SizedBox(
-                  height: isDesktop ? 320 : 280,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (i) => setState(() => _currentPage = i),
-                    itemCount: _slides.length,
-                    itemBuilder: (context, index) {
-                      final slide = _slides[index];
-                      final isActive = index == _currentPage;
-                      return AnimatedScale(
-                        scale: isActive ? 1.0 : 0.93,
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeOutCubic,
-                        child: AnimatedOpacity(
-                          opacity: isActive ? 1.0 : 0.60,
-                          duration: const Duration(milliseconds: 300),
-                          child: _CarouselSlide(
-                            slide: slide,
-                            isActive: isActive,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Left arrow
-                if (isDesktop)
-                  Positioned(
-                    left: 8,
-                    child: _NavArrow(
-                      icon: Icons.chevron_left_rounded,
-                      onTap: _prev,
-                    ),
-                  ),
-
-                // Right arrow
-                if (isDesktop)
-                  Positioned(
-                    right: 8,
-                    child: _NavArrow(
-                      icon: Icons.chevron_right_rounded,
-                      onTap: _next,
-                    ),
-                  ),
-              ],
+    return AnimatedBuilder(
+      animation: _orbCtrl,
+      builder: (_, __) {
+        final t = _orbCtrl.value;
+        return Container(
+          width: double.infinity,
+          clipBehavior: Clip.hardEdge,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.midnight, AppColors.richNavy, AppColors.midnight],
             ),
           ),
-
-          const SizedBox(height: 32),
-
-          // ── Navigation dots + arrows (mobile) ─────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!isDesktop) ...[
-                _NavArrow(icon: Icons.chevron_left_rounded, onTap: _prev, small: true),
-                const SizedBox(width: 16),
-              ],
-              AnimatedSmoothIndicator(
-                activeIndex: _currentPage,
-                count: _slides.length,
-                onDotClicked: _goTo,
-                effect: const ExpandingDotsEffect(
-                  dotHeight: 6,
-                  dotWidth: 6,
-                  expansionFactor: 5,
-                  activeDotColor: AppColors.golden,
-                  dotColor: Colors.white24,
-                  spacing: 6,
-                ),
-              ),
-              if (!isDesktop) ...[
-                const SizedBox(width: 16),
-                _NavArrow(icon: Icons.chevron_right_rounded, onTap: _next, small: true),
-              ],
-            ],
-          ),
-
-          const SizedBox(height: 56),
-        ],
-      ),
-    );
-  }
-
-  // ─── Section header ────────────────────────────────────────
-  Widget _buildSectionHeader(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _orbAnim,
-      builder: (_, child) {
-        final t = _orbAnim.value;
-        return Container(
-          padding: const EdgeInsets.only(top: 80, bottom: 0),
           child: Stack(
-            alignment: Alignment.center,
             children: [
-              // Subtle golden orb behind header
+              // Orbs
               Positioned(
-                right: MediaQuery.of(context).size.width * 0.1 + t * 10,
-                top: -20 + t * 10,
+                left: -100 + t * 50,
+                top: 50 + t * 40,
                 child: Container(
-                  width: 200,
-                  height: 200,
+                  width: 350,
+                  height: 350,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.golden.withValues(alpha: 0.06),
-                        blurRadius: 120,
-                        spreadRadius: 20,
+                        blurRadius: 180,
+                        spreadRadius: 50,
                       ),
                     ],
                   ),
                 ),
               ),
-              child!,
+              Positioned(
+                right: -80 + t * 40,
+                bottom: 30 + t * 35,
+                child: Container(
+                  width: 280,
+                  height: 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.teal.withValues(alpha: 0.06),
+                        blurRadius: 150,
+                        spreadRadius: 40,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: isDesktop ? 80 : 56,
+                ),
+                child: Column(
+                  children: [
+                    // Section header
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 80 : 24,
+                      ),
+                      child: _buildHeader(isDesktop),
+                    ),
+                    SizedBox(height: isDesktop ? 48 : 32),
+
+                    // Carousel
+                    MouseRegion(
+                      onEnter: (_) => setState(() => _isPaused = true),
+                      onExit: (_) => setState(() => _isPaused = false),
+                      child: SizedBox(
+                        height: isDesktop ? 320 : 420,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: _slides.length,
+                          onPageChanged: (i) => setState(() => _currentPage = i),
+                          itemBuilder: (_, i) {
+                            final isActive = i == _currentPage;
+                            return AnimatedScale(
+                              scale: isActive ? 1.0 : 0.94,
+                              duration: const Duration(milliseconds: 350),
+                              curve: Curves.easeOutCubic,
+                              child: _CarouselCard(
+                                data: _slides[i],
+                                isActive: isActive,
+                                glowCtrl: _glowCtrl,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Dot indicators + nav arrows
+                    _buildControls(isDesktop),
+
+                    const SizedBox(height: 36),
+
+                    // Stats row
+                    _buildStatsRow(isDesktop),
+                  ],
+                ),
+              ),
             ],
           ),
         );
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            // Eyebrow
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.golden.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.golden.withValues(alpha: 0.30),
-                ),
-              ),
-              child: const Text(
-                'FEATURED',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.golden,
-                  letterSpacing: 2,
-                ),
-              ),
-            ).animate().fadeIn(duration: 500.ms),
-
-            const SizedBox(height: 16),
-
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Colors.white, AppColors.golden],
-                stops: [0.5, 1.0],
-              ).createShader(bounds),
-              child: const Text(
-                'Featured Innovations',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 38,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -0.8,
-                ),
-              ),
-            )
-                .animate()
-                .fadeIn(duration: 600.ms, delay: 100.ms)
-                .slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
-
-            const SizedBox(height: 12),
-
-            Text(
-              'Discover groundbreaking solutions from Filipino innovators',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 15,
-                color: Colors.white.withValues(alpha: 0.50),
-              ),
-              textAlign: TextAlign.center,
-            ).animate().fadeIn(duration: 500.ms, delay: 200.ms),
-
-            const SizedBox(height: 6),
-
-            // Gradient separator line
-            Container(
-              width: 80,
-              height: 2,
-              margin: const EdgeInsets.only(top: 16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.teal, AppColors.golden],
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ).animate().fadeIn(duration: 500.ms, delay: 300.ms).scaleX(begin: 0, end: 1),
-          ],
-        ),
-      ),
     );
+  }
+
+  Widget _buildHeader(bool isDesktop) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // "Trending this week" sub-label
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.warmEmber,
+                    ),
+                  )
+                      .animate()
+                      .then(delay: 600.ms)
+                      .fadeOut(duration: 500.ms)
+                      .then()
+                      .fadeIn(duration: 500.ms),
+                  const SizedBox(width: 8),
+                  Text(
+                    'TRENDING THIS WEEK',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.warmEmber.withValues(alpha: 0.90),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    'Featured Innovations',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: isDesktop ? 40 : 28,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -1.5,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // NEW badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.golden, AppColors.warmEmber],
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.golden.withValues(alpha: 0.40),
+                          blurRadius: 12,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'NEW',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.navy,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  )
+                      .animate()
+                      .then(delay: 1000.ms)
+                      .shimmer(duration: 1200.ms, color: Colors.white.withValues(alpha: 0.4)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (isDesktop) ...[
+          // Navigation arrow buttons
+          _NavButton(
+            icon: Icons.arrow_back_ios_rounded,
+            onTap: () {
+              final prev = (_currentPage - 1 + _slides.length) % _slides.length;
+              _pageController.animateToPage(
+                prev,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOutCubic,
+              );
+            },
+          ),
+          const SizedBox(width: 10),
+          _NavButton(
+            icon: Icons.arrow_forward_ios_rounded,
+            onTap: () {
+              final next = (_currentPage + 1) % _slides.length;
+              _pageController.animateToPage(
+                next,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOutCubic,
+              );
+            },
+          ),
+        ],
+      ],
+    )
+        .animate()
+        .fadeIn(duration: 600.ms)
+        .slideY(begin: 0.2, end: 0);
+  }
+
+  Widget _buildControls(bool isDesktop) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (!isDesktop) ...[
+          _NavButton(
+            icon: Icons.arrow_back_ios_rounded,
+            onTap: () {
+              final prev = (_currentPage - 1 + _slides.length) % _slides.length;
+              _pageController.animateToPage(
+                prev,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOutCubic,
+              );
+            },
+            small: true,
+          ),
+          const SizedBox(width: 16),
+        ],
+        // Dot indicators
+        ...List.generate(_slides.length, (i) {
+          final isActive = i == _currentPage;
+          final color = _slides[i]['color'] as Color;
+          return GestureDetector(
+            onTap: () => _pageController.animateToPage(
+              i,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOutCubic,
+            ),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: isActive ? 24 : 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                color: isActive ? color : Colors.white.withValues(alpha: 0.20),
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.50),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : [],
+              ),
+            ),
+          );
+        }),
+        if (!isDesktop) ...[
+          const SizedBox(width: 16),
+          _NavButton(
+            icon: Icons.arrow_forward_ios_rounded,
+            onTap: () {
+              final next = (_currentPage + 1) % _slides.length;
+              _pageController.animateToPage(
+                next,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOutCubic,
+              );
+            },
+            small: true,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStatsRow(bool isDesktop) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface.withValues(alpha: 0.80),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderDark),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StatPill(label: '500+ Innovations', icon: Icons.lightbulb_rounded, color: AppColors.golden),
+          Container(width: 1, height: 24, color: AppColors.borderDark),
+          _StatPill(label: '200+ Innovators', icon: Icons.people_rounded, color: AppColors.teal),
+          Container(width: 1, height: 24, color: AppColors.borderDark),
+          _StatPill(label: '50+ Categories', icon: Icons.category_rounded, color: AppColors.sky),
+        ],
+      ),
+    )
+        .animate(delay: 300.ms)
+        .fadeIn(duration: 500.ms)
+        .slideY(begin: 0.2, end: 0);
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Navigation arrow button
-// ═══════════════════════════════════════════════════════════
-class _NavArrow extends StatefulWidget {
+// ── Navigation Button ─────────────────────────────────────────────────────
+class _NavButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool small;
 
-  const _NavArrow({
-    required this.icon,
-    required this.onTap,
-    this.small = false,
-  });
+  const _NavButton({required this.icon, required this.onTap, this.small = false});
 
   @override
-  State<_NavArrow> createState() => _NavArrowState();
+  State<_NavButton> createState() => _NavButtonState();
 }
 
-class _NavArrowState extends State<_NavArrow> {
+class _NavButtonState extends State<_NavButton> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final size = widget.small ? 36.0 : 44.0;
-    final iconSize = widget.small ? 18.0 : 22.0;
-
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
@@ -387,14 +495,13 @@ class _NavArrowState extends State<_NavArrow> {
           height: size,
           decoration: BoxDecoration(
             color: _hovered
-                ? AppColors.golden.withValues(alpha: 0.18)
-                : AppColors.darkSurface.withValues(alpha: 0.80),
-            shape: BoxShape.circle,
+                ? AppColors.golden.withValues(alpha: 0.15)
+                : AppColors.darkSurface,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _hovered
-                  ? AppColors.golden.withValues(alpha: 0.50)
+                  ? AppColors.golden.withValues(alpha: 0.55)
                   : AppColors.borderDark,
-              width: 1.5,
             ),
             boxShadow: _hovered
                 ? [
@@ -405,10 +512,12 @@ class _NavArrowState extends State<_NavArrow> {
                   ]
                 : [],
           ),
-          child: Icon(
-            widget.icon,
-            color: _hovered ? AppColors.golden : Colors.white54,
-            size: iconSize,
+          child: Center(
+            child: Icon(
+              widget.icon,
+              size: widget.small ? 14 : 16,
+              color: _hovered ? AppColors.golden : Colors.white.withValues(alpha: 0.50),
+            ),
           ),
         ),
       ),
@@ -416,245 +525,479 @@ class _NavArrowState extends State<_NavArrow> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Carousel slide — cinematic with gradient overlay
-// ═══════════════════════════════════════════════════════════
-class _CarouselSlide extends StatelessWidget {
-  final Map<String, dynamic> slide;
-  final bool isActive;
+// ── Stat Pill ─────────────────────────────────────────────────────────────
+class _StatPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
 
-  const _CarouselSlide({required this.slide, required this.isActive});
+  const _StatPill({required this.label, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final color = slide['color'] as Color;
-    final icon = slide['icon'] as IconData;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF080F1A),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: color.withValues(alpha: isActive ? 0.50 : 0.12),
-          width: isActive ? 1.5 : 1,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.65),
+          ),
         ),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.28),
-                  blurRadius: 48,
-                  offset: const Offset(0, 14),
-                ),
+      ],
+    );
+  }
+}
+
+// ── Carousel Card ─────────────────────────────────────────────────────────
+class _CarouselCard extends StatefulWidget {
+  final Map<String, dynamic> data;
+  final bool isActive;
+  final AnimationController glowCtrl;
+
+  const _CarouselCard({
+    required this.data,
+    required this.isActive,
+    required this.glowCtrl,
+  });
+
+  @override
+  State<_CarouselCard> createState() => _CarouselCardState();
+}
+
+class _CarouselCardState extends State<_CarouselCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = widget.data;
+    final color = d['color'] as Color;
+    final w = MediaQuery.of(context).size.width;
+    final isDesktop = w >= 900;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedBuilder(
+        animation: widget.glowCtrl,
+        builder: (_, __) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.darkSurface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: widget.isActive
+                    ? color.withValues(alpha: 0.55)
+                    : AppColors.borderDark,
+                width: widget.isActive ? 1.5 : 1,
+              ),
+              boxShadow: [
+                if (widget.isActive)
+                  BoxShadow(
+                    color: color.withValues(
+                      alpha: 0.15 * (0.6 + 0.4 * widget.glowCtrl.value),
+                    ),
+                    blurRadius: 40,
+                    offset: const Offset(0, 10),
+                    spreadRadius: 2,
+                  ),
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.40),
                   blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.40),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 8),
                 ),
               ],
-      ),
-      child: Stack(
-        children: [
-          // ── Image placeholder with gradient overlay ────────
-          Positioned.fill(
+            ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                children: [
-                  // Simulated image bg (gradient pattern as placeholder)
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topRight,
-                        end: Alignment.bottomLeft,
-                        colors: [
-                          color.withValues(alpha: 0.12),
-                          AppColors.deepVoid.withValues(alpha: 0.80),
-                          color.withValues(alpha: 0.05),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Large translucent icon as image stand-in
-                  Positioned(
-                    right: -20,
-                    top: -20,
-                    child: Icon(
-                      icon,
-                      size: 180,
-                      color: color.withValues(alpha: 0.06),
-                    ),
-                  ),
-                  // Cinematic dark gradient overlay (bottom fade)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            const Color(0xFF080F1A).withValues(alpha: 0.60),
-                            const Color(0xFF080F1A).withValues(alpha: 0.95),
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: isDesktop
+                  ? _buildDesktopCard(d, color)
+                  : _buildMobileCard(d, color),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDesktopCard(Map<String, dynamic> d, Color color) {
+    return Row(
+      children: [
+        // Left: colored category panel (35%)
+        Container(
+          width: 240,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withValues(alpha: 0.25),
+                AppColors.richNavy,
+              ],
             ),
           ),
-
-          // ── Category color strip at top ────────────────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color, color.withValues(alpha: 0.20)],
-                ),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
+          child: Stack(
+            children: [
+              // Large watermark icon
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Icon(
+                  d['icon'] as IconData,
+                  size: 140,
+                  color: color.withValues(alpha: 0.12),
                 ),
               ),
-            ),
-          ),
-
-          // ── Background glow orb ────────────────────────────
-          Positioned(
-            right: -40,
-            bottom: -40,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: isActive ? 0.18 : 0.06),
-                    blurRadius: 120,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Content ────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Tag pill
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: color.withValues(alpha: 0.30),
-                    ),
-                  ),
-                  child: Text(
-                    slide['tag'] as String,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 10,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-
-                // Bottom text block
-                Column(
+              Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      (slide['category'] as String).toUpperCase(),
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 10,
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 2.5,
+                    // Category badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: color.withValues(alpha: 0.40)),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      slide['title'] as String,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w800,
-                        height: 1.2,
-                        letterSpacing: -0.3,
-                      ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 8),
-                    // Description — visible on active slide
-                    AnimatedOpacity(
-                      opacity: isActive ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 400),
                       child: Text(
-                        slide['desc'] as String,
+                        d['category'] as String,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.50),
-                          fontSize: 12,
                           fontFamily: 'Poppins',
-                          height: 1.55,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                          letterSpacing: 0.5,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
+                    const Spacer(),
+                    // Main icon
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: color.withValues(alpha: 0.40)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.30),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(d['icon'] as IconData, color: color, size: 30),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Innovator
+                    Text(
+                      d['innovator'] as String,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Right: content panel
+        Expanded(
+          child: _buildCardContent(d, color, isDesktop: true),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileCard(Map<String, dynamic> d, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Top colored header
+        Container(
+          height: 100,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color.withValues(alpha: 0.25), AppColors.richNavy],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -10,
+                bottom: -10,
+                child: Icon(d['icon'] as IconData, size: 100, color: color.withValues(alpha: 0.12)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: color.withValues(alpha: 0.40)),
+                      ),
+                      child: Center(child: Icon(d['icon'] as IconData, color: color, size: 24)),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.location_on_rounded,
-                          color: Colors.white.withValues(alpha: 0.30),
-                          size: 12,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.20),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: color.withValues(alpha: 0.35)),
+                          ),
                           child: Text(
-                            slide['innovator'] as String,
+                            d['category'] as String,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.40),
-                              fontSize: 12,
                               fontFamily: 'Poppins',
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: color,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          d['innovator'] as String,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.45),
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
+        Expanded(child: _buildCardContent(d, color, isDesktop: false)),
+      ],
+    );
+  }
+
+  Widget _buildCardContent(Map<String, dynamic> d, Color color, {required bool isDesktop}) {
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tag
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.golden.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.golden.withValues(alpha: 0.30)),
+                ),
+                child: Text(
+                  d['tag'] as String,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.golden,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Title
+              Text(
+                d['title'] as String,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: isDesktop ? 22 : 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.2,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 10),
+
+              // Description
+              Text(
+                d['desc'] as String,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  color: Colors.white.withValues(alpha: 0.48),
+                  height: 1.6,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+
+              // Rating + stats row
+              Row(
+                children: [
+                  // Stars
+                  ...List.generate(5, (i) {
+                    final rating = (d['rating'] as double);
+                    return Icon(
+                      i < rating.floor()
+                          ? Icons.star_rounded
+                          : (i < rating ? Icons.star_half_rounded : Icons.star_border_rounded),
+                      size: 14,
+                      color: i < rating ? AppColors.golden : Colors.white.withValues(alpha: 0.20),
+                    );
+                  }),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${d['rating']}',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.golden,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Icon(Icons.remove_red_eye_rounded, size: 12, color: Colors.white.withValues(alpha: 0.35)),
+                  const SizedBox(width: 4),
+                  Text(
+                    d['views'] as String,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.40),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(Icons.favorite_rounded, size: 12, color: AppColors.crimson.withValues(alpha: 0.70)),
+                  const SizedBox(width: 4),
+                  Text(
+                    d['likes'] as String,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.40),
+                    ),
+                  ),
+                  const Spacer(),
+                  // View button
+                  _ViewButton(color: color),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // Hover overlay
+        if (_hovered)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          )
+              .animate()
+              .fadeIn(duration: 200.ms),
+      ],
+    );
+  }
+}
+
+// ── View Button ───────────────────────────────────────────────────────────
+class _ViewButton extends StatefulWidget {
+  final Color color;
+  const _ViewButton({required this.color});
+
+  @override
+  State<_ViewButton> createState() => _ViewButtonState();
+}
+
+class _ViewButtonState extends State<_ViewButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => context.go('/marketplace'),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: _hovered
+                  ? [widget.color, widget.color.withValues(alpha: 0.75)]
+                  : [widget.color.withValues(alpha: 0.14), widget.color.withValues(alpha: 0.08)],
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _hovered ? Colors.transparent : widget.color.withValues(alpha: 0.30),
+            ),
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: 0.30),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'View',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: _hovered ? AppColors.navy : widget.color,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 12,
+                color: _hovered ? AppColors.navy : widget.color,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

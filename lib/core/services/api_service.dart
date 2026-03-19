@@ -98,7 +98,11 @@ class ApiService {
       return res.data as Map<String, dynamic>;
     }
     if (res.data is String) {
-      return jsonDecode(res.data as String) as Map<String, dynamic>;
+      try {
+        return jsonDecode(res.data as String) as Map<String, dynamic>;
+      } on FormatException {
+        throw const FormatException('Non-JSON response received from API');
+      }
     }
     return {};
   }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/user_model.dart';
@@ -119,8 +120,8 @@ class _AdminSidebar extends ConsumerWidget {
                   colors: [AppColors.golden, AppColors.warmEmber],
                 ).createShader(bounds),
                 child: const Text(
-                  'HIRAYA',
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 3),
+                  'Digital Platform',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1),
                 ),
               ),
               const SizedBox(height: 2),
@@ -303,19 +304,11 @@ class _AdminTopBar extends ConsumerWidget {
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-<<<<<<< HEAD
           decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.golden.withValues(alpha: 0.25))),
           child: const Row(children: [
             Icon(Icons.admin_panel_settings_rounded, color: AppColors.golden, size: 14),
             SizedBox(width: 6),
             Text('Super Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden, fontWeight: FontWeight.w600)),
-=======
-          decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.teal.withValues(alpha: 0.3))),
-          child: Row(children: [
-            const Icon(Icons.shield_rounded, color: AppColors.teal, size: 14),
-            const SizedBox(width: 6),
-            Text(email, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.teal, fontWeight: FontWeight.w600)),
->>>>>>> origin/master
           ]),
         ),
         const SizedBox(width: 8),

@@ -165,7 +165,7 @@ class _ShareQrSectionState extends State<ShareQrSection> {
 
   Future<void> _shareLink() async {
     await Share.share(
-      '🚀 Check out "${widget.product.name}" on HIRAYA — the Philippine Innovation Marketplace!\n\n$_deepLink',
+      '🚀 Check out "${widget.product.name}" on Digital Platform — the Philippine Innovation Marketplace!\n\n$_deepLink',
       subject: widget.product.name,
     );
   }

@@ -1,0 +1,25 @@
+# Digital Platform Agent Collaboration Protocol
+
+## Shared Mission
+- Build a cohesive, high-quality UI for Digital Platform using the Hiraya brand theme.
+- Prioritize user engagement, smooth transitions, and production-safe implementations.
+- Minimize regressions with focused verification per changed section.
+
+## Team Workflow
+1. `ui-orchestrator` breaks work into tasks and assigns specialists.
+2. Specialists must read and follow shared design tokens and section constraints before editing.
+3. Every specialist reports:
+   - files changed
+   - decisions made
+   - unresolved risks
+4. `qa-consistency` performs cross-section theme and interaction checks before handoff.
+
+## Uniformity Rules
+- Keep typography, spacing rhythm, and motion timing consistent across auth, landing, marketplace, and footer.
+- Reuse existing core widgets and color constants whenever possible.
+- Keep brand language as **Digital Platform** for all visible labels.
+
+## Error Avoidance
+- Run targeted static checks on edited files.
+- Prefer incremental patches over broad rewrites.
+- Preserve existing route contracts unless explicitly migrated.

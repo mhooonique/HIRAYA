@@ -33,7 +33,7 @@ class HirayaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title:                    'HIRAYA',
+      title:                    'Digital Platform',
       theme:                    AppTheme.lightTheme,
       darkTheme:                AppTheme.darkTheme,
       themeMode:                ref.watch(themeProvider),

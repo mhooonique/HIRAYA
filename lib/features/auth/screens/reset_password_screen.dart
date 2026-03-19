@@ -228,13 +228,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                         colors: [AppColors.golden, AppColors.warmEmber],
                       ).createShader(bounds),
                       child: const Text(
-                        'HIRAYA',
+                        'Digital Platform',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 32,
+                          fontSize: 24,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
-                          letterSpacing: 3,
+                          letterSpacing: 1,
                         ),
                       ),
                     ),
@@ -257,7 +257,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                         .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 16),
                     Text(
-                      'Choose a strong, unique password to secure your HIRAYA account.',
+                      'Choose a strong, unique password to secure your Digital Platform account.',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 15,
@@ -275,7 +275,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                     _InfoPill(icon: Icons.pin_rounded, label: 'One number required'),
                     const Spacer(),
                     Text(
-                      '© 2025 HIRAYA Innovation Marketplace',
+                      '© 2025 Digital Platform',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 11,

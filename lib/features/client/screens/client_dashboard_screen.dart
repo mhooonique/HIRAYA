@@ -161,7 +161,7 @@ class _ClientTopBar extends StatelessWidget {
                 colors: [AppColors.golden, AppColors.warmEmber],
               ).createShader(bounds),
               child: const Text(
-                'HIRAYA',
+                'Digital Platform',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 20,
@@ -199,7 +199,6 @@ class _ClientTopBar extends StatelessWidget {
             const SizedBox(width: 4),
             GestureDetector(
               onTap: () => tabController.animateTo(4),
-<<<<<<< HEAD
               child: Container(
                 width: 34,
                 height: 34,
@@ -222,14 +221,6 @@ class _ClientTopBar extends StatelessWidget {
                     style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
-=======
-              child: UserAvatar(
-                name:         user?.firstName ?? 'C',
-                avatarBase64: user?.avatarBase64,
-                radius:       16,
-                backgroundColor: AppColors.sky.withValues(alpha: 0.2),
-                foregroundColor: AppColors.sky,
->>>>>>> origin/master
               ),
             ),
             const SizedBox(width: 8),
@@ -666,7 +657,6 @@ class _ClientProfile extends ConsumerWidget {
               border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
             ),
             child: Column(children: [
-<<<<<<< HEAD
               Container(
                 width: 76, height: 76,
                 decoration: BoxDecoration(
@@ -676,27 +666,6 @@ class _ClientProfile extends ConsumerWidget {
                 ),
                 child: Center(child: Text(firstName.substring(0, 1).toUpperCase(),
                     style: const TextStyle(fontFamily: 'Poppins', fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white))),
-=======
-              UserAvatar(
-                name:         firstName,
-                avatarBase64: u?.avatarBase64,
-                radius:       38,
-                backgroundColor: AppColors.sky.withValues(alpha: 0.15),
-                foregroundColor: AppColors.sky,
-                uploadable:   true,
-                onUpload: (base64) async {
-                  final err = await ref.read(authProvider.notifier).updateAvatar(base64);
-                  if (err != null && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(err), backgroundColor: Colors.red),
-                    );
-                  } else if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Profile picture updated!')),
-                    );
-                  }
-                },
->>>>>>> origin/master
               ),
               const SizedBox(height: 14),
               Text(fullName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),

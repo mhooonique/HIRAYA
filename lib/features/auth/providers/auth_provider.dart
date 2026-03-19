@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:dio/dio.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/api_service.dart';
 import 'otp_provider.dart';
@@ -146,10 +147,14 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiService _api;
 
-  final _googleSignIn = GoogleSignIn(
-    clientId: '31131385571-rhrhdr9hk5t2jsrah4gho23k8rj4ctlf.apps.googleusercontent.com',
-    scopes:   ['email', 'profile', 'openid'],
-  );
+  static GoogleSignIn? _googleSignInInstance;
+
+  GoogleSignIn get _googleSignIn {
+    return _googleSignInInstance ??= GoogleSignIn(
+      clientId: '31131385571-rhrhdr9hk5t2jsrah4gho23k8rj4ctlf.apps.googleusercontent.com',
+      scopes: ['email', 'profile', 'openid'],
+    );
+  }
 
   AuthNotifier(this._api) : super(const AuthState()) {
     _rehydrate();
@@ -187,7 +192,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final deviceId = await getDeviceId();
       final res = await _api.post('auth/login', {
         'email': email, 'password': password, 'device_id': deviceId,
-      });
+      }, auth: false);
 
       if (res['error'] != null) {
         final s = res['status'] as String?;
@@ -267,7 +272,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'email':      account.email,
         'first_name': account.displayName?.split(' ').first ?? '',
         'last_name':  account.displayName?.split(' ').skip(1).join(' ') ?? '',
-      });
+      }, auth: false);
 
       if (res['needs_signup'] == true) {
         final nameParts = (account.displayName ?? '').trim().split(RegExp(r'\s+'));
@@ -344,7 +349,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'selfie_name':      data.selfieFileName,
         'is_google_signup': data.isGoogleSignup,
         'google_id':        data.googleId,
-      });
+      }, auth: false);
 
       if (res['error'] != null) {
         state = state.copyWith(isLoading: false, error: res['error']);
@@ -356,14 +361,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading:   false,
         loginStatus: LoginStatus.pending,
       );
-    } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Signup failed. Check your connection.');
+    } catch (e) {
+      String message;
+
+      if (e is DioException) {
+        final payload = e.response?.data;
+        if (payload is Map<String, dynamic>) {
+          final backendError = (payload['error'] ?? payload['message'])?.toString();
+          if (backendError != null && backendError.isNotEmpty) {
+            message = backendError;
+          } else {
+            message = 'Signup failed (${e.response?.statusCode ?? 'unknown'}). Please try again.';
+          }
+        } else {
+          switch (e.type) {
+            case DioExceptionType.connectionError:
+              message = 'Cannot reach server. Please check your internet or backend tunnel.';
+              break;
+            case DioExceptionType.connectionTimeout:
+            case DioExceptionType.sendTimeout:
+            case DioExceptionType.receiveTimeout:
+              message = 'Request timed out. Please try again.';
+              break;
+            case DioExceptionType.badResponse:
+              message = 'Server returned an unexpected response. Please try again.';
+              break;
+            default:
+              message = 'Signup request failed. Please try again.';
+          }
+        }
+      } else if (e is FormatException) {
+        message = 'Server returned an invalid response. Please try again in a moment.';
+      } else {
+        message = 'Signup failed. Please try again.';
+      }
+
+      state = state.copyWith(isLoading: false, error: message);
     }
   }
 
   Future<void> logout() async {
     await _api.clearToken();
-    await _googleSignIn.signOut();
+    final google = _googleSignInInstance;
+    if (google != null) {
+      await google.signOut();
+    }
     state = const AuthState(isRehydrating: false);
   }
 

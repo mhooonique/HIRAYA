@@ -222,7 +222,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 )),
             ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 6),
-            Text('Sign in to your HIRAYA account',
+            Text('Sign in to your Digital Platform account',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 14,
@@ -466,16 +466,16 @@ class _LeftPanel extends StatelessWidget {
                       shaderCallback: (b) => const LinearGradient(
                         colors: [AppColors.golden, AppColors.warmEmber],
                       ).createShader(b),
-                      child: const Text('HIRAYA',
+                      child: const Text('Digital Platform',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 38,
+                          fontSize: 28,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
-                          letterSpacing: 5,
+                          letterSpacing: 1,
                         )),
                     ).animate().fadeIn(duration: 600.ms, delay: 100.ms),
-                    Text('Innovation Marketplace',
+                    Text('Where Filipino Innovation Soars',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 12,
@@ -521,7 +521,7 @@ class _LeftPanel extends StatelessWidget {
                         letterSpacing: 0.5,
                       )).animate(delay: 1000.ms).fadeIn(duration: 600.ms),
                     const SizedBox(height: 4),
-                    Text('© 2025 HIRAYA Innovation Marketplace',
+                    Text('© 2025 Digital Platform',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 11,
