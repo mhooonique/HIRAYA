@@ -702,15 +702,75 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ProductDetailRow extends StatelessWidget {
+class _ProductDetailRow extends ConsumerWidget {
   final ProductModel product;
   final int index;
   const _ProductDetailRow({required this.product, required this.index});
 
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: AppColors.crimson, size: 22),
+          SizedBox(width: 10),
+          Text('Delete Post', style: TextStyle(
+              fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 17)),
+        ]),
+        content: Text(
+          'Are you sure you want to delete "${product.name}"? This cannot be undone.',
+          style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black54),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',
+                style: TextStyle(fontFamily: 'Poppins', color: Colors.black45)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              final err = await ref
+                  .read(innovatorProvider.notifier)
+                  .deleteProduct(product.id);
+              if (err != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(err,
+                      style: const TextStyle(fontFamily: 'Poppins')),
+                  backgroundColor: AppColors.crimson,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ));
+              }
+            },
+            icon: const Icon(Icons.delete_forever_rounded,
+                size: 16, color: Colors.white),
+            label: const Text('Delete',
+                style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.crimson,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final color = AppColors.categoryColors[product.category] ?? AppColors.navy;
-    final statusColor = product.status == 'approved' ? AppColors.teal : product.status == 'pending' ? AppColors.golden : AppColors.crimson;
+    final statusColor = product.status == 'approved'
+        ? AppColors.teal
+        : product.status == 'pending'
+            ? AppColors.golden
+            : AppColors.crimson;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -719,57 +779,107 @@ class _ProductDetailRow extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.lightGray),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)
+        ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10)),
             child: Icon(Icons.lightbulb_rounded, color: color, size: 20),
           ),
           const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navy)),
-            Text('${product.category} · ${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
-                style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38)),
-          ])),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(product.name,
+                    style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.navy)),
+                Text(
+                    '${product.category} · ${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
+                    style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        color: Colors.black38)),
+              ])),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: statusColor.withValues(alpha: 0.3)),
             ),
-            child: Text(product.status.toUpperCase(), style: TextStyle(fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w700, color: statusColor)),
+            child: Text(product.status.toUpperCase(),
+                style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: statusColor)),
           ),
         ]),
         const SizedBox(height: 12),
         Text(product.description,
-            style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black54, height: 1.5),
-            maxLines: 2, overflow: TextOverflow.ellipsis),
+            style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 13,
+                color: Colors.black54,
+                height: 1.5),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis),
         const SizedBox(height: 14),
         const Divider(height: 1, color: AppColors.lightGray),
         const SizedBox(height: 14),
         Row(children: [
-          _MiniStat(icon: Icons.favorite_rounded, value: '${product.likes} likes', color: AppColors.crimson),
+          _MiniStat(
+              icon: Icons.favorite_rounded,
+              value: '${product.likes} likes',
+              color: AppColors.crimson),
           const SizedBox(width: 16),
-          _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views} views', color: Colors.black38),
+          _MiniStat(
+              icon: Icons.remove_red_eye_rounded,
+              value: '${product.views} views',
+              color: Colors.black38),
           const SizedBox(width: 16),
-          _MiniStat(icon: Icons.handshake_rounded, value: '${product.interestCount} interests', color: AppColors.teal),
+          _MiniStat(
+              icon: Icons.handshake_rounded,
+              value: '${product.interestCount} interests',
+              color: AppColors.teal),
           const Spacer(),
           if (product.status == 'approved')
             TextButton.icon(
               onPressed: () => context.go('/product/${product.id}'),
-              icon: const Icon(Icons.open_in_new_rounded, size: 14, color: AppColors.sky),
-              label: const Text('View Live', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.sky, fontWeight: FontWeight.w600)),
+              icon: const Icon(Icons.open_in_new_rounded,
+                  size: 14, color: AppColors.sky),
+              label: const Text('View Live',
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: AppColors.sky,
+                      fontWeight: FontWeight.w600)),
             ),
+          IconButton(
+            onPressed: () => _confirmDelete(context, ref),
+            icon: const Icon(Icons.delete_outline_rounded,
+                size: 18, color: Colors.black26),
+            tooltip: 'Delete post',
+            hoverColor: AppColors.crimson.withValues(alpha: 0.08),
+          ),
         ]),
       ]),
     ).animate(delay: Duration(milliseconds: 60 * index)).fadeIn(duration: 400.ms);
   }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  POST INNOVATION — updated with images/video/link/qr support
 // ─────────────────────────────────────────────────────────────────────────────

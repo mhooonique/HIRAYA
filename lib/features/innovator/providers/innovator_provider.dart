@@ -179,10 +179,31 @@ class InnovatorNotifier extends StateNotifier<InnovatorState> {
 
   Future<bool> updateProduct(int id, String name, String description, String category) async {
     try {
-      final res = await _api.put('products/$id', {'name': name, 'description': description, 'category': category}, auth: true);
+      final res = await _api.put('products/$id', {
+        'name': name, 'description': description, 'category': category,
+      }, auth: true);
       if (res['success'] == true) { await loadMyProducts(); return true; }
       return false;
     } catch (_) { return false; }
+  }
+
+  Future<String?> deleteProduct(int id) async {
+    final snapshot = state.myProducts;
+    state = state.copyWith(
+      myProducts: state.myProducts.where((p) => p.id != id).toList(),
+    );
+    _computeStats(state.myProducts);
+    try {
+      final res = await _api.delete('products/$id', auth: true);
+      if (res['success'] == true) return null;
+      state = state.copyWith(myProducts: snapshot);
+      _computeStats(snapshot);
+      return res['message'] as String? ?? 'Failed to delete.';
+    } catch (_) {
+      state = state.copyWith(myProducts: snapshot);
+      _computeStats(snapshot);
+      return 'Network error. Please try again.';
+    }
   }
 
   void clearMessages() => state = state.copyWith(error: null, successMessage: null);
