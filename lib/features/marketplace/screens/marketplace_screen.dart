@@ -53,20 +53,24 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
             pinned: true,
             backgroundColor: AppColors.navy,
             automaticallyImplyLeading: false,
-leading: context.canPop()
-    ? IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.arrow_back_rounded,
-              color: Colors.white, size: 18),
-        ),
-        onPressed: () => context.pop(),
-      )
-    : null,
+leading: IconButton(
+  icon: Container(
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: const Icon(Icons.arrow_back_rounded,
+        color: Colors.white, size: 18),
+  ),
+  onPressed: () {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
+  },
+),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(

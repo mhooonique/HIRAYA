@@ -200,7 +200,7 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
                               style: TextStyle(fontFamily: 'Poppins',
                                   fontSize: 12, color: AppColors.sky),
                               children: [
-                                TextSpan(text: 'Sign in '),
+                                TextSpan(text: 'Join as a CLIENT '),
                                 TextSpan(
                                     text: 'to like, message, bookmark, and express interest.',
                                     style: TextStyle(fontWeight: FontWeight.w600)),

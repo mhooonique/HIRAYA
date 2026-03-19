@@ -404,7 +404,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                               style: const TextStyle(fontFamily: 'Poppins',
                                   fontSize: 12, color: AppColors.sky),
                               children: const [
-                                TextSpan(text: 'Sign in '),
+                                TextSpan(text: 'Join as a CLIENT '),
                                 TextSpan(text: 'to like, message, bookmark, and express interest.',
                                     style: TextStyle(fontWeight: FontWeight.w600)),
                               ],
@@ -557,8 +557,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
                   const SizedBox(height: 32),
                   // Reviews — clients only (must be logged in)
-                  if (isClient) ReviewsSection(productId: product.id),
-                  if (isClient) const SizedBox(height: 32),
+                  ReviewsSection(productId: product.id),
+                  const SizedBox(height: 32),
                   ShareQrSection(product: product),
 
                   // Admin dashboard button
