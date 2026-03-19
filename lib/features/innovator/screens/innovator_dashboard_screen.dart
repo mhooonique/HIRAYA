@@ -15,6 +15,7 @@ import '../providers/innovator_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
 import 'dart:typed_data';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  DRAFT KEY
@@ -968,28 +969,45 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
     );
   }
 
-  Future<void> _pickImages() async {
-    if (_images.length >= 10) return;
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-      allowMultiple: true,
-      withData: true,
+ Future<void> _pickImages() async {
+  if (_images.length >= 10) return;
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+    allowMultiple: true,
+    withData: true,
+  );
+  if (result == null) return;
+  final remaining = 10 - _images.length;
+  for (final f in result.files.take(remaining)) {
+    if (f.bytes == null) continue;
+
+    // ── Compress before storing ──────────────────────────
+    final compressed = await FlutterImageCompress.compressWithList(
+      f.bytes!,
+      minWidth:  800,
+      minHeight: 600,
+      quality:   75,       // 75% quality — good balance
+      format: CompressFormat.jpeg,
     );
-    if (result == null) return;
-    final remaining = 10 - _images.length;
-    for (final f in result.files.take(remaining)) {
-      if ((f.size / 1024 / 1024) > 5) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${f.name} exceeds 5 MB — skipped.', style: const TextStyle(fontFamily: 'Poppins')),
-          backgroundColor: AppColors.crimson,
-        ));
-        continue;
-      }
-      if (f.bytes != null) setState(() => _images.add(_PickedFile(name: f.name, bytes: f.bytes!, sizeKb: f.size ~/ 1024)));
+
+    final sizeKb = compressed.length ~/ 1024;
+
+    if ((compressed.length / 1024 / 1024) > 5) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('${f.name} exceeds 5 MB even after compression — skipped.',
+            style: const TextStyle(fontFamily: 'Poppins')),
+        backgroundColor: AppColors.crimson,
+      ));
+      continue;
     }
-    _onFieldChanged();
+
+    setState(() => _images.add(
+      _PickedFile(name: f.name, bytes: compressed, sizeKb: sizeKb),
+    ));
   }
+  _onFieldChanged();
+}
 
   Future<void> _pickVideo() async {
     final result = await FilePicker.platform.pickFiles(

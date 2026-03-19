@@ -15,6 +15,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
+
 class UserAvatar extends StatelessWidget {
   final String? avatarBase64;
   final String  name;

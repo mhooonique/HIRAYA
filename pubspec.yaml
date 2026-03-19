@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   
+  flutter_image_compress: ^2.3.0
   # Navigation
   go_router: ^13.2.0
   

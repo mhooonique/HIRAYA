@@ -16,6 +16,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../widgets/share_qr_section.dart';
 import '../../reviews/widgets/reviews_widget.dart';
 
+
 final _productDetailProvider =
     FutureProvider.family<ProductModel?, int>((ref, id) async {
   final api = ref.read(apiServiceProvider);
