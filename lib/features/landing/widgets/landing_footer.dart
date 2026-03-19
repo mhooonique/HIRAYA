@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -534,6 +535,8 @@ class _BrandColumn extends StatelessWidget {
         const SizedBox(height: 24),
         const _SocialIconsRow(),
         const SizedBox(height: 24),
+        const _OfficialContactPanel(),
+        const SizedBox(height: 20),
         _AppBadges(),
       ],
     );
@@ -544,10 +547,24 @@ class _SocialIconsRow extends StatelessWidget {
   const _SocialIconsRow();
 
   static const _socials = [
-    {'icon': Icons.facebook_rounded, 'label': 'Facebook', 'color': Color(0xFF1877F2)},
-    {'icon': Icons.alternate_email_rounded, 'label': 'Twitter / X', 'color': Color(0xFF1DA1F2)},
-    {'icon': Icons.work_outline_rounded, 'label': 'LinkedIn', 'color': Color(0xFF0A66C2)},
-    {'icon': Icons.camera_alt_outlined, 'label': 'Instagram', 'color': Color(0xFFE1306C)},
+    {
+      'icon': Icons.facebook_rounded,
+      'label': 'DOST NorMin Facebook',
+      'color': Color(0xFF1877F2),
+      'url': 'https://facebook.com/DOSTNorMinPH'
+    },
+    {
+      'icon': Icons.language_rounded,
+      'label': 'DOST Region X Website',
+      'color': Color(0xFF3F88C5),
+      'url': 'https://region10.dost.gov.ph/'
+    },
+    {
+      'icon': Icons.mail_outline_rounded,
+      'label': 'Message Us',
+      'color': Color(0xFF136F63),
+      'url': 'mailto:dmbalanayjr@region10.dost.gov.ph'
+    },
   ];
 
   @override
@@ -555,7 +572,12 @@ class _SocialIconsRow extends StatelessWidget {
     return Row(
       children: _socials.map((s) => Padding(
         padding: const EdgeInsets.only(right: 10),
-        child: _SocialIconButton(icon: s['icon'] as IconData, label: s['label'] as String, hoverColor: s['color'] as Color),
+        child: _SocialIconButton(
+          icon: s['icon'] as IconData,
+          label: s['label'] as String,
+          hoverColor: s['color'] as Color,
+          url: s['url'] as String,
+        ),
       )).toList(),
     );
   }
@@ -565,7 +587,8 @@ class _SocialIconButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final Color hoverColor;
-  const _SocialIconButton({required this.icon, required this.label, required this.hoverColor});
+  final String url;
+  const _SocialIconButton({required this.icon, required this.label, required this.hoverColor, required this.url});
 
   @override
   State<_SocialIconButton> createState() => _SocialIconButtonState();
@@ -597,18 +620,140 @@ class _SocialIconButtonState extends State<_SocialIconButton> with SingleTickerP
         onExit: (_) { setState(() => _hovered = false); _scaleCtrl.reverse(); },
         child: ScaleTransition(
           scale: _scaleAnim,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            width: 38, height: 38,
-            decoration: BoxDecoration(
-              color: _hovered ? widget.hoverColor.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
-              shape: BoxShape.circle,
-              border: Border.all(color: _hovered ? widget.hoverColor.withValues(alpha: 0.50) : Colors.white.withValues(alpha: 0.08)),
-              boxShadow: _hovered ? [BoxShadow(color: widget.hoverColor.withValues(alpha: 0.25), blurRadius: 14, spreadRadius: 1)] : [],
+          child: GestureDetector(
+            onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              width: 38, height: 38,
+              decoration: BoxDecoration(
+                color: _hovered ? widget.hoverColor.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
+                shape: BoxShape.circle,
+                border: Border.all(color: _hovered ? widget.hoverColor.withValues(alpha: 0.50) : Colors.white.withValues(alpha: 0.08)),
+                boxShadow: _hovered ? [BoxShadow(color: widget.hoverColor.withValues(alpha: 0.25), blurRadius: 14, spreadRadius: 1)] : [],
+              ),
+              child: Icon(widget.icon, size: 17, color: _hovered ? widget.hoverColor : Colors.white.withValues(alpha: 0.38)),
             ),
-            child: Icon(widget.icon, size: 17, color: _hovered ? widget.hoverColor : Colors.white.withValues(alpha: 0.38)),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficialContactPanel extends StatelessWidget {
+  const _OfficialContactPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 260,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'DOST Region X Contact',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.golden,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _ContactLine(
+            icon: Icons.mail_outline_rounded,
+            label: 'dmbalanayjr@region10.dost.gov.ph',
+            onTap: () => launchUrl(Uri.parse('mailto:dmbalanayjr@region10.dost.gov.ph')),
+          ),
+          _ContactLine(
+            icon: Icons.alternate_email_rounded,
+            label: 'digitalplatform@region10.dost.gov.ph',
+            onTap: () => launchUrl(Uri.parse('mailto:digitalplatform@region10.dost.gov.ph')),
+          ),
+          _ContactLine(
+            icon: Icons.phone_rounded,
+            label: '0917 857 9186',
+            onTap: () => launchUrl(Uri.parse('tel:09178579186')),
+          ),
+          _ContactLine(
+            icon: Icons.location_on_outlined,
+            label: 'J.V. Seriña St., Carmen, Cagayan de Oro City, Misamis Oriental, Philippines',
+            onTap: () => launchUrl(Uri.parse('https://maps.google.com/?q=J.V.+Serina+St.,+Carmen,+Cagayan+de+Oro+City')),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => launchUrl(Uri.parse('mailto:dmbalanayjr@region10.dost.gov.ph')),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [AppColors.golden, AppColors.warmEmber]),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.send_rounded, size: 14, color: AppColors.navy),
+                  SizedBox(width: 6),
+                  Text(
+                    'Message Us',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.12, end: 0);
+  }
+}
+
+class _ContactLine extends StatelessWidget {
+  const _ContactLine({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.55)),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.58),
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

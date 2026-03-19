@@ -180,7 +180,7 @@ class _ShareQrSectionState extends State<ShareQrSection> {
       final bytes = byteData!.buffer.asUint8List();
       final blob = html.Blob([bytes], 'image/png');
       final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
+      html.AnchorElement(href: url)
         ..setAttribute('download', 'hiraya-qr-${widget.product.id}.png')
         ..click();
       html.Url.revokeObjectUrl(url);

@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/app_colors.dart';
@@ -947,6 +948,206 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
     });
   }
 
+  bool _isImageFile(String? fileName) {
+    if (fileName == null) return false;
+    return RegExp(r'\.(jpg|jpeg|png|webp)$', caseSensitive: false).hasMatch(fileName);
+  }
+
+  Uint8List? _safeDecode(String? b64) {
+    if (b64 == null) return null;
+    try {
+      return base64Decode(b64);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1950, 1, 1),
+      lastDate: DateTime.now(),
+      helpText: 'Select your birth date',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.golden,
+              onPrimary: AppColors.navy,
+              surface: AppColors.darkSurface,
+              onSurface: Colors.white,
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppColors.darkSurface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => _dateOfBirth = picked);
+    }
+  }
+
+  void _showAttachmentPreview(String title, String? b64, String? fileName) {
+    final bytes = _safeDecode(b64);
+    if (bytes == null || !_isImageFile(fileName)) return;
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                fileName ?? 'Attached image',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.45),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: InteractiveViewer(
+                  maxScale: 4,
+                  child: Image.memory(bytes, fit: BoxFit.contain),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showConsentModule({
+    required String title,
+    required List<_ConsentClause> clauses,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.80,
+        maxChildSize: 0.94,
+        minChildSize: 0.60,
+        expand: false,
+        builder: (context, controller) => Container(
+          decoration: BoxDecoration(
+            color: AppColors.darkSurface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 10),
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.24),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.golden.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.gavel_rounded, color: AppColors.golden, size: 16),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  controller: controller,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                  itemCount: clauses.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) {
+                    final clause = clauses[i];
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            clause.title,
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.golden,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            clause.body,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.62),
+                              height: 1.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate(delay: Duration(milliseconds: i * 40)).fadeIn(duration: 240.ms);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _submitSignup() async {
     setState(() => _stepError = null);
     await ref.read(authProvider.notifier).signup(_data);
@@ -1407,15 +1608,7 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
           children: [
             _DatePickerTile(
               date: _dateOfBirth,
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime(2000, 1, 1),
-                  firstDate: DateTime(1950, 1, 1),
-                  lastDate: DateTime.now(),
-                );
-                if (picked != null) setState(() => _dateOfBirth = picked);
-              },
+              onTap: _pickDateOfBirth,
             ),
             const SizedBox(height: 10),
             _ProvincePicker(
@@ -1437,12 +1630,68 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               fileName: _govIdFileName,
               onTap: () => _pickFile(true),
             ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.golden.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.golden.withValues(alpha: 0.22)),
+              ),
+              child: Text(
+                'Valid Government IDs: Philippine Passport, Driver\'s License, SSS ID, PhilSys National ID, UMID, Voter\'s ID, PRC License, and School/Student ID (for students).',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.70),
+                  height: 1.5,
+                ),
+              ),
+            ),
             const SizedBox(height: 10),
             _UploadTile(
               title: 'Selfie Photo',
               fileName: _selfieFileName,
               onTap: () => _pickFile(false),
             ),
+            if ((_govIdBase64 != null && _isImageFile(_govIdFileName)) ||
+                (_selfieBase64 != null && _isImageFile(_selfieFileName))) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Preview Attachments',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.golden,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AttachmentPreviewTile(
+                      title: 'Government ID',
+                      fileName: _govIdFileName,
+                      bytes: _safeDecode(_govIdBase64),
+                      showPreview: _isImageFile(_govIdFileName),
+                      onPreview: () => _showAttachmentPreview('Government ID', _govIdBase64, _govIdFileName),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _AttachmentPreviewTile(
+                      title: 'Selfie Photo',
+                      fileName: _selfieFileName,
+                      bytes: _safeDecode(_selfieBase64),
+                      showPreview: _isImageFile(_selfieFileName),
+                      onPreview: () => _showAttachmentPreview('Selfie Photo', _selfieBase64, _selfieFileName),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         );
       case 6:
@@ -1452,12 +1701,62 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               value: _data.privacyAccepted,
               onChanged: (v) => setState(() => _data.privacyAccepted = v ?? false),
               label: 'I agree to the Privacy Notice.',
+              onLabelTap: () => _showConsentModule(
+                title: 'Privacy Notice',
+                clauses: const [
+                  _ConsentClause(
+                    title: 'Clause 1.1: Scope of Data Collection',
+                    body:
+                        'Digital Platform collects only information required for account creation and identity verification. By registering, the user consents to secure storage of login information for system access and communication.',
+                  ),
+                  _ConsentClause(
+                    title: 'Clause 1.2: Data Retention and Deletion',
+                    body:
+                        'User login information is retained while the account is active. Upon written termination request, personal identifiers are purged within thirty (30) days in compliance with National Privacy Commission standards.',
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
             _ConsentTile(
               value: _data.dataConsentAccepted,
               onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false),
               label: 'I agree to Data Consent terms.',
+              onLabelTap: () => _showConsentModule(
+                title: 'Terms of Service and Consent (Q3 Clauses)',
+                clauses: const [
+                  _ConsentClause(
+                    title: 'Clause 2.1: Innovator\'s Warranty of Ownership',
+                    body:
+                        'Innovators warrant legal rights or authorized licenses to uploaded technologies and assume liability for specification accuracy and non-infringement.',
+                  ),
+                  _ConsentClause(
+                    title: 'Clause 2.2: Public vs. Restricted Visibility',
+                    body:
+                        'Basic descriptions and high-level benefits are public for discovery, while detailed manuals or proprietary schematics remain protected and access-restricted.',
+                  ),
+                  _ConsentClause(
+                    title: 'Clause 2.3: Non-Transfer of Rights',
+                    body:
+                        'Uploading to Digital Platform does not transfer ownership to the platform or administrator. Licensing and technology transfer are executed externally between innovator and client.',
+                  ),
+                  _ConsentClause(
+                    title: 'Clause 3.1 and 3.2: Security and MFA',
+                    body:
+                        'Users are responsible for account credential confidentiality and must report unauthorized access. Multi-factor authentication is required for Client, Innovator, and Admin roles.',
+                  ),
+                  _ConsentClause(
+                    title: 'Clause 4.1 and 4.2: Administrative Moderation',
+                    body:
+                        'Administrators may verify technology legitimacy and remove fraudulent or misleading submissions. Users are categorized by role, with feature restrictions enforced via role-based access.',
+                  ),
+                  _ConsentClause(
+                    title: 'Clause 5.1 and 5.2: Liability and External Links',
+                    body:
+                        'Technology listings are provided as-is. Digital Platform is not liable for production or ROI losses from adoption outcomes, and is not responsible for privacy/content of external government portals.',
+                  ),
+                ],
+              ),
             ),
           ],
         );
@@ -1465,6 +1764,39 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.golden.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.verified_user_rounded, color: AppColors.golden, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Review your details carefully before submission.',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.66),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             _ReviewRow(label: 'Role', value: _data.role),
             _ReviewRow(label: 'Name', value: '${_data.firstName} ${_data.lastName}'),
             _ReviewRow(label: 'Username', value: _data.username),
@@ -1474,6 +1806,43 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
             _ReviewRow(label: 'Province / City', value: '${_data.province} / ${_data.city}'),
             _ReviewRow(label: 'Government ID', value: _govIdFileName ?? 'Attached'),
             _ReviewRow(label: 'Selfie', value: _selfieFileName ?? 'Attached'),
+            if ((_govIdBase64 != null && _isImageFile(_govIdFileName)) ||
+                (_selfieBase64 != null && _isImageFile(_selfieFileName))) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Attached Files Preview',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.golden,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AttachmentPreviewTile(
+                      title: 'Government ID',
+                      fileName: _govIdFileName,
+                      bytes: _safeDecode(_govIdBase64),
+                      showPreview: _isImageFile(_govIdFileName),
+                      onPreview: () => _showAttachmentPreview('Government ID', _govIdBase64, _govIdFileName),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _AttachmentPreviewTile(
+                      title: 'Selfie Photo',
+                      fileName: _selfieFileName,
+                      bytes: _safeDecode(_selfieBase64),
+                      showPreview: _isImageFile(_selfieFileName),
+                      onPreview: () => _showAttachmentPreview('Selfie Photo', _selfieBase64, _selfieFileName),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         );
       default:
@@ -1764,12 +2133,101 @@ class _UploadTile extends StatelessWidget {
   }
 }
 
+class _AttachmentPreviewTile extends StatelessWidget {
+  const _AttachmentPreviewTile({
+    required this.title,
+    required this.fileName,
+    required this.bytes,
+    required this.showPreview,
+    required this.onPreview,
+  });
+
+  final String title;
+  final String? fileName;
+  final Uint8List? bytes;
+  final bool showPreview;
+  final VoidCallback onPreview;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: showPreview ? onPreview : null,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+            ),
+            const SizedBox(height: 6),
+            if (showPreview && bytes != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: AspectRatio(
+                  aspectRatio: 1.35,
+                  child: Image.memory(bytes!, fit: BoxFit.cover),
+                ),
+              )
+            else
+              Container(
+                height: 72,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.02),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: Icon(Icons.description_outlined, color: Colors.white.withValues(alpha: 0.40), size: 20),
+              ),
+            const SizedBox(height: 6),
+            Text(
+              fileName ?? 'Not attached',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: fileName == null ? Colors.white.withValues(alpha: 0.32) : AppColors.teal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConsentClause {
+  const _ConsentClause({required this.title, required this.body});
+
+  final String title;
+  final String body;
+}
+
 class _ConsentTile extends StatelessWidget {
-  const _ConsentTile({required this.value, required this.onChanged, required this.label});
+  const _ConsentTile({
+    required this.value,
+    required this.onChanged,
+    required this.label,
+    this.onLabelTap,
+  });
 
   final bool value;
   final ValueChanged<bool?> onChanged;
   final String label;
+  final VoidCallback? onLabelTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1785,12 +2243,17 @@ class _ConsentTile extends StatelessWidget {
         children: [
           Checkbox(value: value, activeColor: AppColors.golden, onChanged: onChanged),
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.55),
+            child: GestureDetector(
+              onTap: onLabelTap,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.55),
+                  decoration: onLabelTap != null ? TextDecoration.underline : TextDecoration.none,
+                  decorationColor: AppColors.golden.withValues(alpha: 0.65),
+                ),
               ),
             ),
           ),
@@ -2372,7 +2835,7 @@ class _ShowcaseCard extends StatelessWidget {
                 color: AppColors.teal.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text('Agriculture',
+              child: const Text('Agri-Aqua and Forestry',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize:   10,

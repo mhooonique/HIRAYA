@@ -47,7 +47,7 @@ class AnalyticsScreen extends ConsumerWidget {
               _FilterDropdown(
                 label: 'Category',
                 value: state.filterCategory,
-                items: const ['All', 'Agriculture', 'Healthcare', 'Energy', 'Construction', 'Product Design', 'Information Technology'],
+                items: const ['All', 'Agri-Aqua and Forestry', 'Food Processing and Nutrition', 'Health and Medical Sciences', 'Energy, Utilities, and Environment', 'Advanced Manufacturing and Engineering', 'Creative Industries and Product Design', 'Information and Communications Technology (ICT)'],
                 onChanged: notifier.setFilterCategory,
               ),
               const SizedBox(width: 10),

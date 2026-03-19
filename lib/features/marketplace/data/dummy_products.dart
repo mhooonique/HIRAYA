@@ -48,7 +48,6 @@ ProductModel _dummy({
   required int interests,
   String? videoUrl,
   String? externalLink,
-  String? externalLinkLabel,
 }) =>
     ProductModel(
       id:                   id,
@@ -82,7 +81,7 @@ final List<ProductModel> dummyProducts = [
         'The suite includes soil moisture sensors, weather stations, and automated irrigation controllers — '
         'reducing water usage by 40% and increasing yield by up to 25%. '
         'Fully compatible with existing DOST-funded farm infrastructure and validated in partnership with DA Region X.',
-    category: 'Agriculture',
+    category: 'Agri-Aqua and Forestry',
     imageUrls: [
       'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800',
       'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=800',
@@ -104,7 +103,7 @@ final List<ProductModel> dummyProducts = [
         'like jackfruit, mango, and banana. Extends shelf life to 12 months without preservatives, '
         'retains 90% of natural nutrients, and is FDA-compliance ready. '
         'Designed with stainless-steel food-grade components certified under Philippine Food Safety Act standards.',
-    category: 'Agriculture',
+    category: 'Food Processing and Nutrition',
     imageUrls: [
       'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800',
       'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800',
@@ -126,7 +125,7 @@ final List<ProductModel> dummyProducts = [
         '"Tuklas Lunas" drug discovery program. HerbalDx detects early markers of dengue and leptospirosis '
         'in under 15 minutes using lateral flow immunoassay technology. '
         'Currently deployed in 12 rural health units across Region X with 94.7% sensitivity.',
-    category: 'Healthcare',
+    category: 'Health and Medical Sciences',
     imageUrls: [
       'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800',
       'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800',
@@ -148,7 +147,7 @@ final List<ProductModel> dummyProducts = [
         'and sugarcane bagasse — into clean electricity for industrial use. '
         'Reduces carbon footprint by 60% compared to diesel generators and saves up to ₱180,000/month in energy costs '
         'for medium-scale factories. Certified by DOE Region X and currently pilot-tested in 3 Bukidnon agro-industrial estates.',
-    category: 'Energy',
+    category: 'Energy, Utilities, and Environment',
     imageUrls: [
       'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800',
       'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800',
@@ -170,7 +169,7 @@ final List<ProductModel> dummyProducts = [
         'Features real-time stock monitoring, automated reorder triggers, and Shopee/Lazada integration. '
         'Predictive maintenance alerts reduce machine downtime by 35% in pilot factories. '
         'Winner of the DOST-PCIEERD 2024 Innovation Challenge for Digitalization.',
-    category: 'Information Technology',
+    category: 'Information and Communications Technology (ICT)',
     imageUrls: [
       'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800',
       'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
@@ -192,7 +191,7 @@ final List<ProductModel> dummyProducts = [
         'Achieves ±0.01mm precision at 1,200 units/hour — competitive with imported alternatives at 40% lower cost. '
         'Designed for the Metals and Engineering cluster of Region X, with after-sales support and spare parts '
         'available nationwide through partner DTI fabrication centers.',
-    category: 'Construction',
+    category: 'Advanced Manufacturing and Engineering',
     imageUrls: [
       'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=800',
       'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800',
@@ -215,7 +214,7 @@ final List<ProductModel> dummyProducts = [
         'Fully biodegradable, with tensile strength 3x higher than standard kraft paper. '
         'Compliant with EU and US eco-packaging import standards. '
         'Backed by the Philippine Creative Industries Development Act and CITEM export programs.',
-    category: 'Product Design',
+    category: 'Creative Industries and Product Design',
     imageUrls: [
       'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
       'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
@@ -237,7 +236,7 @@ final List<ProductModel> dummyProducts = [
         'Uses computer vision to detect fish feeding behavior and adjusts feed amounts in real time, '
         'reducing feed waste by 32% and increasing fish weight gain by 18%. '
         'Wireless monitoring via mobile app with 7-day battery backup.',
-    category: 'Agriculture',
+    category: 'Agri-Aqua and Forestry',
     imageUrls: [
       'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
       'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800',
@@ -260,7 +259,7 @@ final List<ProductModel> dummyProducts = [
         'Modular design allows expansion up to 10 hectares. '
         'Reduces water consumption by 45% versus traditional flood irrigation. '
         'Currently deployed in 28 corn farms in Maramag and Valencia, Bukidnon.',
-    category: 'Energy',
+    category: 'Energy, Utilities, and Environment',
     imageUrls: [
       'https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=800',
       'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
@@ -282,7 +281,7 @@ final List<ProductModel> dummyProducts = [
         'Extends shelf life of ready-to-eat meals and canned goods to 24 months without refrigeration. '
         'FDA-LTO ready documentation included. Processes 200 cans per batch at 121°C sterilization temperature. '
         'Saves ₱60,000/month in cold storage costs for early adopters.',
-    category: 'Agriculture',
+    category: 'Agri-Aqua and Forestry',
     imageUrls: [
       'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800',
       'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800',
@@ -305,7 +304,7 @@ final List<ProductModel> dummyProducts = [
         'Integrated with PhilHealth for cashless consultation coverage. '
         'Reduced patient travel cost by average ₱1,200/visit across 15 partner RHUs. '
         'Recognized by DOH Region X as a flagship digital health initiative.',
-    category: 'Healthcare',
+    category: 'Health and Medical Sciences',
     imageUrls: [
       'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800',
       'https://images.unsplash.com/photo-1563213126-a4273aed2016?w=800',
@@ -328,7 +327,7 @@ final List<ProductModel> dummyProducts = [
         'Includes eco-friendly natural dye processing using locally sourced tannin compounds. '
         'Partner of the NCCA and DTI Go Lokal! program. '
         'Products currently sold in 4 international markets including Japan, Germany, and the US.',
-    category: 'Product Design',
+    category: 'Creative Industries and Product Design',
     imageUrls: [
       'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=800',
       'https://images.unsplash.com/photo-1493552152660-f915ab47ae9d?w=800',
@@ -350,7 +349,7 @@ final List<ProductModel> dummyProducts = [
         'Effective against aphids, whiteflies, and fungal pathogens in pineapple and banana plantations. '
         'Reduces chemical pesticide use by 55% and meets organic certification requirements. '
         'Validated by PCAARRD and recommended by DA-BAI for nationwide distribution.',
-    category: 'Agriculture',
+    category: 'Agri-Aqua and Forestry',
     imageUrls: [
       'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
       'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=800',
@@ -372,7 +371,7 @@ final List<ProductModel> dummyProducts = [
         'operations in Region X. Each pack provides 100% RDA of iron, vitamin A, and zinc for children 6-12. '
         'Shelf-stable for 18 months. Produced using locally sourced moringa, malunggay, and kangkong concentrates. '
         'Endorsed by DepEd Region X and currently supplying 42 public schools in Misamis Oriental.',
-    category: 'Healthcare',
+    category: 'Health and Medical Sciences',
     imageUrls: [
       'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800',
       'https://images.unsplash.com/photo-1547592180-85f173990554?w=800',
@@ -395,7 +394,7 @@ final List<ProductModel> dummyProducts = [
         'Features automated BIR, DTI, and FDA document preparation using AI form-filling. '
         'Integrated with GCash, Maya, and UnionBank for instant business account setup. '
         'Has onboarded 1,240 MSMEs in Region X since its soft launch in Q1 2024.',
-    category: 'Information Technology',
+    category: 'Information and Communications Technology (ICT)',
     imageUrls: [
       'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
       'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',

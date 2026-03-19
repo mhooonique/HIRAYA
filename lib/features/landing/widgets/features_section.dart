@@ -1,5 +1,4 @@
 // lib/features/landing/widgets/features_section.dart
-import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -22,7 +21,6 @@ class _FeaturesSectionState extends State<FeaturesSection>
     with TickerProviderStateMixin {
   late AnimationController _orbCtrl;
   late AnimationController _counterCtrl;
-  late Animation<double> _counterAnim;
   bool _counterStarted = false;
 
   static const _features = [
@@ -94,7 +92,6 @@ class _FeaturesSectionState extends State<FeaturesSection>
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    _counterAnim = CurvedAnimation(parent: _counterCtrl, curve: Curves.easeOutCubic);
 
     Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted && !_counterStarted) {

@@ -24,12 +24,13 @@ class CategoryFilterBar extends StatefulWidget {
 
   static const List<Map<String, dynamic>> cats = [
     {'name': 'All', 'icon': Icons.apps_rounded, 'count': null},
-    {'name': 'Agriculture', 'icon': Icons.grass_rounded, 'count': null},
-    {'name': 'Healthcare', 'icon': Icons.medical_services_rounded, 'count': null},
-    {'name': 'Energy', 'icon': Icons.bolt_rounded, 'count': null},
-    {'name': 'Construction', 'icon': Icons.foundation_rounded, 'count': null},
-    {'name': 'Product Design', 'icon': Icons.design_services_rounded, 'count': null},
-    {'name': 'Information Technology', 'icon': Icons.computer_rounded, 'count': null},
+    {'name': 'Agri-Aqua and Forestry', 'icon': Icons.grass_rounded, 'count': null},
+    {'name': 'Food Processing and Nutrition', 'icon': Icons.restaurant_menu_rounded, 'count': null},
+    {'name': 'Health and Medical Sciences', 'icon': Icons.medical_services_rounded, 'count': null},
+    {'name': 'Energy, Utilities, and Environment', 'icon': Icons.bolt_rounded, 'count': null},
+    {'name': 'Advanced Manufacturing and Engineering', 'icon': Icons.foundation_rounded, 'count': null},
+    {'name': 'Creative Industries and Product Design', 'icon': Icons.design_services_rounded, 'count': null},
+    {'name': 'Information and Communications Technology (ICT)', 'icon': Icons.computer_rounded, 'count': null},
   ];
 
   @override

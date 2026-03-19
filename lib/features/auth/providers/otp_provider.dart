@@ -1,9 +1,7 @@
 // lib/features/auth/providers/otp_provider.dart
 
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/api_service.dart';
 
@@ -147,44 +145,6 @@ class OtpNotifier extends StateNotifier<OtpState> {
   void reset() => state = const OtpState();
 
   // ── Private ──────────────────────────────────────────────────────────────
-  Future<void> _sendSmsOtp(String phoneNumber) async {
-    final completer = Completer<void>();
-
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber:      phoneNumber,
-      timeout:          const Duration(seconds: 60),
-      forceResendingToken: state.resendToken,
-      verificationCompleted: (credential) async {
-        // Auto-verified on Android
-        await FirebaseAuth.instance.signInWithCredential(credential);
-        final deviceId = await getDeviceId();
-        await _api.post('otp/verify', {
-          'user_id':      state.userId,
-          'code':         '000000',
-          'device_id':    deviceId,
-          'sms_verified': true,
-        }, auth: false);
-        state = state.copyWith(isVerified: true);
-        if (!completer.isCompleted) completer.complete();
-      },
-      verificationFailed: (e) {
-        if (!completer.isCompleted) {
-          completer.completeError(e.message ?? 'SMS verification failed');
-        }
-      },
-      codeSent: (verificationId, resendToken) {
-        state = state.copyWith(
-          verificationId: verificationId,
-          resendToken:    resendToken,
-        );
-        if (!completer.isCompleted) completer.complete();
-      },
-      codeAutoRetrievalTimeout: (_) {},
-    );
-
-    return completer.future;
-  }
-
   Future<void> _sendEmailOtp(int userId) async {
     final res = await _api.post('otp/send', {
       'user_id': userId,

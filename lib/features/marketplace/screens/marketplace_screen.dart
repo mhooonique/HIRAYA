@@ -98,7 +98,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     final isDesktop = w > 900;
 
     return Scaffold(
-<<<<<<< HEAD
       backgroundColor: AppColors.deepVoid,
       // ── Scroll-to-top FAB ─────────────────────────────────
       floatingActionButton: AnimatedOpacity(
@@ -168,43 +167,6 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                     auth: auth,
                     onLogoTap: () => context.go('/'),
                     onSignIn: () => context.go('/login'),
-=======
-      backgroundColor: AppColors.offWhite,
-      body: NestedScrollView(
-        controller: _scrollCtrl,
-        headerSliverBuilder: (context, innerScrolled) => [
-          SliverAppBar(
-            expandedHeight: 200,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.navy,
-            automaticallyImplyLeading: false,
-leading: IconButton(
-  icon: Container(
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: const Icon(Icons.arrow_back_rounded,
-        color: Colors.white, size: 18),
-  ),
-  onPressed: () {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
-  },
-),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.navy, AppColors.teal],
->>>>>>> origin/master
                   ),
                 ),
 

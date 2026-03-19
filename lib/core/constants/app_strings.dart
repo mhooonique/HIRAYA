@@ -5,11 +5,12 @@ class AppStrings {
       'Connecting Filipino Innovators with the Clients who believe in them.';
 
   static const List<String> categories = [
-    'Agriculture',
-    'Healthcare',
-    'Energy',
-    'Construction',
-    'Product Design',
-    'Information Technology',
+    'Agri-Aqua and Forestry',
+    'Food Processing and Nutrition',
+    'Health and Medical Sciences',
+    'Energy, Utilities, and Environment',
+    'Information and Communications Technology (ICT)',
+    'Advanced Manufacturing and Engineering',
+    'Creative Industries and Product Design',
   ];
 }

@@ -851,8 +851,8 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
   double _minRating = 0;
 
   static const _categories = [
-    'Agriculture', 'Healthcare', 'Energy',
-    'Construction', 'Product Design', 'Information Technology'
+    'Agri-Aqua and Forestry', 'Food Processing and Nutrition', 'Health and Medical Sciences', 'Energy, Utilities, and Environment',
+    'Advanced Manufacturing and Engineering', 'Creative Industries and Product Design', 'Information and Communications Technology (ICT)'
   ];
   static const _stages = [
     ('concept', 'Concept'),

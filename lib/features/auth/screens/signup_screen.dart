@@ -480,13 +480,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   }
 
   Widget _buildProgressHeader(int displayStep, double progress, AuthState auth) {
-
-    // Step labels — password step (3) is skipped for Google signups
-    final allLabels = _data.isGoogleSignup
-        ? const ['Role', 'Info', 'Phone', 'KYC', 'Terms', 'Review']
-        : const ['Role', 'Info', 'Pass', 'Phone', 'KYC', 'Terms', 'Review'];
-    final displayStep = (_data.isGoogleSignup && _step >= 4) ? _step - 1 : _step;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       decoration: BoxDecoration(

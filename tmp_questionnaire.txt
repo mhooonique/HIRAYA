@@ -1,0 +1,376 @@
+---PAGE 1---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 1 
+DIGITAL PLATFORM 
+ 
+ 
+ADVISER QUESTIONNAIRE & ASSET UPLOAD GUIDE 
+For Review, Feedback, and Content Preparation 
+Prepared by the Development Team 
+  
+
+---PAGE 2---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 2 
+SECTION 1 — ADVISER QUESTIONNAIRE 
+The following questions are intended to be answered by the project adviser. Please provide your responses, 
+corrections, and recommendations in the spaces provided.  
+Part A: User Roles & Platform Interaction 
+ 
+Q1.  Are innovators permitted to browse and explore the marketplace in the same capacity as 
+clients? Should they have access to the same features, such as liking posts, expressing 
+interest, and viewing other innovations? 
+This clarifies whether innovators operate solely as content publishers or whether they may also function as 
+marketplace participants. 
+Answer / Feedback: No. 
+ 
+ 
+Part B: Terms, Consent & Legal Compliance 
+ 
+Q2.  Is the current wording of the Privacy Policy and Data Processing Consent sufficient to be 
+considered legally valid and comprehensible to a general user? Please advise on any revisions 
+needed. 
+The current consent text reads: "I consent to the platform collecting and processing my personal data including 
+KYC documents under Republic Act 10173 (Data Privacy Act of 2012)." — Please refer to the attached 
+screenshot: 
+ 
+Answer / Feedback: Yes, the current wordings are sufficient. But please remove all “HIRAYA” words. 
+ 
+ 
+ 
+ 
+
+
+---PAGE 3---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 3 
+Q3.  What specific clauses or disclosures should be added to the Terms of Service to ensure 
+the platform's compliance with applicable Philippine laws and DOST institutional policies?  
+Answer / Feedback: 
+ 
+1. Data Privacy and User Information 
+Clause 1.1: Scope of Data Collection. The Digital Platform collects and processes only the 
+personal information required for account creation and identity verification. By registering, 
+the User consents to the storage of this login information for the purpose of secure system 
+access and communication. 
+Clause 1.2: Data Retention and Deletion. User login information shall be retained only for 
+the duration of the account's active status. Upon a written request for account termination, all 
+personal identifiers shall be purged from the system database within thirty (30) days, in 
+compliance with the National Privacy Commission (NPC) standards. 
+2. Intellectual Property and Technology Commercialization 
+Clause 2.1: Innovator’s Warranty of Ownership. By uploading innovative technologies for 
+adoption, the Innovator warrants that they hold the legal rights or authorized license to the 
+intellectual property. The Innovator assumes all liability for the accuracy of technical 
+specifications and for ensuring that the commercialization of such technology does not 
+infringe on existing patents. 
+Clause 2.2: Public vs. Restricted Visibility. Basic technology descriptions and high-level 
+benefits are treated as "Public Information" to facilitate discovery. However, detailed 
+operational manuals or proprietary schematics remain protected by the innovator; access to 
+these files is granted only to clients adopting the innovative technology. 
+Clause 2.3: Non-Transfer of Rights. The act of uploading a technology to the Digital 
+Platform does not constitute a transfer of ownership to the Platform or the System 
+Administrator. Formal Technology Transfer Agreements (TTA) and licensing must be 
+executed externally between the innovator and the client. 
+3. System Security and Access Control 
+Clause 3.1: Credential Responsibility. The User is solely responsible for maintaining the 
+confidentiality of their login credentials. Any activity performed under a User’s account is 
+deemed the action of that User. Users are required to notify the Administrator immediately 
+upon any suspicion of unauthorized account access. 
+Clause 3.2: Multi-Factor Authentication (MFA). To protect the integrity of the innovation 
+marketplace, the Digital Platform requires MFA for all, ”Client”, "Innovator" and "Admin" 
+roles. Users agree to provide a valid mobile number or authenticator app link to satisfy this 
+security requirement. 
+4. Administrative Moderation (E-Governance Compliance) 
+
+---PAGE 4---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 4 
+Clause 4.1: Verification of Innovative Technologies. In line with RA 12254 (E-
+Governance Act), the System Administrator reserves the right to verify the legitimacy of any 
+technology submitted for commercialization. Submissions that are found to be fraudulent, 
+misleading, or scientifically unverified may be removed without prior notice. 
+Clause 4.2: Role-Based Redirection. The system utilizes automated role-based redirection. 
+Users agree to be categorized as "Client", "Innovator," or "Admin" based on the credentials 
+and documentation provided during onboarding, and acknowledge that certain platform 
+features are restricted based on these roles. 
+5. Disclaimers and Limitation of Liability 
+Clause 5.1: "As-Is" Information. All technology listings are provided on an "as-is" basis. 
+The Digital Platform does not verify the mechanical soundness or financial ROI of the 
+technologies and shall not be held liable for any production losses or business failures 
+resulting from an adoption facilitated through the marketplace. 
+Clause 5.2: Third-Party Links. The Digital Platform may contain links to external DOST 
+portals or official government filing systems. The Digital Platform is not responsible for the 
+privacy practices or content of these external government sites. 
+ 
+ 
+ 
+ 
+ 
+Part C: Identity Verification (KYC) 
+ 
+Q4.  What specific government-issued identification documents should be accepted for KYC 
+verification? Please indicate whether all documents listed below are acceptable, or if the list 
+should be revised. 
+Current accepted IDs: Philippine Passport, Driver's License, SSS ID, PhilSys National ID, UMID, Voter's ID, PRC 
+License, and School/Student ID (for students). Please indicate additions or removals. 
+Answer / Feedback: Yes. List above is acceptable. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+---PAGE 5---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 5 
+Part D: Platform Content, Categories & Branding 
+ 
+Q5.  The platform currently features the following innovation categories: Agriculture, 
+Healthcare, Energy, Construction, Product Design, and Information Technology. Are these 
+categories appropriate and sufficient for the scope of DOST Region X innovations?  Should any 
+categories be added, removed, or renamed? 
+Please provide a rationale for each recommended change, if applicable. 
+Answer / Feedback: Revise all and replace the following. 
+ 
+1. Agri-Aqua and Forestry 
+ 
+2. Food Processing and Nutrition 
+ 
+3. Health and Medical Sciences 
+ 
+4. Energy, Utilities, and Environment 
+ 
+5. Information and Communications Technology (ICT) 
+ 
+6. Advanced Manufacturing and Engineering 
+ 
+7. Creative Industries and Product Design 
+ 
+ 
+ 
+ 
+Q6.  Why were these specific categories chosen for the platform? Please provide a brief 
+description or rationale for each category — what it represents, what kinds of innovations fall 
+under it, and what information or visuals should be highlighted on each category card on the 
+landing page. 
+This will be used to write the descriptive content displayed on each category card and section of the platform 
+visible to guests, registered users, and innovators. 
+Answer / Feedback: 
+1. Agri-Aqua and Forestry 
+Rationale: Northern Mindanao is the top producer of pineapple and a major producer of bananas and 
+corn. This category captures the "raw material" side of the value chain.  
+ 
+Innovations: Post-harvest facilities, smart farming sensors, high-yield seed varieties, and aquaculture 
+feeding systems. 
+ 
+Visuals/Info: Highlight "Yield Increase Percentage" or "Waste Reduction." Use icons or images of 
+modern farm machinery or automated fisheries. 
+ 
+2. Food Processing and Nutrition 
+Rationale: This is the most critical category for your MSME study. Most local businesses in CDO and 
+Bukidnon are in food manufacturing but struggle with shelf-life and packaging. 
+ 
+
+---PAGE 6---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 6 
+Innovations: Dehydrators, vacuum frying technology, retort processing (canning), and nutrient -fortified 
+food formulations. 
+ 
+Visuals/Info: Highlight "Shelf-life Extension" and "FDA Compliance Ready." Use visuals of stainless 
+steel food-grade machinery. 
+ 
+3. Health and Medical Sciences 
+Rationale: Aligns with DOST’s push for "Tuklas Lunas" (drug discovery from local plants) and 
+biomedical devices to support regional hospitals. 
+ 
+Innovations: Herbal supplements, diagnostic kits, telehealth software, and locally -made medical 
+furniture. 
+ 
+Visuals/Info: Highlight "Clinical Validation Status." Use clean, clinical imagery like laboratory 
+equipment or medical pulse icons. 
+ 
+4. Energy, Utilities, and Environment 
+Rationale: Region X has a heavy industrial base that requires sustainable energy and waste 
+management solutions to lower operational costs. 
+ 
+Innovations: Solar-powered irrigation, biomass energy from agricultural waste, and industrial 
+wastewater treatment systems. 
+ 
+Visuals/Info: Highlight "Energy Savings (kWh)" or "Carbon Footprint Reduction." Use icons of solar 
+panels or green recycling arrows. 
+ 
+5. Information and Communications Technology (ICT) 
+Rationale: Supports the "Smart City" initiatives of Cagayan de Oro and the digitalization of logistics 
+and supply chains in the region. 
+ 
+Innovations: Inventory management systems, E-commerce integrations for MSMEs, and AI-driven 
+predictive maintenance for factories. 
+ 
+Visuals/Info: Highlight "Automation Level" and "System Interoperability." Use visuals of circuit patterns 
+or cloud computing symbols. 
+ 
+6. Advanced Manufacturing and Engineering 
+Rationale: Reflects the "Metals and Engineering" strength of Iligan City and the surrounding areas. 
+This is where heavy equipment and "Metal-works" innovations sit. 
+ 
+Innovations: CNC machines, specialized metal casting, 3D industrial printing, and hydraulic press 
+systems. 
+ 
+Visuals/Info: Highlight "Production Speed (Units/Hour)" and "Material Durability." Use images of gears, 
+mechanical arms, or metal fabrication. 
+ 
+7. Creative Industries and Product Design 
+
+---PAGE 7---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 7 
+Rationale: Aligns with the Philippine Creative Industries Development Act. It targets MSMEs in the 
+handicraft, fashion, and furniture sectors that need high-end design to export. 
+ 
+Innovations: Sustainable packaging designs, CAD-aided furniture patterns, and eco-friendly textile 
+processing. 
+ 
+Visuals/Info: Highlight "Market Aesthetic Score" or "Export Potential." Use high -quality lifestyle photos 
+of finished, well-designed local products. 
+ 
+ 
+ 
+Q7.  Should the platform display or link to the official DOST Region X Facebook account and 
+official website? If so, please provide the correct and current URLs.  
+Proposed links: DOST RX Facebook Page and DOST RX Official Website. 
+Answer / Feedback: Yes. Please attach the links below: 
+ 
+FB: facebook.com/DOSTNorMinPH 
+ 
+Official Website: region10.dost.gov.ph/ 
+ 
+ 
+ 
+Part E: Contact Information & Communication 
+ 
+Q8.  What official contact information (email address, telephone number, and physical office 
+address) should be displayed on the platform for user inquiries and support?  
+This information will appear in the footer and the Contact Us section of the platform. 
+Answer / Feedback: 
+ 
+dmbalanayjr@region10.dost.gov.ph 
+digitalplatform@region10.dost.gov.ph 
+ 
+0917 857 9186 
+ 
+J.V. Seriña St., Carmen, Cagayan de Oro City, Misamis Oriental, Philippines  
+ 
+ 
+ 
+Q9.  Should the platform include a "Message Us" or contact form feature on the landing page 
+that allows guests and users to send inquiries directly to DOST Region X? If yes, to which 
+email address should these messages be routed? 
+This feature is optional and will only be implemented upon adviser approval. 
+
+---PAGE 8---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 8 
+Answer / Feedback: Yes. Route to the following email address: 
+ 
+dmbalanayjr@region10.dost.gov.ph 
+ 
+ 
+ 
+ 
+  
+
+---PAGE 9---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 9 
+SECTION 2 — GOOGLE DRIVE ASSET UPLOAD GUIDE 
+The following instructions describe the folder structure and content requirements for all visual assets to be 
+uploaded to the shared Google Drive. These assets will be used across the platform, including the landing page, 
+category pages, marketplace, and administrative sections. 
+ 
+NOTE:  All uploaded assets must be organized exactly as described below. Misplaced or improperly named 
+files may result in them not being displayed correctly on the platform. Please do not alter the folder names. 
+ 
+Google Drive Folder Structure 
+ 
+Main Folder: Platform Assets 
+• This is the root folder shared with the development team. 
+• Do not modify the folder name or move files outside their designated subfolders. 
+• Ensure that sharing permissions are set to "Anyone with the link can view" or provide direct access to 
+the development team's Gmail account. 
+ 
+Subfolder 1: /stock-photos 
+Contains general-purpose photographs used on the landing page, hero banners, section backgrounds, and 
+promotional materials. 
+ 
+Subfolders within /stock-photos (one per category): 
+• /stock-photos/Agriculture — Photos of crops, farmland, irrigation systems, farming technology, and 
+rural innovation. 
+• /stock-photos/Healthcare — Photos of medical facilities, health workers, medical devices, and 
+community health programs. 
+• /stock-photos/Energy — Photos of solar panels, wind turbines, sustainable energy infrastructure, and 
+energy projects. 
+• /stock-photos/Construction — Photos of structures, building materials, engineering projects, and 
+construction innovation. 
+• /stock-photos/Product Design — Photos of prototypes, product mockups, design labs, and 
+manufactured goods. 
+• /stock-photos/Information Technology — Photos of computers, software interfaces, networking 
+equipment, and digital innovation. 
+ 
+ 
+Subfolder 2: /products 
+Contains media assets specifically associated with featured innovation posts on the marketplace. These images 
+will be displayed directly on product listing cards and detail pages. 
+ 
+Instructions for /products uploads: 
+• Create one named subfolder per featured product or innovation (e.g., /products/SmartRiceMonitor). 
+• Each product folder should contain at least 5 high-quality photographs of the product. 
+• The first image in each folder will be treated as the cover thumbnail. 
+
+---PAGE 10---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 10 
+• Optional: include one short video (MP4 format, 30–60 seconds) per product folder. 
+• Optional: include a QR code image (PNG format) linking to a demo or presentation. 
+ 
+Subfolder 3: /id-examples 
+Contains sample or reference images of accepted government-issued identification documents. These will be 
+displayed on the KYC (Know Your Customer) upload screen to guide users on what types of IDs are accepted 
+and how to present them properly. 
+ 
+Accepted ID examples to include? Specify, please. 
+  
+
+---PAGE 11---
+DIGITAL PLATFORM   |   Adviser Questionnaire & Asset Upload Guide 
+Digital Platform  |  Confidential  |  Page 11 
+SECTION 3 — PRIVACY NOTICE & DATA HANDLING POLICY 
+ 
+Data Privacy Notice 
+In compliance with Republic Act No. 10173, otherwise known as the Data Privacy Act of 2012 , the platform is 
+committed to protecting the privacy and security of all personal data collected through this platform.  
+ 
+What Information Is Collected 
+The platform collects the following categories of personal information during registration and account verification:  
+• Gmail address 
+• Mobile phone number 
+• Government-issued identification document (image) 
+• Platform activity data, including posts. 
+ 
+How Your Information Is Used 
+The personal data collected by the platform is used exclusively for the following purposes:  
+• Verification of user identity and eligibility to participate on the platform  
+• Administration of user accounts and platform access 
+• Communication of account status updates, verification codes, and system notifications  
+• Generation of platform analytics. 
+ 
+Data Sharing & Disclosure 
+Your personal data — including your identification documents and photographs — will NOT be shared 
+with, sold to, or disclosed to any third party without your explicit written consent, except as required by 
+applicable law or by order of a competent authority. 
+ 
+By submitting this form and uploading assets to the shared Google Drive, you acknowledge that you have read and 
+understood this Privacy Notice and that all uploaded materials are provided voluntarily for the development and operation 
+of the platform. 

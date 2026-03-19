@@ -537,7 +537,7 @@ class _MyInnovationsState extends State<_MyInnovations> {
   String _sortBy = 'Newest';
 
   static const _statuses = ['All', 'approved', 'pending', 'rejected'];
-  static const _categories = ['All', 'Agriculture', 'Healthcare', 'Energy', 'Construction', 'Product Design', 'Information Technology'];
+  static const _categories = ['All', 'Agri-Aqua and Forestry', 'Food Processing and Nutrition', 'Health and Medical Sciences', 'Energy, Utilities, and Environment', 'Advanced Manufacturing and Engineering', 'Creative Industries and Product Design', 'Information and Communications Technology (ICT)'];
   static const _sortOptions = ['Newest', 'Most Liked', 'Most Views'];
 
   @override
@@ -762,21 +762,15 @@ class _ProductDetailRow extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
-<<<<<<< HEAD
         border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-=======
-        border: Border.all(color: AppColors.lightGray),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)
+          BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 10),
         ],
->>>>>>> origin/master
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
-<<<<<<< HEAD
             decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
             child: Icon(Icons.lightbulb_rounded, color: color, size: 20),
           ),
@@ -786,31 +780,6 @@ class _ProductDetailRow extends ConsumerWidget {
             Text('${product.category} · ${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
                 style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.38))),
           ])),
-=======
-            decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10)),
-            child: Icon(Icons.lightbulb_rounded, color: color, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(product.name,
-                    style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.navy)),
-                Text(
-                    '${product.category} · ${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
-                    style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 12,
-                        color: Colors.black38)),
-              ])),
->>>>>>> origin/master
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -830,18 +799,8 @@ class _ProductDetailRow extends ConsumerWidget {
         ]),
         const SizedBox(height: 12),
         Text(product.description,
-<<<<<<< HEAD
             style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.50), height: 1.5),
             maxLines: 2, overflow: TextOverflow.ellipsis),
-=======
-            style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-                color: Colors.black54,
-                height: 1.5),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis),
->>>>>>> origin/master
         const SizedBox(height: 14),
         Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
         const SizedBox(height: 14),
@@ -851,14 +810,8 @@ class _ProductDetailRow extends ConsumerWidget {
               value: '${product.likes} likes',
               color: AppColors.crimson),
           const SizedBox(width: 16),
-<<<<<<< HEAD
           _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views} views', color: Colors.white38),
-=======
-          _MiniStat(
-              icon: Icons.remove_red_eye_rounded,
-              value: '${product.views} views',
-              color: Colors.black38),
->>>>>>> origin/master
+            _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views} views', color: Colors.white38),
           const SizedBox(width: 16),
           _MiniStat(
               icon: Icons.handshake_rounded,
@@ -917,7 +870,7 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
   final _linkCtrl = TextEditingController();
   final _formKey  = GlobalKey<FormState>();
 
-  String _selectedCategory = 'Agriculture';
+  String _selectedCategory = 'Agri-Aqua and Forestry';
 
   final List<_PickedFile> _images = [];
   _PickedFile? _video;
@@ -926,8 +879,8 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
   Timer? _debounce;
 
   static const _categories = [
-    'Agriculture', 'Healthcare', 'Energy',
-    'Construction', 'Product Design', 'Information Technology',
+    'Agri-Aqua and Forestry', 'Food Processing and Nutrition', 'Health and Medical Sciences', 'Energy, Utilities, and Environment',
+    'Advanced Manufacturing and Engineering', 'Creative Industries and Product Design', 'Information and Communications Technology (ICT)',
   ];
 
   @override
@@ -1061,7 +1014,7 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
       _nameCtrl.clear();
       _descCtrl.clear();
       _linkCtrl.clear();
-      setState(() { _images.clear(); _video = null; _selectedCategory = 'Agriculture'; _draftRestored = false; });
+      setState(() { _images.clear(); _video = null; _selectedCategory = 'Agri-Aqua and Forestry'; _draftRestored = false; });
     }
   }
 

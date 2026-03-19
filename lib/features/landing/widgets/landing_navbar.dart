@@ -742,12 +742,13 @@ class _CategoriesDropdownState extends State<_CategoriesDropdown>
   late Animation<double> _dropdownAnim;
 
   static const List<Map<String, dynamic>> _categories = [
-    {'label': 'Agriculture', 'icon': Icons.grass_rounded, 'color': AppColors.teal},
-    {'label': 'Healthcare', 'icon': Icons.medical_services_rounded, 'color': AppColors.crimson},
-    {'label': 'Energy', 'icon': Icons.bolt_rounded, 'color': AppColors.golden},
-    {'label': 'Construction', 'icon': Icons.foundation_rounded, 'color': AppColors.navy},
-    {'label': 'Product Design', 'icon': Icons.design_services_rounded, 'color': AppColors.sky},
-    {'label': 'Information Technology', 'icon': Icons.computer_rounded, 'color': Color(0xFF1B4B8A)},
+    {'label': 'Agri-Aqua and Forestry', 'icon': Icons.grass_rounded, 'color': AppColors.teal},
+    {'label': 'Food Processing and Nutrition', 'icon': Icons.restaurant_menu_rounded, 'color': Color(0xFFFF8C42)},
+    {'label': 'Health and Medical Sciences', 'icon': Icons.medical_services_rounded, 'color': AppColors.crimson},
+    {'label': 'Energy, Utilities, and Environment', 'icon': Icons.bolt_rounded, 'color': AppColors.golden},
+    {'label': 'Advanced Manufacturing and Engineering', 'icon': Icons.foundation_rounded, 'color': AppColors.navy},
+    {'label': 'Creative Industries and Product Design', 'icon': Icons.design_services_rounded, 'color': AppColors.sky},
+    {'label': 'Information and Communications Technology (ICT)', 'icon': Icons.computer_rounded, 'color': Color(0xFF1B4B8A)},
   ];
 
   @override
@@ -1160,12 +1161,13 @@ class _MobileDrawerOverlayState extends State<_MobileDrawerOverlay>
   bool _categoriesExpanded = false;
 
   static const List<Map<String, dynamic>> _categories = [
-    {'label': 'Agriculture', 'icon': Icons.grass_rounded, 'color': AppColors.teal},
-    {'label': 'Healthcare', 'icon': Icons.medical_services_rounded, 'color': AppColors.crimson},
-    {'label': 'Energy', 'icon': Icons.bolt_rounded, 'color': AppColors.golden},
-    {'label': 'Construction', 'icon': Icons.foundation_rounded, 'color': AppColors.navy},
-    {'label': 'Product Design', 'icon': Icons.design_services_rounded, 'color': AppColors.sky},
-    {'label': 'Information Technology', 'icon': Icons.computer_rounded, 'color': Color(0xFF1B4B8A)},
+    {'label': 'Agri-Aqua and Forestry', 'icon': Icons.grass_rounded, 'color': AppColors.teal},
+    {'label': 'Food Processing and Nutrition', 'icon': Icons.restaurant_menu_rounded, 'color': Color(0xFFFF8C42)},
+    {'label': 'Health and Medical Sciences', 'icon': Icons.medical_services_rounded, 'color': AppColors.crimson},
+    {'label': 'Energy, Utilities, and Environment', 'icon': Icons.bolt_rounded, 'color': AppColors.golden},
+    {'label': 'Advanced Manufacturing and Engineering', 'icon': Icons.foundation_rounded, 'color': AppColors.navy},
+    {'label': 'Creative Industries and Product Design', 'icon': Icons.design_services_rounded, 'color': AppColors.sky},
+    {'label': 'Information and Communications Technology (ICT)', 'icon': Icons.computer_rounded, 'color': Color(0xFF1B4B8A)},
   ];
 
   @override

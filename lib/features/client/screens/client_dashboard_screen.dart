@@ -6,7 +6,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/providers/theme_provider.dart';
-import '../../../core/widgets/user_avatar.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
 import '../../marketplace/providers/marketplace_provider.dart';

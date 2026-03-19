@@ -64,17 +64,19 @@ class _ProductCardState extends ConsumerState<ProductCard> {
 
   IconData _categoryIcon(String category) {
     switch (category) {
-      case 'Agriculture':
+      case 'Agri-Aqua and Forestry':
         return Icons.grass_rounded;
-      case 'Healthcare':
+      case 'Food Processing and Nutrition':
+        return Icons.restaurant_menu_rounded;
+      case 'Health and Medical Sciences':
         return Icons.medical_services_rounded;
-      case 'Energy':
+      case 'Energy, Utilities, and Environment':
         return Icons.bolt_rounded;
-      case 'Construction':
+      case 'Advanced Manufacturing and Engineering':
         return Icons.foundation_rounded;
-      case 'Product Design':
+      case 'Creative Industries and Product Design':
         return Icons.design_services_rounded;
-      case 'Information Technology':
+      case 'Information and Communications Technology (ICT)':
         return Icons.computer_rounded;
       default:
         return Icons.lightbulb_rounded;

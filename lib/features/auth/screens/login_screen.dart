@@ -615,7 +615,7 @@ class _InnovationShowcaseCard extends StatelessWidget {
             )),
           const SizedBox(height: 14),
           Row(children: [
-            _MiniTag(label: 'Agriculture', color: AppColors.teal),
+            _MiniTag(label: 'Agri-Aqua and Forestry', color: AppColors.teal),
             const SizedBox(width: 8),
             _MiniTag(label: 'AI/ML', color: AppColors.sky),
             const Spacer(),

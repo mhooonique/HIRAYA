@@ -10,12 +10,13 @@ class AppColors {
 
   // Category Color Map
   static const Map<String, Color> categoryColors = {
-    'Agriculture': teal,
-    'Healthcare': crimson,
-    'Energy': golden,
-    'Construction': navy,
-    'Product Design': sky,
-    'Information Technology': Color(0xFF1B4B8A),
+    'Agri-Aqua and Forestry': teal,
+    'Food Processing and Nutrition': Color(0xFFFF8C42),
+    'Health and Medical Sciences': crimson,
+    'Energy, Utilities, and Environment': golden,
+    'Information and Communications Technology (ICT)': Color(0xFF1B4B8A),
+    'Advanced Manufacturing and Engineering': navy,
+    'Creative Industries and Product Design': sky,
   };
 
   // Neutrals

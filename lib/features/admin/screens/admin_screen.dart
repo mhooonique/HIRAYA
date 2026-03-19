@@ -284,7 +284,6 @@ class _AdminThemeToggle extends ConsumerWidget {
 class _AdminTopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final email = ref.watch(authProvider).user?.email ?? 'admin';
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
