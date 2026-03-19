@@ -112,7 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         Image.asset('assets/images/logo/final-logo.png', height: 80),
                         const SizedBox(height: 24),
-                        const Text('HIRAYA', style: TextStyle(fontFamily: 'Poppins', fontSize: 48, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 8)),
+                        const Text('Digital Platform', style: TextStyle(fontFamily: 'Poppins', fontSize: 48, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 8)),
                         const SizedBox(height: 12),
                         const Text('Where Innovation\nMeets Opportunity', style: TextStyle(fontFamily: 'Poppins', fontSize: 20, color: Colors.white60, height: 1.5)),
                         const SizedBox(height: 48),

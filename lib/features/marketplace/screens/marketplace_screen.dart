@@ -9,11 +9,16 @@ import '../widgets/category_filter_bar.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class MarketplaceScreen extends ConsumerStatefulWidget {
-  const MarketplaceScreen({super.key});
+  /// When true, hides the SliverAppBar (used inside client dashboard tab)
+  final bool embeddedInDashboard;
+
+  const MarketplaceScreen({
+    super.key,
+    this.embeddedInDashboard = false,
+  });
 
   @override
-  ConsumerState<MarketplaceScreen> createState() =>
-      _MarketplaceScreenState();
+  ConsumerState<MarketplaceScreen> createState() => _MarketplaceScreenState();
 }
 
 class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
@@ -37,11 +42,128 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(marketplaceProvider);
+    final state    = ref.watch(marketplaceProvider);
     final notifier = ref.read(marketplaceProvider.notifier);
     final products = state.filtered;
-    final auth = ref.watch(authProvider);
+    final auth     = ref.watch(authProvider);
 
+    // ── Embedded mode (inside client dashboard tab) ───────────────────────
+    if (widget.embeddedInDashboard) {
+      return RefreshIndicator(
+        onRefresh: notifier.loadProducts,
+        color: AppColors.teal,
+        child: CustomScrollView(
+          slivers: [
+            // Search + sort bar
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => context.push('/search'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.lightGray),
+                          boxShadow: [BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2))],
+                        ),
+                        child: const Row(children: [
+                          Icon(Icons.search_rounded,
+                              color: Colors.black38, size: 20),
+                          SizedBox(width: 12),
+                          Text('Search innovations, innovators...',
+                              style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  color: Colors.black38)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  PopupMenuButton<String>(
+                    onSelected: notifier.setSort,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.lightGray),
+                      ),
+                      child: const Icon(Icons.sort_rounded,
+                          color: AppColors.navy, size: 20),
+                    ),
+                    itemBuilder: (_) => [
+                      _sortItem('newest',       'Newest First',  Icons.access_time_rounded),
+                      _sortItem('most_liked',   'Most Liked',    Icons.favorite_rounded),
+                      _sortItem('most_viewed',  'Most Viewed',   Icons.remove_red_eye_rounded),
+                      _sortItem('most_interest','Most Interest', Icons.trending_up_rounded),
+                    ],
+                  ),
+                ]),
+              ),
+            ),
+
+            // Category filter
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: CategoryFilterBar(
+                  selected: state.selectedCategory,
+                  onSelect: notifier.setCategory,
+                ),
+              ),
+            ),
+
+            // Stats bar
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(children: [
+                  Text('${products.length} innovations found',
+                      style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          color: Colors.black45,
+                          fontWeight: FontWeight.w500)),
+                  const Spacer(),
+                  if (state.selectedCategory != 'All' ||
+                      state.searchQuery.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        _searchCtrl.clear();
+                        notifier.setSearch('');
+                        notifier.setCategory('All');
+                      },
+                      child: const Text('Clear filters',
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              color: AppColors.crimson,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                ]),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+            ..._buildProductSliver(context, state, products, notifier),
+          ],
+        ),
+      );
+    }
+
+    // ── Standalone mode (normal marketplace route) ────────────────────────
     return Scaffold(
       backgroundColor: AppColors.offWhite,
       body: NestedScrollView(
@@ -53,24 +175,24 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen> {
             pinned: true,
             backgroundColor: AppColors.navy,
             automaticallyImplyLeading: false,
-leading: IconButton(
-  icon: Container(
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: const Icon(Icons.arrow_back_rounded,
-        color: Colors.white, size: 18),
-  ),
-  onPressed: () {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
-  },
-),
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.arrow_back_rounded,
+                    color: Colors.white, size: 18),
+              ),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/');
+                }
+              },
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -80,71 +202,53 @@ leading: IconButton(
                     colors: [AppColors.navy, AppColors.teal],
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    // Grid texture
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: 0.04,
-                        child: CustomPaint(
-                            painter: _GridPainter()),
-                      ),
+                child: Stack(children: [
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.04,
+                      child: CustomPaint(painter: _GridPainter()),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          24, 80, 24, 24),
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        mainAxisAlignment:
-                            MainAxisAlignment.end,
-                        children: [
-                          const Text(
-                            'Marketplace',
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Text('Marketplace',
                             style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 32,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ).animate().fadeIn(duration: 500.ms),
-                          const Text(
-                            'Discover Filipino innovations',
+                                fontFamily: 'Poppins',
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white))
+                            .animate()
+                            .fadeIn(duration: 500.ms),
+                        const Text('Discover Filipino innovations',
                             style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 14,
-                              color: Colors.white60,
-                            ),
-                          ),
-                        ],
-                      ),
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                color: Colors.white60)),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ]),
               ),
             ),
-            title: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => context.go('/'),
-                  child: Image.asset(
-                    'assets/images/logo/final-logo.png',
-                    height: 32,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'HIRAYA',
+            title: Row(children: [
+              GestureDetector(
+                onTap: () => context.go('/'),
+                child: Image.asset('assets/images/logo/final-logo.png',
+                    height: 32),
+              ),
+              const SizedBox(width: 8),
+              const Text('DIGITAL PLATFORM',
                   style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
-            ),
+                      fontFamily: 'Poppins',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 2)),
+            ]),
             actions: [
               IconButton(
                 icon: const Icon(Icons.notifications_outlined,
@@ -163,15 +267,12 @@ leading: IconButton(
                         color: AppColors.teal,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
-                      ),
+                      child: const Text('Sign In',
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontSize: 13)),
                     ),
                   ),
                 ),
@@ -183,280 +284,107 @@ leading: IconButton(
           color: AppColors.teal,
           child: CustomScrollView(
             slivers: [
-              // Search bar
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      24, 20, 24, 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(12),
-                            border: Border.all(
-                                color: AppColors.lightGray),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: 0.04),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              )
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _searchCtrl,
-                            onTap: () => context.push('/search'),
-                            readOnly: true,
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 14,
-                            ),
-                            decoration: const InputDecoration(
-                              hintText:
-                                  'Search innovations, innovators...',
-                              hintStyle: TextStyle(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                  child: Row(children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.lightGray),
+                          boxShadow: [BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2))],
+                        ),
+                        child: TextField(
+                          controller: _searchCtrl,
+                          onTap: () => context.push('/search'),
+                          readOnly: true,
+                          style: const TextStyle(
+                              fontFamily: 'Poppins', fontSize: 14),
+                          decoration: const InputDecoration(
+                            hintText: 'Search innovations, innovators...',
+                            hintStyle: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 14,
-                                color: Colors.black26,
-                              ),
-                              prefixIcon: Icon(
-                                  Icons.search_rounded,
-                                  color: Colors.black38,
-                                  size: 20),
-                              border: InputBorder.none,
-                              contentPadding:
-                                  EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 14),
-                            ),
+                                color: Colors.black26),
+                            prefixIcon: Icon(Icons.search_rounded,
+                                color: Colors.black38, size: 20),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      // Sort button
-                      PopupMenuButton<String>(
-                        onSelected: notifier.setSort,
-                        shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(12)),
-                        child: Container(
-                          padding: const EdgeInsets.all(13),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(12),
-                            border: Border.all(
-                                color: AppColors.lightGray),
-                          ),
-                          child: const Icon(
-                              Icons.sort_rounded,
-                              color: AppColors.navy,
-                              size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    PopupMenuButton<String>(
+                      onSelected: notifier.setSort,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Container(
+                        padding: const EdgeInsets.all(13),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.lightGray),
                         ),
-                        itemBuilder: (_) => [
-                          _sortItem(
-                              'newest', 'Newest First',
-                              Icons.access_time_rounded),
-                          _sortItem(
-                              'most_liked', 'Most Liked',
-                              Icons.favorite_rounded),
-                          _sortItem(
-                              'most_viewed', 'Most Viewed',
-                              Icons.remove_red_eye_rounded),
-                          _sortItem(
-                              'most_interest',
-                              'Most Interest',
-                              Icons.trending_up_rounded),
-                        ],
+                        child: const Icon(Icons.sort_rounded,
+                            color: AppColors.navy, size: 20),
                       ),
-                    ],
-                  ),
+                      itemBuilder: (_) => [
+                        _sortItem('newest',       'Newest First',  Icons.access_time_rounded),
+                        _sortItem('most_liked',   'Most Liked',    Icons.favorite_rounded),
+                        _sortItem('most_viewed',  'Most Viewed',   Icons.remove_red_eye_rounded),
+                        _sortItem('most_interest','Most Interest', Icons.trending_up_rounded),
+                      ],
+                    ),
+                  ]),
                 ),
               ),
-
-              // Category filter
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: CategoryFilterBar(
                     selected: state.selectedCategory,
                     onSelect: notifier.setCategory,
                   ),
                 ),
               ),
-
-              // Stats bar
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${products.length} innovations found',
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(children: [
+                    Text('${products.length} innovations found',
                         style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 13,
-                          color: Colors.black45,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (state.selectedCategory != 'All' ||
-                          state.searchQuery.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            _searchCtrl.clear();
-                            notifier.setSearch('');
-                            notifier.setCategory('All');
-                          },
-                          child: const Text(
-                            'Clear filters',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 13,
-                              color: AppColors.crimson,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(
-                  child: SizedBox(height: 16)),
-
-              // Loading
-              if (state.isLoading)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.teal),
-                  ),
-                )
-              // Error
-              else if (state.error != null)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.wifi_off_rounded,
-                            size: 64, color: AppColors.lightGray),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Failed to load innovations',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.navy,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          state.error!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 13,
-                            color: Colors.black38,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: () => ref
-                              .read(marketplaceProvider.notifier)
-                              .loadProducts(),
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Retry',
-                              style: TextStyle(fontFamily: 'Poppins')),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.teal,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              // Empty
-              else if (products.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                            Icons.search_off_rounded,
-                            size: 64,
-                            color: AppColors.lightGray),
-                        SizedBox(height: 16),
-                        Text(
-                          'No innovations found',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.navy,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Try a different category or search term',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: Colors.black38,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              // Grid
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                      24, 0, 24, 32),
-                  sliver: SliverGrid(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => ProductCard(
-                        product: products[index],
-                        index: index,
+                            color: Colors.black45,
+                            fontWeight: FontWeight.w500)),
+                    const Spacer(),
+                    if (state.selectedCategory != 'All' ||
+                        state.searchQuery.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _searchCtrl.clear();
+                          notifier.setSearch('');
+                          notifier.setCategory('All');
+                        },
+                        child: const Text('Clear filters',
+                            style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 13,
+                                color: AppColors.crimson,
+                                fontWeight: FontWeight.w600)),
                       ),
-                      childCount: products.length,
-                    ),
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount:
-                          MediaQuery.of(context).size.width > 1200
-                              ? 4
-                              : MediaQuery.of(context).size.width >
-                                      800
-                                  ? 3
-                                  : MediaQuery.of(context)
-                                              .size
-                                              .width >
-                                          500
-                                      ? 2
-                                      : 1,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 0.72,
-                    ),
-                  ),
+                  ]),
                 ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              ..._buildProductSliver(context, state, products, notifier),
             ],
           ),
         ),
@@ -464,19 +392,108 @@ leading: IconButton(
     );
   }
 
-  PopupMenuItem<String> _sortItem(
-      String value, String label, IconData icon) {
+  List<Widget> _buildProductSliver(
+    BuildContext context,
+    MarketplaceState state,
+    List products,
+    MarketplaceNotifier notifier,
+  ) {
+    if (state.isLoading) {
+      return [
+        const SliverFillRemaining(
+          child: Center(child: CircularProgressIndicator(color: AppColors.teal)),
+        )
+      ];
+    }
+    if (state.error != null && products.isEmpty) {
+      return [
+        SliverFillRemaining(
+          child: Center(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.wifi_off_rounded,
+                  size: 64, color: AppColors.lightGray),
+              const SizedBox(height: 16),
+              const Text('Failed to load innovations',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 18,
+                      fontWeight: FontWeight.w700, color: AppColors.navy)),
+              const SizedBox(height: 8),
+              Text(state.error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontFamily: 'Poppins',
+                      fontSize: 13, color: Colors.black38)),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: notifier.loadProducts,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Retry',
+                    style: TextStyle(fontFamily: 'Poppins')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ]),
+          ),
+        )
+      ];
+    }
+    if (products.isEmpty) {
+      return [
+        const SliverFillRemaining(
+          child: Center(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.search_off_rounded, size: 64, color: AppColors.lightGray),
+              SizedBox(height: 16),
+              Text('No innovations found',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 18,
+                      fontWeight: FontWeight.w700, color: AppColors.navy)),
+              SizedBox(height: 8),
+              Text('Try a different category or search term',
+                  style: TextStyle(fontFamily: 'Poppins',
+                      fontSize: 14, color: Colors.black38)),
+            ]),
+          ),
+        )
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+        sliver: SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => ProductCard(
+              product: products[index],
+              index: index,
+            ),
+            childCount: products.length,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: MediaQuery.of(context).size.width > 1200
+                ? 4
+                : MediaQuery.of(context).size.width > 800
+                    ? 3
+                    : MediaQuery.of(context).size.width > 500
+                        ? 2
+                        : 1,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: 0.72,
+          ),
+        ),
+      ),
+    ];
+  }
+
+  PopupMenuItem<String> _sortItem(String value, String label, IconData icon) {
     return PopupMenuItem(
       value: value,
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: AppColors.navy),
-          const SizedBox(width: 10),
-          Text(label,
-              style: const TextStyle(
-                  fontFamily: 'Poppins', fontSize: 13)),
-        ],
-      ),
+      child: Row(children: [
+        Icon(icon, size: 16, color: AppColors.navy),
+        const SizedBox(width: 10),
+        Text(label, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+      ]),
     );
   }
 }
@@ -489,12 +506,10 @@ class _GridPainter extends CustomPainter {
       ..strokeWidth = 0.5;
     const spacing = 40.0;
     for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(
-          Offset(x, 0), Offset(x, size.height), paint);
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
     for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(
-          Offset(0, y), Offset(size.width, y), paint);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
   }
 

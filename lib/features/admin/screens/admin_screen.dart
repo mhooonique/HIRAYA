@@ -118,7 +118,7 @@ class _AdminSidebar extends ConsumerWidget {
               Image.asset('assets/images/logo/final-logo.png', height: 36),
               const SizedBox(width: 10),
               const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('HIRAYA', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2)),
+                Text('DIGITAL', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2)),
                 Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, color: AppColors.golden, letterSpacing: 1)),
               ]),
             ]),

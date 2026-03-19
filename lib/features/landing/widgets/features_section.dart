@@ -40,7 +40,7 @@ class FeaturesSection extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            'Why HIRAYA?',
+            'Why the DIGITAL PLATFORM?',
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 36,

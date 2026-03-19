@@ -1,3 +1,5 @@
+// lib/features/innovator/screens/innovator_dashboard_screen.dart
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -15,7 +17,6 @@ import '../providers/innovator_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../notifications/widgets/notification_bell.dart';
 import 'dart:typed_data';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  DRAFT KEY
@@ -161,7 +162,7 @@ class _InnovatorSidebar extends ConsumerWidget {
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('HIRAYA',
+                    Text('Digital',
                         style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 15,
@@ -881,8 +882,9 @@ class _ProductDetailRow extends ConsumerWidget {
     ).animate(delay: Duration(milliseconds: 60 * index)).fadeIn(duration: 400.ms);
   }
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
-//  POST INNOVATION — updated with images/video/link/qr support
+//  POST INNOVATION
 // ─────────────────────────────────────────────────────────────────────────────
 class _PostInnovation extends ConsumerStatefulWidget {
   final Future<bool> Function(
@@ -969,45 +971,37 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
     );
   }
 
- Future<void> _pickImages() async {
-  if (_images.length >= 10) return;
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-    allowMultiple: true,
-    withData: true,
-  );
-  if (result == null) return;
-  final remaining = 10 - _images.length;
-  for (final f in result.files.take(remaining)) {
-    if (f.bytes == null) continue;
-
-    // ── Compress before storing ──────────────────────────
-    final compressed = await FlutterImageCompress.compressWithList(
-      f.bytes!,
-      minWidth:  800,
-      minHeight: 600,
-      quality:   75,       // 75% quality — good balance
-      format: CompressFormat.jpeg,
+  Future<void> _pickImages() async {
+    if (_images.length >= 10) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      allowMultiple: true,
+      withData: true,
     );
+    if (result == null) return;
+    final remaining = 10 - _images.length;
+    for (final f in result.files.take(remaining)) {
+      if (f.bytes == null) continue;
 
-    final sizeKb = compressed.length ~/ 1024;
+      final bytes  = f.bytes!;
+      final sizeKb = bytes.length ~/ 1024;
 
-    if ((compressed.length / 1024 / 1024) > 5) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('${f.name} exceeds 5 MB even after compression — skipped.',
-            style: const TextStyle(fontFamily: 'Poppins')),
-        backgroundColor: AppColors.crimson,
+      if ((bytes.length / 1024 / 1024) > 5) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${f.name} exceeds 5 MB — skipped.',
+              style: const TextStyle(fontFamily: 'Poppins')),
+          backgroundColor: AppColors.crimson,
+        ));
+        continue;
+      }
+
+      setState(() => _images.add(
+        _PickedFile(name: f.name, bytes: bytes, sizeKb: sizeKb),
       ));
-      continue;
     }
-
-    setState(() => _images.add(
-      _PickedFile(name: f.name, bytes: compressed, sizeKb: sizeKb),
-    ));
+    _onFieldChanged();
   }
-  _onFieldChanged();
-}
 
   Future<void> _pickVideo() async {
     final result = await FilePicker.platform.pickFiles(
@@ -1083,7 +1077,6 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
           key: _formKey,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-            // Header
             Row(children: [
               const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Post an Innovation', style: TextStyle(fontFamily: 'Poppins', fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.navy)),
@@ -1122,10 +1115,8 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
             ]),
 
             const SizedBox(height: 28),
-
             const _SectionHeader('Basic Information', Icons.info_outline_rounded),
             const SizedBox(height: 16),
-
             const _FormLabel('Innovation Name *'),
             const SizedBox(height: 8),
             TextFormField(
@@ -1135,9 +1126,7 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
               decoration: _inputDec('e.g. Smart Solar Irrigation System'),
               validator: (v) => v == null || v.trim().length < 5 ? 'Minimum 5 characters' : null,
             ),
-
             const SizedBox(height: 16),
-
             const _FormLabel('Category *'),
             const SizedBox(height: 8),
             Container(
@@ -1159,9 +1148,7 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
                 }).toList(),
               ),
             ),
-
             const SizedBox(height: 16),
-
             const _FormLabel('Description *'),
             const SizedBox(height: 8),
             TextFormField(
@@ -1172,9 +1159,7 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
               decoration: _inputDec('Describe your innovation — what it does, who it helps, and why it matters...'),
               validator: (v) => v == null || v.trim().length < 30 ? 'Minimum 30 characters' : null,
             ),
-
             const SizedBox(height: 28),
-
             _SectionHeader('Images', Icons.photo_library_rounded,
                 badge: '${_images.length}/10 · Min 5 required'),
             const SizedBox(height: 8),
@@ -1183,7 +1168,6 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
               style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38),
             ),
             const SizedBox(height: 12),
-
             if (_images.isNotEmpty)
               ReorderableListView.builder(
                 shrinkWrap: true,
@@ -1205,7 +1189,6 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
                   onRemove: () { setState(() => _images.removeAt(i)); _onFieldChanged(); },
                 ),
               ),
-
             if (_images.length < 10)
               GestureDetector(
                 onTap: _pickImages,
@@ -1228,12 +1211,9 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
                   ]),
                 ),
               ),
-
             const SizedBox(height: 28),
-
             const _SectionHeader('Short Video', Icons.videocam_rounded, badge: 'Optional · 30–60 sec · MP4/MOV'),
             const SizedBox(height: 12),
-
             if (_video != null)
               Container(
                 padding: const EdgeInsets.all(14),
@@ -1275,9 +1255,7 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
                   ]),
                 ),
               ),
-
             const SizedBox(height: 28),
-
             const _SectionHeader('QR Code / External Link', Icons.link_rounded, badge: 'Optional'),
             const SizedBox(height: 8),
             const Text(
@@ -1300,16 +1278,13 @@ class _PostInnovationState extends ConsumerState<_PostInnovation> {
                 return null;
               },
             ),
-
             const SizedBox(height: 32),
-
             _ProgressBar(
               images:  _images.length,
               hasName: _nameCtrl.text.trim().length >= 5,
               hasDesc: _descCtrl.text.trim().length >= 30,
             ),
             const SizedBox(height: 20),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

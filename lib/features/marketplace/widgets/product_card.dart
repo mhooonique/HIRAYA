@@ -85,7 +85,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit:  (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: () => context.go('/product/${widget.product.id}'),
+        onTap: () => context.push('/product/${widget.product.id}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,

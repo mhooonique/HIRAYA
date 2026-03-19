@@ -492,7 +492,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     children: [
       const Text('Choose Your Role', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _dark)),
       const SizedBox(height: 8),
-      const Text('Select how you will use the HIRAYA platform.', style: TextStyle(color: Colors.black54)),
+      const Text('Select how you will use the Digital Platform.', style: TextStyle(color: Colors.black54)),
       const SizedBox(height: 24),
       _RoleCard(title: 'Client',    description: 'Browse and invest in innovative projects', icon: Icons.person_outline,    selected: _data.role == 'client',    onTap: () => setState(() => _data.role = 'client')),
       const SizedBox(height: 12),
@@ -976,9 +976,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       const SizedBox(height: 8),
       const Text('Please review and accept the following.', style: TextStyle(color: Colors.black54)),
       const SizedBox(height: 24),
-      _ConsentTile(title: 'Privacy Policy', subtitle: 'I have read and agree to the HIRAYA Privacy Policy and Terms of Service.', value: _data.privacyAccepted, onChanged: (v) => setState(() => _data.privacyAccepted = v ?? false)),
+      _ConsentTile(title: 'Privacy Policy', subtitle: 'I have read and agree to the DIGITAL PLATFORM Privacy Policy and Terms of Service.', value: _data.privacyAccepted, onChanged: (v) => setState(() => _data.privacyAccepted = v ?? false)),
       const SizedBox(height: 12),
-      _ConsentTile(title: 'Data Processing Consent', subtitle: 'I consent to HIRAYA collecting and processing my personal data including KYC documents under RA 10173.', value: _data.dataConsentAccepted, onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false)),
+      _ConsentTile(title: 'Data Processing Consent', subtitle: 'I consent to DIGITAL PLATFORM collecting and processing my personal data including KYC documents under RA 10173.', value: _data.dataConsentAccepted, onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false)),
     ],
   );
 

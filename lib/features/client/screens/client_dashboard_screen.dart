@@ -22,7 +22,7 @@ class _InterestItem {
   final String productName;
   final String category;
   final String innovatorName;
-  final String status; // pending | accepted | declined
+  final String status;
   final DateTime sentAt;
 
   const _InterestItem({
@@ -35,11 +35,6 @@ class _InterestItem {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PROVIDERS
-// ─────────────────────────────────────────────────────────────────────────────
-// Wishlist and bookmarks are now handled by clientProvider (real API).
-// Interests remain a local empty list until wired to the API.
 final _interestsProvider = StateProvider<List<_InterestItem>>((ref) => const []);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,11 +52,11 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
   late TabController _tabController;
 
   final _tabs = const [
-    Tab(icon: Icon(Icons.explore_rounded, size: 18), text: 'Discover'),
-    Tab(icon: Icon(Icons.favorite_rounded, size: 18), text: 'Wishlist'),
-    Tab(icon: Icon(Icons.bookmark_rounded, size: 18), text: 'Bookmarks'),
+    Tab(icon: Icon(Icons.explore_rounded, size: 18),   text: 'Discover'),
+    Tab(icon: Icon(Icons.favorite_rounded, size: 18),  text: 'Wishlist'),
+    Tab(icon: Icon(Icons.bookmark_rounded, size: 18),  text: 'Bookmarks'),
     Tab(icon: Icon(Icons.handshake_rounded, size: 18), text: 'My Interests'),
-    Tab(icon: Icon(Icons.person_rounded, size: 18), text: 'Profile'),
+    Tab(icon: Icon(Icons.person_rounded, size: 18),    text: 'Profile'),
   ];
 
   @override
@@ -78,43 +73,50 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
-    final cState = ref.watch(clientProvider);
-    final wishlist = cState.wishlist;
+    final user      = ref.watch(authProvider).user;
+    final cState    = ref.watch(clientProvider);
+    final wishlist  = cState.wishlist;
     final bookmarks = cState.bookmarks;
     final interests = ref.watch(_interestsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
-      body: Column(
-        children: [
-          _ClientTopBar(user: user, tabController: _tabController, tabs: _tabs),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                const _DiscoverTab(),
-                _WishlistTab(
-                  items: wishlist,
-                  onRemove: (p) {
-                    ref.read(clientProvider.notifier).toggleWishlist(p);
-                    _showSnack('Removed from wishlist', AppColors.crimson);
-                  },
-                ),
-                _BookmarksTab(
-                  items: bookmarks,
-                  onRemove: (p) {
-                    ref.read(clientProvider.notifier).toggleBookmark(p);
-                    _showSnack('Bookmark removed', AppColors.crimson);
-                  },
-                ),
-                _InterestsTab(items: interests),
-                _ClientProfile(user: user),
-              ],
-            ),
+      body: Column(children: [
+        _ClientTopBar(user: user, tabController: _tabController, tabs: _tabs),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // ── Tab 1: Discover ──────────────────────────────────────────
+              const _DiscoverTab(),
+
+              // ── Tab 2: Wishlist ──────────────────────────────────────────
+              _WishlistTab(
+                items: wishlist,
+                onRemove: (p) {
+                  ref.read(clientProvider.notifier).toggleWishlist(p);
+                  _showSnack('Removed from wishlist', AppColors.crimson);
+                },
+              ),
+
+              // ── Tab 3: Bookmarks ─────────────────────────────────────────
+              _BookmarksTab(
+                items: bookmarks,
+                onRemove: (p) {
+                  ref.read(clientProvider.notifier).toggleBookmark(p);
+                  _showSnack('Bookmark removed', AppColors.crimson);
+                },
+              ),
+
+              // ── Tab 4: My Interests ──────────────────────────────────────
+              _InterestsTab(items: interests),
+
+              // ── Tab 5: Profile ───────────────────────────────────────────
+              _ClientProfile(user: user),
+            ],
           ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 
@@ -156,37 +158,43 @@ class _ClientTopBar extends StatelessWidget {
           child: Row(children: [
             Image.asset('assets/images/logo/final-logo.png', height: 32),
             const SizedBox(width: 10),
-            const Text('HIRAYA',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy, letterSpacing: 3)),
+            const Text('Digital Platform',
+                style: TextStyle(
+                    fontFamily: 'Poppins', fontSize: 18,
+                    fontWeight: FontWeight.w800, color: AppColors.navy,
+                    letterSpacing: 3)),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: AppColors.sky.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-              child: const Text('Client', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.sky)),
+              decoration: BoxDecoration(
+                  color: AppColors.sky.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6)),
+              child: const Text('Client',
+                  style: TextStyle(
+                      fontFamily: 'Poppins', fontSize: 10,
+                      fontWeight: FontWeight.w700, color: AppColors.sky)),
             ),
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.navy),
-              onPressed: () => context.go('/messages'),
+              onPressed: () => context.go('/messaging'),
               tooltip: 'Messages',
-            ),
-            IconButton(
-              icon: const Icon(Icons.storefront_rounded, color: AppColors.navy),
-              onPressed: () => context.go('/marketplace'),
-              tooltip: 'Browse Marketplace',
             ),
             const NotificationBell(),
             const SizedBox(width: 4),
-            GestureDetector(
-              onTap: () => tabController.animateTo(4),
-              child: UserAvatar(
-                name:         user?.firstName ?? 'C',
-                avatarBase64: user?.avatarBase64,
-                radius:       16,
-                backgroundColor: AppColors.sky.withValues(alpha: 0.2),
-                foregroundColor: AppColors.sky,
-              ),
-            ),
+            Consumer(builder: (context, ref, _) {
+              final u = ref.watch(authProvider).user;
+              return GestureDetector(
+                onTap: () => tabController.animateTo(4),
+                child: UserAvatar(
+                  name:         u?.firstName ?? 'C',
+                  avatarBase64: u?.avatarBase64,
+                  radius:       16,
+                  backgroundColor: AppColors.sky.withValues(alpha: 0.2),
+                  foregroundColor: AppColors.sky,
+                ),
+              );
+            }),
             const SizedBox(width: 8),
           ]),
         ),
@@ -195,8 +203,10 @@ class _ClientTopBar extends StatelessWidget {
           tabs: tabs,
           labelColor: AppColors.navy,
           unselectedLabelColor: Colors.black38,
-          labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700),
-          unselectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w400),
+          labelStyle: const TextStyle(
+              fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(
+              fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w400),
           indicatorColor: AppColors.sky,
           indicatorWeight: 3,
           indicatorSize: TabBarIndicatorSize.tab,
@@ -212,6 +222,7 @@ class _ClientTopBar extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _DiscoverTab extends ConsumerStatefulWidget {
   const _DiscoverTab();
+
   @override
   ConsumerState<_DiscoverTab> createState() => _DiscoverTabState();
 }
@@ -220,7 +231,8 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(marketplaceProvider.notifier).loadProducts());
+    Future.microtask(
+        () => ref.read(marketplaceProvider.notifier).loadProducts());
   }
 
   @override
@@ -241,12 +253,16 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.lightGray),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+              boxShadow: [BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8, offset: const Offset(0, 2))],
             ),
             child: const Row(children: [
               Icon(Icons.search_rounded, color: Colors.black38, size: 20),
               SizedBox(width: 12),
-              Text('Search innovations, innovators...', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.black38)),
+              Text('Search innovations, innovators...',
+                  style: TextStyle(fontFamily: 'Poppins',
+                      fontSize: 14, color: Colors.black38)),
             ]),
           ),
         ),
@@ -254,68 +270,95 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
 
       // Category filter
       CategoryFilterBar(
-        selected: state.selectedCategory,
-        onSelect: notifier.setCategory,
-      ),
-
+          selected: state.selectedCategory,
+          onSelect: notifier.setCategory),
       const SizedBox(height: 8),
 
       // Count + sort
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(children: [
-          Text('${products.length} innovations', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+          Text('${products.length} innovations',
+              style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13, color: Colors.black45)),
           const Spacer(),
           PopupMenuButton<String>(
             onSelected: notifier.setSort,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.navy.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(8),
-              ),
+                  color: AppColors.navy.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(8)),
               child: const Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.sort_rounded, size: 16, color: AppColors.navy),
                 SizedBox(width: 6),
-                Text('Sort', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.navy)),
+                Text('Sort', style: TextStyle(
+                    fontFamily: 'Poppins', fontSize: 12,
+                    color: AppColors.navy)),
               ]),
             ),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'newest',        child: Text('Newest First',  style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
-              const PopupMenuItem(value: 'most_liked',    child: Text('Most Liked',    style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
-              const PopupMenuItem(value: 'most_viewed',   child: Text('Most Viewed',   style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
-              const PopupMenuItem(value: 'most_interest', child: Text('Most Interest', style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+              const PopupMenuItem(value: 'newest',
+                  child: Text('Newest First',
+                      style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+              const PopupMenuItem(value: 'most_liked',
+                  child: Text('Most Liked',
+                      style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+              const PopupMenuItem(value: 'most_viewed',
+                  child: Text('Most Viewed',
+                      style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
+              const PopupMenuItem(value: 'most_interest',
+                  child: Text('Most Interest',
+                      style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
             ],
           ),
         ]),
       ),
-
       const SizedBox(height: 12),
 
       // Grid
       Expanded(
         child: state.isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.teal))
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.teal))
             : products.isEmpty
-                ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.search_off_rounded, size: 56, color: AppColors.lightGray),
-                    SizedBox(height: 12),
-                    Text('No innovations found', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navy)),
-                  ]))
+                ? const Center(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                      Icon(Icons.search_off_rounded,
+                          size: 56, color: AppColors.lightGray),
+                      SizedBox(height: 12),
+                      Text('No innovations found',
+                          style: TextStyle(
+                              fontFamily: 'Poppins', fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.navy)),
+                    ]))
                 : RefreshIndicator(
                     onRefresh: notifier.loadProducts,
                     color: AppColors.teal,
                     child: GridView.builder(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: MediaQuery.of(context).size.width > 1000 ? 3 : MediaQuery.of(context).size.width > 600 ? 2 : 1,
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width > 1000
+                                ? 3
+                                : MediaQuery.of(context).size.width > 600
+                                    ? 2
+                                    : 1,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.72,
                       ),
                       itemCount: products.length,
-                      itemBuilder: (_, i) => ProductCard(product: products[i], index: i),
+                      itemBuilder: (_, i) =>
+                          ProductCard(product: products[i], index: i),
                     ),
                   ),
       ),
@@ -334,17 +377,26 @@ class _WishlistTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      _TabHeader(icon: Icons.favorite_rounded, iconColor: AppColors.crimson, title: 'Wishlist', subtitle: 'Products you\'re keeping an eye on', count: items.length),
+      _TabHeader(
+          icon: Icons.favorite_rounded, iconColor: AppColors.crimson,
+          title: 'Wishlist',
+          subtitle: 'Products you\'re keeping an eye on',
+          count: items.length),
       Expanded(
         child: items.isEmpty
-            ? const _EmptyState(icon: Icons.favorite_outline_rounded, title: 'Your wishlist is empty', subtitle: 'Heart a product from Discover to save it here.')
+            ? const _EmptyState(
+                icon: Icons.favorite_outline_rounded,
+                title: 'Your wishlist is empty',
+                subtitle: 'Heart a product from Discover to save it here.')
             : ListView.builder(
                 padding: const EdgeInsets.all(20),
                 itemCount: items.length,
                 itemBuilder: (ctx, i) => _SavedProductRow(
                   product: items[i], index: i,
-                  actionIcon: Icons.favorite_rounded, actionColor: AppColors.crimson,
-                  actionTooltip: 'Remove from wishlist', onAction: () => onRemove(items[i]),
+                  actionIcon: Icons.favorite_rounded,
+                  actionColor: AppColors.crimson,
+                  actionTooltip: 'Remove from wishlist',
+                  onAction: () => onRemove(items[i]),
                 ),
               ),
       ),
@@ -363,17 +415,26 @@ class _BookmarksTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      _TabHeader(icon: Icons.bookmark_rounded, iconColor: AppColors.navy, title: 'Bookmarks', subtitle: 'Private saves — innovators are not notified', count: items.length),
+      _TabHeader(
+          icon: Icons.bookmark_rounded, iconColor: AppColors.navy,
+          title: 'Bookmarks',
+          subtitle: 'Private saves — innovators are not notified',
+          count: items.length),
       Expanded(
         child: items.isEmpty
-            ? const _EmptyState(icon: Icons.bookmark_outline_rounded, title: 'No bookmarks yet', subtitle: 'Bookmark a product to privately save it for later.')
+            ? const _EmptyState(
+                icon: Icons.bookmark_outline_rounded,
+                title: 'No bookmarks yet',
+                subtitle: 'Bookmark a product to privately save it for later.')
             : ListView.builder(
                 padding: const EdgeInsets.all(20),
                 itemCount: items.length,
                 itemBuilder: (ctx, i) => _SavedProductRow(
                   product: items[i], index: i,
-                  actionIcon: Icons.bookmark_remove_rounded, actionColor: AppColors.navy,
-                  actionTooltip: 'Remove bookmark', onAction: () => onRemove(items[i]),
+                  actionIcon: Icons.bookmark_remove_rounded,
+                  actionColor: AppColors.navy,
+                  actionTooltip: 'Remove bookmark',
+                  onAction: () => onRemove(items[i]),
                 ),
               ),
       ),
@@ -405,44 +466,66 @@ class _SavedProductRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white, borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.lightGray),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
+        boxShadow: [BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
       ),
       child: Row(children: [
         Container(
           width: 52, height: 52,
-          decoration: BoxDecoration(color: catColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+              color: catColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12)),
           child: Icon(Icons.lightbulb_rounded, color: catColor, size: 24),
         ),
         const SizedBox(width: 14),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.navy),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+          Text(product.name,
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14,
+                  fontWeight: FontWeight.w700, color: AppColors.navy),
               maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 3),
           Row(children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(color: catColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-              child: Text(product.category, style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w600, color: catColor)),
+              decoration: BoxDecoration(
+                  color: catColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4)),
+              child: Text(product.category,
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 10,
+                      fontWeight: FontWeight.w600, color: catColor)),
             ),
             const SizedBox(width: 6),
-            if (product.kycStatus == 'verified') const Icon(Icons.verified_rounded, size: 11, color: AppColors.teal),
+            if (product.kycStatus == 'verified')
+              const Icon(Icons.verified_rounded, size: 11, color: AppColors.teal),
             const SizedBox(width: 3),
-            Expanded(child: Text(product.innovatorName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black45), overflow: TextOverflow.ellipsis)),
+            Expanded(child: Text(product.innovatorName,
+                style: const TextStyle(fontFamily: 'Poppins',
+                    fontSize: 11, color: Colors.black45),
+                overflow: TextOverflow.ellipsis)),
           ]),
           const SizedBox(height: 6),
           Row(children: [
-            _MiniStat(icon: Icons.favorite_rounded, value: '${product.likes}', color: AppColors.crimson),
+            _MiniStat(icon: Icons.favorite_rounded,
+                value: '${product.likes}', color: AppColors.crimson),
             const SizedBox(width: 10),
-            _MiniStat(icon: Icons.remove_red_eye_rounded, value: '${product.views}', color: Colors.black38),
+            _MiniStat(icon: Icons.remove_red_eye_rounded,
+                value: '${product.views}', color: Colors.black38),
           ]),
         ])),
         const SizedBox(width: 12),
         Column(children: [
-          IconButton(icon: const Icon(Icons.open_in_new_rounded, size: 18, color: AppColors.sky), onPressed: () => context.go('/product/${product.id}'), tooltip: 'View product'),
-          IconButton(icon: Icon(actionIcon, size: 18, color: actionColor), onPressed: onAction, tooltip: actionTooltip),
+          IconButton(
+              icon: const Icon(Icons.open_in_new_rounded,
+                  size: 18, color: AppColors.sky),
+              onPressed: () => context.push('/product/${product.id}'),
+              tooltip: 'View product'),
+          IconButton(
+              icon: Icon(actionIcon, size: 18, color: actionColor),
+              onPressed: onAction,
+              tooltip: actionTooltip),
         ]),
       ]),
     ).animate(delay: Duration(milliseconds: 50 * index)).fadeIn(duration: 300.ms);
@@ -459,21 +542,31 @@ class _InterestsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      _TabHeader(icon: Icons.handshake_rounded, iconColor: AppColors.teal, title: 'My Interests', subtitle: 'Formal interest requests you have sent', count: items.length),
+      _TabHeader(
+          icon: Icons.handshake_rounded, iconColor: AppColors.teal,
+          title: 'My Interests',
+          subtitle: 'Formal interest requests you have sent',
+          count: items.length),
       if (items.isNotEmpty)
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
           child: Row(children: [
-            _StatusPill('Accepted', items.where((i) => i.status == 'accepted').length, AppColors.teal),
+            _StatusPill('Accepted',
+                items.where((i) => i.status == 'accepted').length, AppColors.teal),
             const SizedBox(width: 10),
-            _StatusPill('Pending', items.where((i) => i.status == 'pending').length, AppColors.golden),
+            _StatusPill('Pending',
+                items.where((i) => i.status == 'pending').length, AppColors.golden),
             const SizedBox(width: 10),
-            _StatusPill('Declined', items.where((i) => i.status == 'declined').length, AppColors.crimson),
+            _StatusPill('Declined',
+                items.where((i) => i.status == 'declined').length, AppColors.crimson),
           ]),
         ),
       Expanded(
         child: items.isEmpty
-            ? const _EmptyState(icon: Icons.handshake_outlined, title: 'No interests sent yet', subtitle: 'Express interest on a product to start a conversation.')
+            ? const _EmptyState(
+                icon: Icons.handshake_outlined,
+                title: 'No interests sent yet',
+                subtitle: 'Express interest on a product to start a conversation.')
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 itemCount: items.length,
@@ -492,18 +585,20 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: color.withValues(alpha: 0.2)),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Text('$count', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w800, color: color)),
-      const SizedBox(width: 6),
-      Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: color)),
-    ]),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text('$count', style: TextStyle(fontFamily: 'Poppins',
+              fontSize: 14, fontWeight: FontWeight.w800, color: color)),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(
+              fontFamily: 'Poppins', fontSize: 12, color: color)),
+        ]),
+      );
 }
 
 class _InterestRow extends StatelessWidget {
@@ -513,40 +608,52 @@ class _InterestRow extends StatelessWidget {
 
   static String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inDays > 0)  return '${diff.inDays}d ago';
     if (diff.inHours > 0) return '${diff.inHours}h ago';
     return 'just now';
   }
 
   @override
   Widget build(BuildContext context) {
-    final catColor = AppColors.categoryColors[item.category] ?? AppColors.navy;
-    final statusColor = item.status == 'accepted' ? AppColors.teal : item.status == 'pending' ? AppColors.golden : AppColors.crimson;
-    final statusIcon = item.status == 'accepted' ? Icons.check_circle_rounded : item.status == 'pending' ? Icons.pending_rounded : Icons.cancel_rounded;
+    final catColor    = AppColors.categoryColors[item.category] ?? AppColors.navy;
+    final statusColor = item.status == 'accepted' ? AppColors.teal
+        : item.status == 'pending' ? AppColors.golden : AppColors.crimson;
+    final statusIcon  = item.status == 'accepted' ? Icons.check_circle_rounded
+        : item.status == 'pending' ? Icons.pending_rounded : Icons.cancel_rounded;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: item.status == 'accepted' ? AppColors.teal.withValues(alpha: 0.3) : AppColors.lightGray),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
+        color: Colors.white, borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: item.status == 'accepted'
+            ? AppColors.teal.withValues(alpha: 0.3) : AppColors.lightGray),
+        boxShadow: [BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
       ),
       child: Row(children: [
         Container(
           width: 48, height: 48,
-          decoration: BoxDecoration(color: catColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+              color: catColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12)),
           child: Icon(Icons.lightbulb_rounded, color: catColor, size: 22),
         ),
         const SizedBox(width: 14),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item.productName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.navy),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+          Text(item.productName,
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14,
+                  fontWeight: FontWeight.w700, color: AppColors.navy),
               maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 2),
-          Text('by ${item.innovatorName}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black45)),
+          Text('by ${item.innovatorName}',
+              style: const TextStyle(fontFamily: 'Poppins',
+                  fontSize: 12, color: Colors.black45)),
           const SizedBox(height: 3),
-          Text('Sent ${_timeAgo(item.sentAt)}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.black38)),
+          Text('Sent ${_timeAgo(item.sentAt)}',
+              style: const TextStyle(fontFamily: 'Poppins',
+                  fontSize: 11, color: Colors.black38)),
         ])),
         const SizedBox(width: 12),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -560,21 +667,28 @@ class _InterestRow extends StatelessWidget {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(statusIcon, size: 12, color: statusColor),
               const SizedBox(width: 4),
-              Text(item.status.toUpperCase(), style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: statusColor)),
+              Text(item.status.toUpperCase(),
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 10,
+                      fontWeight: FontWeight.w700, color: statusColor)),
             ]),
           ),
           if (item.status == 'accepted') ...[
             const SizedBox(height: 6),
             InkWell(
-              onTap: () => context.go('/messages'),
+              onTap: () => context.go('/messaging'),
               borderRadius: BorderRadius.circular(8),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: AppColors.sky.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                    color: AppColors.sky.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8)),
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.chat_bubble_outline_rounded, size: 12, color: AppColors.sky),
+                  Icon(Icons.chat_bubble_outline_rounded,
+                      size: 12, color: AppColors.sky),
                   SizedBox(width: 4),
-                  Text('Message', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.sky)),
+                  Text('Message', style: TextStyle(fontFamily: 'Poppins',
+                      fontSize: 10, fontWeight: FontWeight.w700,
+                      color: AppColors.sky)),
                 ]),
               ),
             ),
@@ -594,13 +708,12 @@ class _ClientProfile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Read directly from provider — never rely on passed-in user prop
-    final u = ref.watch(authProvider).user;
-    final firstName = u?.firstName ?? 'Client';
-    final fullName = u != null ? '${u.firstName} ${u.lastName}' : 'Client';
-    final username = u?.username ?? '—';
-    final email = u?.email ?? '—';
-    final kycStatus = u?.kycStatus ?? 'unverified';
+    final u          = ref.watch(authProvider).user;
+    final firstName  = u?.firstName ?? 'Client';
+    final fullName   = u != null ? '${u.firstName} ${u.lastName}' : 'Client';
+    final username   = u?.username ?? '—';
+    final email      = u?.email ?? '—';
+    final kycStatus  = u?.kycStatus ?? 'unverified';
     final userStatus = u?.userStatus ?? 0;
 
     return SingleChildScrollView(
@@ -608,11 +721,14 @@ class _ClientProfile extends ConsumerWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('My Profile', style: TextStyle(fontFamily: 'Poppins', fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.navy)),
+          const Text('My Profile', style: TextStyle(fontFamily: 'Poppins',
+              fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.navy)),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.lightGray)),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.lightGray)),
             child: Column(children: [
               UserAvatar(
                 name:         firstName,
@@ -625,34 +741,40 @@ class _ClientProfile extends ConsumerWidget {
                   final err = await ref.read(authProvider.notifier).updateAvatar(base64);
                   if (err != null && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(err), backgroundColor: Colors.red),
-                    );
+                        SnackBar(content: Text(err), backgroundColor: Colors.red));
                   } else if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Profile picture updated!')),
-                    );
+                        const SnackBar(content: Text('Profile picture updated!')));
                   }
                 },
               ),
               const SizedBox(height: 14),
-              Text(fullName, style: const TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.navy)),
-              Text('@$username', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+              Text(fullName, style: const TextStyle(fontFamily: 'Poppins',
+                  fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.navy)),
+              Text('@$username', style: const TextStyle(fontFamily: 'Poppins',
+                  fontSize: 13, color: Colors.black45)),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(color: AppColors.sky.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(
+                    color: AppColors.sky.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20)),
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.person_rounded, color: AppColors.sky, size: 14),
                   SizedBox(width: 6),
-                  Text('Client / Investor', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.sky)),
+                  Text('Client / Investor', style: TextStyle(fontFamily: 'Poppins',
+                      fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.sky)),
                 ]),
               ),
               const SizedBox(height: 20),
               const Divider(color: AppColors.lightGray),
               const SizedBox(height: 14),
               _ProfileRow(label: 'Email', value: email, icon: Icons.email_outlined),
-              _ProfileRow(label: 'KYC Status', value: kycStatus.toUpperCase(), icon: Icons.verified_user_rounded),
-              _ProfileRow(label: 'Account Status', value: userStatus == 1 ? 'Active' : 'Pending', icon: Icons.circle_rounded),
+              _ProfileRow(label: 'KYC Status', value: kycStatus.toUpperCase(),
+                  icon: Icons.verified_user_rounded),
+              _ProfileRow(label: 'Account Status',
+                  value: userStatus == 1 ? 'Active' : 'Pending',
+                  icon: Icons.circle_rounded),
             ]),
           ),
           const SizedBox(height: 20),
@@ -663,9 +785,13 @@ class _ClientProfile extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () { ref.read(authProvider.notifier).logout(); context.go('/login'); },
+              onPressed: () {
+                ref.read(authProvider.notifier).logout();
+                context.go('/login');
+              },
               icon: const Icon(Icons.logout_rounded, color: AppColors.crimson, size: 18),
-              label: const Text('Logout', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.crimson)),
+              label: const Text('Logout', style: TextStyle(fontFamily: 'Poppins',
+                  fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.crimson)),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.4)),
@@ -680,22 +806,23 @@ class _ClientProfile extends ConsumerWidget {
 }
 
 class _ProfileRow extends StatelessWidget {
-  final String label;
-  final String value;
+  final String label, value;
   final IconData icon;
   const _ProfileRow({required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 14),
-    child: Row(children: [
-      Icon(icon, size: 16, color: AppColors.sky),
-      const SizedBox(width: 12),
-      Text(label, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
-      const Spacer(),
-      Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
-    ]),
-  );
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(children: [
+          Icon(icon, size: 16, color: AppColors.sky),
+          const SizedBox(width: 12),
+          Text(label, style: const TextStyle(fontFamily: 'Poppins',
+              fontSize: 13, color: Colors.black45)),
+          const Spacer(),
+          Text(value, style: const TextStyle(fontFamily: 'Poppins',
+              fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.navy)),
+        ]),
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -707,7 +834,8 @@ class _ThemeToggleCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
-    final bg     = isDark ? Colors.white.withValues(alpha: 0.06) : AppColors.navy.withValues(alpha: 0.04);
+    final bg     = isDark ? Colors.white.withValues(alpha: 0.06)
+        : AppColors.navy.withValues(alpha: 0.04);
     final border = isDark ? Colors.white12 : AppColors.lightGray;
     final label  = isDark ? 'Dark Mode' : 'Light Mode';
     final sub    = isDark ? 'Switch to light' : 'Switch to dark';
@@ -719,21 +847,19 @@ class _ThemeToggleCard extends ConsumerWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border)),
       child: Row(children: [
-        Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
-          child: Icon(icon, color: color, size: 20),
-        ),
+        Container(width: 40, height: 40,
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 20)),
         const SizedBox(width: 14),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w600, color: textPrimary)),
-          Text(sub,   style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: textSecondary)),
+          Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 14,
+              fontWeight: FontWeight.w600, color: textPrimary)),
+          Text(sub,   style: TextStyle(fontFamily: 'Poppins', fontSize: 11,
+              color: textSecondary)),
         ]),
         const Spacer(),
         Switch(
@@ -761,13 +887,13 @@ class _SocialLinksCard extends ConsumerStatefulWidget {
 
 class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
   bool _editing = false;
-  bool _saving = false;
+  bool _saving  = false;
   late final Map<String, TextEditingController> _ctrls;
 
   static const _fields = [
-    ('facebook',  'Facebook',  Icons.facebook_rounded),
-    ('instagram', 'Instagram', Icons.camera_alt_rounded),
-    ('linkedin',  'LinkedIn',  Icons.work_rounded),
+    ('facebook',  'Facebook',    Icons.facebook_rounded),
+    ('instagram', 'Instagram',   Icons.camera_alt_rounded),
+    ('linkedin',  'LinkedIn',    Icons.work_rounded),
     ('x',         'X / Twitter', Icons.close_rounded),
   ];
 
@@ -794,36 +920,34 @@ class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
       setState(() { _editing = false; _saving = false; });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Social links updated', style: TextStyle(fontFamily: 'Poppins')),
-          backgroundColor: AppColors.teal,
-          behavior: SnackBarBehavior.floating,
+          content: Text('Social links updated',
+              style: TextStyle(fontFamily: 'Poppins')),
+          backgroundColor: AppColors.teal, behavior: SnackBarBehavior.floating,
         ));
       }
-    } catch (_) {
-      setState(() => _saving = false);
-    }
+    } catch (_) { setState(() => _saving = false); }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.lightGray),
-      ),
+      decoration: BoxDecoration(color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.lightGray)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           const Icon(Icons.share_rounded, size: 16, color: AppColors.navy),
           const SizedBox(width: 8),
-          const Text('Social Links', style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navy)),
+          const Text('Social Links', style: TextStyle(fontFamily: 'Poppins',
+              fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navy)),
           const Spacer(),
           if (!_editing)
             TextButton.icon(
               onPressed: () => setState(() => _editing = true),
               icon: const Icon(Icons.edit_rounded, size: 14),
-              label: const Text('Edit', style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+              label: const Text('Edit',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
             ),
         ]),
         const SizedBox(height: 12),
@@ -838,13 +962,17 @@ class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
                   labelText: f.$2,
                   labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
                   prefixIcon: Icon(f.$3, size: 18, color: AppColors.navy),
-                  hintText: 'https://...',
-                  hintStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
+                  hintText: 'https://...', hintStyle: const TextStyle(
+                      fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
                   filled: true, fillColor: AppColors.offWhite,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.lightGray)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.teal, width: 1.5)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.lightGray)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.lightGray)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.teal, width: 1.5)),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
                 ),
               ),
             )
@@ -852,50 +980,50 @@ class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Row(children: [
-                Icon(f.$3, size: 16, color: (_ctrls[f.$1]!.text.isEmpty) ? Colors.black26 : AppColors.navy),
+                Icon(f.$3, size: 16,
+                    color: _ctrls[f.$1]!.text.isEmpty
+                        ? Colors.black26 : AppColors.navy),
                 const SizedBox(width: 10),
-                Text(f.$2, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black45)),
+                Text(f.$2, style: const TextStyle(fontFamily: 'Poppins',
+                    fontSize: 13, color: Colors.black45)),
                 const Spacer(),
-                Flexible(
-                  child: Text(
-                    _ctrls[f.$1]!.text.isEmpty ? 'Not set' : _ctrls[f.$1]!.text,
-                    style: TextStyle(
-                      fontFamily: 'Poppins', fontSize: 12,
-                      color: _ctrls[f.$1]!.text.isEmpty ? Colors.black26 : AppColors.sky,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+                Flexible(child: Text(
+                  _ctrls[f.$1]!.text.isEmpty ? 'Not set' : _ctrls[f.$1]!.text,
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 12,
+                      color: _ctrls[f.$1]!.text.isEmpty
+                          ? Colors.black26 : AppColors.sky,
+                      fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                )),
               ]),
             ),
         ],
         if (_editing) ...[
           const SizedBox(height: 4),
           Row(children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _saving ? null : () => setState(() => _editing = false),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.lightGray),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
-              ),
-            ),
+            Expanded(child: OutlinedButton(
+              onPressed: _saving ? null : () => setState(() => _editing = false),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.lightGray),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10))),
+              child: const Text('Cancel',
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 13)),
+            )),
             const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.teal,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: _saving
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Save', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600)),
-              ),
-            ),
+            Expanded(child: ElevatedButton(
+              onPressed: _saving ? null : _save,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              child: _saving
+                  ? const SizedBox(width: 16, height: 16,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text('Save', style: TextStyle(fontFamily: 'Poppins',
+                      fontSize: 13, color: Colors.white,
+                      fontWeight: FontWeight.w600)),
+            )),
           ]),
         ],
       ]),
@@ -909,37 +1037,45 @@ class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
 class _TabHeader extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
-  final String title;
-  final String subtitle;
+  final String title, subtitle;
   final int count;
 
-  const _TabHeader({required this.icon, required this.iconColor, required this.title, required this.subtitle, required this.count});
+  const _TabHeader({required this.icon, required this.iconColor,
+      required this.title, required this.subtitle, required this.count});
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-    color: Colors.white,
-    child: Row(children: [
-      Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: iconColor, size: 20),
-      ),
-      const SizedBox(width: 14),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy)),
-          const SizedBox(width: 8),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        color: Colors.white,
+        child: Row(children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-            child: Text('$count', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: iconColor)),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+            Row(children: [
+              Text(title, style: const TextStyle(fontFamily: 'Poppins',
+                  fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy)),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6)),
+                child: Text('$count', style: TextStyle(fontFamily: 'Poppins',
+                    fontSize: 12, fontWeight: FontWeight.w700, color: iconColor)),
+              ),
+            ]),
+            Text(subtitle, style: const TextStyle(fontFamily: 'Poppins',
+                fontSize: 12, color: Colors.black38)),
+          ])),
         ]),
-        Text(subtitle, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.black38)),
-      ])),
-    ]),
-  );
+      );
 }
 
 class _MiniStat extends StatelessWidget {
@@ -949,30 +1085,30 @@ class _MiniStat extends StatelessWidget {
   const _MiniStat({required this.icon, required this.value, required this.color});
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(icon, size: 12, color: color),
-      const SizedBox(width: 3),
-      Text(value, style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-    ],
-  );
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 3),
+          Text(value, style: TextStyle(fontFamily: 'Poppins', fontSize: 11,
+              color: color, fontWeight: FontWeight.w600)),
+        ]);
 }
 
 class _EmptyState extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String title, subtitle;
   const _EmptyState({required this.icon, required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, size: 60, color: AppColors.lightGray),
-      const SizedBox(height: 16),
-      Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.navy)),
-      const SizedBox(height: 6),
-      Text(subtitle, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.black38), textAlign: TextAlign.center),
-    ]),
-  );
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, size: 60, color: AppColors.lightGray),
+          const SizedBox(height: 16),
+          Text(title, style: const TextStyle(fontFamily: 'Poppins',
+              fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.navy)),
+          const SizedBox(height: 6),
+          Text(subtitle, style: const TextStyle(fontFamily: 'Poppins',
+              fontSize: 13, color: Colors.black38), textAlign: TextAlign.center),
+        ]),
+      );
 }
