@@ -381,7 +381,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
             child: const Icon(Icons.keyboard_arrow_up_rounded,
                 color: AppColors.navy, size: 22),
           ),
-        ).animate().scaleXY(begin: 0.6, end: 1.0, curve: Curves.easeOutBack),
+        ).animate().scaleXY(begin: 0.6, end: 1.0, curve: Curves.easeOutCubic),
       ),
 
       body: Stack(
@@ -418,6 +418,17 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                     auth: auth,
                     onLogoTap: () => context.go('/'),
                     onSignIn: () => context.go('/login'),
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: _MarketplaceBentoStrip(
+                      productsCount: products.length,
+                      selectedCategory: state.selectedCategory,
+                      activeQuery: state.searchQuery,
+                    ),
                   ),
                 ),
 
@@ -497,23 +508,16 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
 
                 // ── Product grid ───────────────────────────
                 else
-                  SliverPadding(
-                    padding:
-                        const EdgeInsets.fromLTRB(20, 0, 20, 48),
-                    sliver: SliverGrid(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => ProductCard(
-                          product: products[index],
-                          index: index,
-                        ),
-                        childCount: products.length,
-                      ),
-                      gridDelegate:
-                          SliverGridDelegateWithFixedCrossAxisCount(
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 48),
+                      child: _MarketplaceSectionedGrid(
+                        products: products,
                         crossAxisCount: _crossAxisCount(w),
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 20,
-                        childAspectRatio: 0.68,
+                        glowAnim: _gradientAnim,
+                        productsCount: products.length,
+                        selectedCategory: state.selectedCategory,
+                        activeQuery: state.searchQuery,
                       ),
                     ),
                   ),
@@ -553,9 +557,9 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
   }
 
   int _crossAxisCount(double w) {
-    if (w > 1200) return 4;
-    if (w > 800) return 3;
-    if (w > 500) return 2;
+    if (w > 1400) return 3;
+    if (w > 980) return 2;
+    if (w > 600) return 2;
     return 1;
   }
 }
@@ -620,11 +624,35 @@ class _HeroSection extends StatelessWidget {
                         Color.lerp(
                             AppColors.deepVoid, AppColors.richNavy, g)!,
                         Color.lerp(AppColors.midnight,
-                            const Color(0xFF071E2E), g)!,
+                            AppColors.richNavy, g)!,
                         Color.lerp(
                             AppColors.richNavy, const Color(0xFF0A2240), g)!,
                       ],
                       stops: [0.0, 0.5 + g * 0.15, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Aurora sweep overlay ─────────────────────
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.25,
+                  child: FractionalTranslation(
+                    translation: Offset(-0.05 + g * 0.1, 0.02 - g * 0.06),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(-0.6, -0.2),
+                          radius: 1.2,
+                          colors: [
+                            AppColors.teal.withValues(alpha: 0.16),
+                            AppColors.golden.withValues(alpha: 0.10),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.4, 1.0],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -810,124 +838,178 @@ class _HeroSection extends StatelessWidget {
 
                     // Hero content
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Brand pill
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.06),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.10),
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.storefront_rounded,
-                                    color: AppColors.golden, size: 12),
-                                SizedBox(width: 5),
-                                Text(
-                                  'INNOVATION MARKETPLACE',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.golden,
-                                    letterSpacing: 1.5,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final content = Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Brand pill
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.10),
                                   ),
                                 ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.storefront_rounded,
+                                        color: AppColors.golden, size: 12),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'DIGITAL PLATFORM MARKETPLACE',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.golden,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(duration: 500.ms, delay: 50.ms)
+                                  .slideX(
+                                      begin: -0.15,
+                                      end: 0,
+                                      curve: Curves.easeOutCubic),
+                              const SizedBox(height: 10),
+
+                              // Main title with gradient shader
+                              ShaderMask(
+                                shaderCallback: (bounds) =>
+                                    const LinearGradient(
+                                  colors: [
+                                    Colors.white,
+                                    AppColors.golden,
+                                    AppColors.warmEmber,
+                                  ],
+                                  stops: [0.0, 0.52, 1.0],
+                                ).createShader(bounds),
+                                child: Text(
+                                  'Discover Future-Ready Innovations',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: isDesktop ? 36 : 26,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(duration: 650.ms, delay: 100.ms)
+                                  .slideX(
+                                      begin: -0.2,
+                                      end: 0,
+                                      curve: Curves.easeOutCubic),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Explore validated Filipino technologies, products, and ideas built for real-world impact.',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: isDesktop ? 14 : 12,
+                                  color: Colors.white.withValues(alpha: 0.70),
+                                  letterSpacing: 0.2,
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(duration: 650.ms, delay: 250.ms)
+                                  .slideX(
+                                      begin: -0.15,
+                                      end: 0,
+                                      curve: Curves.easeOutCubic),
+                              const SizedBox(height: 16),
+
+                              // Glass morphism search bar
+                              _HeroSearchBar(
+                                controller: searchCtrl,
+                                focusNode: searchFocus,
+                                focused: searchFocused,
+                                onChanged: onSearch,
+                                onClear: onClearSearch,
+                              )
+                                  .animate()
+                                  .fadeIn(duration: 600.ms, delay: 350.ms)
+                                  .slideY(
+                                      begin: 0.15,
+                                      end: 0,
+                                      curve: Curves.easeOutCubic),
+
+                              const SizedBox(height: 8),
+
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _QuickSearchChip(
+                                    label: 'Sustainable Tech',
+                                    onTap: () {
+                                      searchCtrl.text = 'Sustainable';
+                                      onSearch('Sustainable');
+                                    },
+                                  ),
+                                  _QuickSearchChip(
+                                    label: 'Health Innovations',
+                                    onTap: () {
+                                      searchCtrl.text = 'Health';
+                                      onSearch('Health');
+                                    },
+                                  ),
+                                  _QuickSearchChip(
+                                    label: selectedCategory == 'All'
+                                        ? 'ICT'
+                                        : selectedCategory,
+                                    onTap: () {
+                                      final selected = selectedCategory == 'All'
+                                          ? 'ICT'
+                                          : selectedCategory;
+                                      searchCtrl.text = selected;
+                                      onSearch(selected);
+                                    },
+                                  ),
+                                ],
+                              )
+                                  .animate()
+                                  .fadeIn(duration: 420.ms, delay: 420.ms)
+                                  .slideY(begin: 0.08, end: 0),
+
+                              // Active filter chip
+                              if (selectedCategory != 'All') ...[
+                                const SizedBox(height: 10),
+                                _ActiveFilterChip(
+                                  category: selectedCategory,
+                                  onRemove: onClearFilters,
+                                )
+                                    .animate()
+                                    .fadeIn(duration: 300.ms)
+                                    .scale(
+                                        begin: const Offset(0.85, 0.85),
+                                        curve: Curves.easeOutCubic),
                               ],
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 500.ms, delay: 50.ms)
-                              .slideX(
-                                  begin: -0.15,
-                                  end: 0,
-                                  curve: Curves.easeOutCubic),
-                          const SizedBox(height: 10),
+                            ],
+                          );
 
-                          // Main title with gradient shader
-                          ShaderMask(
-                            shaderCallback: (bounds) =>
-                                const LinearGradient(
-                              colors: [
-                                AppColors.golden,
-                                AppColors.warmEmber,
-                                Colors.white,
-                              ],
-                              stops: [0.0, 0.45, 1.0],
-                            ).createShader(bounds),
-                            child: Text(
-                              'Explore Innovations',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: isDesktop ? 36 : 26,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                                height: 1.1,
-                              ),
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 650.ms, delay: 100.ms)
-                              .slideX(
-                                  begin: -0.2,
-                                  end: 0,
-                                  curve: Curves.easeOutCubic),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Discover Filipino innovations ready for the world',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: isDesktop ? 14 : 12,
-                              color: Colors.white.withValues(alpha: 0.55),
-                              letterSpacing: 0.2,
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 650.ms, delay: 250.ms)
-                              .slideX(
-                                  begin: -0.15,
-                                  end: 0,
-                                  curve: Curves.easeOutCubic),
-                          const SizedBox(height: 16),
+                          if (!isDesktop) {
+                            return content;
+                          }
 
-                          // Glass morphism search bar
-                          _HeroSearchBar(
-                            controller: searchCtrl,
-                            focusNode: searchFocus,
-                            focused: searchFocused,
-                            onChanged: onSearch,
-                            onClear: onClearSearch,
-                          )
-                              .animate()
-                              .fadeIn(duration: 600.ms, delay: 350.ms)
-                              .slideY(
-                                  begin: 0.15,
-                                  end: 0,
-                                  curve: Curves.easeOutCubic),
-
-                          // Active filter chip
-                          if (selectedCategory != 'All') ...[
-                            const SizedBox(height: 10),
-                            _ActiveFilterChip(
-                              category: selectedCategory,
-                              onRemove: onClearFilters,
-                            )
-                                .animate()
-                                .fadeIn(duration: 300.ms)
-                                .scale(
-                                    begin: const Offset(0.85, 0.85),
-                                    curve: Curves.easeOutBack),
-                          ],
-                        ],
+                          return Row(
+                            children: [
+                              Expanded(child: content),
+                              const SizedBox(width: 24),
+                              const _HeroInsightPanel(),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -965,20 +1047,20 @@ class _HeroSearchBar extends StatelessWidget {
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: focused ? 0.10 : 0.08),
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.darkSurface.withValues(alpha: focused ? 0.95 : 0.88),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: focused
               ? AppColors.golden.withValues(alpha: 0.70)
-              : Colors.white.withValues(alpha: 0.12),
-          width: focused ? 1.5 : 1.0,
+              : AppColors.borderDark,
+          width: focused ? 1.4 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
             color: focused
-                ? AppColors.golden.withValues(alpha: 0.15)
-                : Colors.black.withValues(alpha: 0.25),
-            blurRadius: focused ? 20 : 10,
+                ? AppColors.golden.withValues(alpha: 0.18)
+                : Colors.black.withValues(alpha: 0.32),
+            blurRadius: focused ? 22 : 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -997,7 +1079,7 @@ class _HeroSearchBar extends StatelessWidget {
           hintStyle: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 14,
-            color: Colors.white.withValues(alpha: 0.30),
+            color: Colors.white.withValues(alpha: 0.40),
           ),
           prefixIcon: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
@@ -1008,7 +1090,7 @@ class _HeroSearchBar extends StatelessWidget {
               key: ValueKey(focused),
               color: focused
                   ? AppColors.golden
-                  : Colors.white.withValues(alpha: 0.40),
+                  : Colors.white.withValues(alpha: 0.50),
               size: 20,
             ),
           ),
@@ -1023,8 +1105,8 @@ class _HeroSearchBar extends StatelessWidget {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
         ),
       ),
     );
@@ -1467,6 +1549,32 @@ class _EmptyState extends StatelessWidget {
                 .animate()
                 .fadeIn(delay: 100.ms, duration: 400.ms)
                 .slideY(begin: 0.2, end: 0),
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: const [
+                _EmptyStateChip(
+                  icon: Icons.verified_rounded,
+                  label: 'Verified innovators',
+                  color: AppColors.teal,
+                ),
+                _EmptyStateChip(
+                  icon: Icons.bolt_rounded,
+                  label: 'Pilot-ready tech',
+                  color: AppColors.golden,
+                ),
+                _EmptyStateChip(
+                  icon: Icons.qr_code_2_rounded,
+                  label: 'Shareable insights',
+                  color: AppColors.sky,
+                ),
+              ],
+            )
+                .animate()
+                .fadeIn(delay: 160.ms, duration: 420.ms)
+                .slideY(begin: 0.2, end: 0),
             if (hasFilters) ...[
               const SizedBox(height: 24),
               GestureDetector(
@@ -1503,11 +1611,58 @@ class _EmptyState extends StatelessWidget {
                   .animate()
                   .fadeIn(delay: 200.ms, duration: 400.ms)
                   .scale(
-                      begin: const Offset(0.85, 0.85),
-                      curve: Curves.easeOutBack),
+                    begin: const Offset(0.85, 0.85),
+                    curve: Curves.easeOutCubic),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyStateChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _EmptyStateChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderDark),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.75),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1567,7 +1722,7 @@ class _ClearFilterChipState extends State<_ClearFilterChip> {
         ),
       ),
     ).animate().fadeIn().scale(
-        begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
+      begin: const Offset(0.8, 0.8), curve: Curves.easeOutCubic);
   }
 }
 
@@ -1591,6 +1746,674 @@ class _GridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GridPainter old) => false;
+}
+
+class _QuickSearchChip extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickSearchChip({required this.label, required this.onTap});
+
+  @override
+  State<_QuickSearchChip> createState() => _QuickSearchChipState();
+}
+
+class _QuickSearchChipState extends State<_QuickSearchChip> {
+  bool _hovered = false;
+
+  Color _chipColor() {
+    final label = widget.label.toLowerCase();
+    if (label.contains('health')) return AppColors.crimson;
+    if (label.contains('sustainable')) return AppColors.teal;
+    if (label.contains('ict')) return AppColors.sky;
+    return AppColors.golden;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          transform:
+              Matrix4.translationValues(0, _hovered ? -2.0 : 0.0, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: _chipColor().withValues(alpha: _hovered ? 0.22 : 0.12),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: _chipColor().withValues(alpha: _hovered ? 0.75 : 0.35),
+            ),
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: _chipColor().withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _hovered ? Colors.white : Colors.white70,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroInsightPanel extends StatelessWidget {
+  const _HeroInsightPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 280,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          _HeroInsightTile(
+            icon: Icons.verified_rounded,
+            title: 'Verified Innovators',
+            body: 'Peer-reviewed research with trusted provenance.',
+            color: AppColors.teal,
+          ),
+          SizedBox(height: 12),
+          _HeroInsightTile(
+            icon: Icons.bolt_rounded,
+            title: 'Future-Ready Solutions',
+            body: 'Emerging tech ready for pilots and adoption.',
+            color: AppColors.golden,
+          ),
+          SizedBox(height: 12),
+          _HeroInsightTile(
+            icon: Icons.qr_code_2_rounded,
+            title: 'Share Instantly',
+            body: 'Send product links or QR codes in one tap.',
+            color: AppColors.sky,
+          ),
+        ],
+      )
+          .animate()
+          .fadeIn(duration: 600.ms, delay: 250.ms)
+          .slideX(begin: 0.12, end: 0, curve: Curves.easeOutCubic),
+    );
+  }
+}
+
+class _HeroInsightTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+  final Color color;
+
+  const _HeroInsightTile({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface.withValues(alpha: 0.90),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderDark),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.30),
+                  color.withValues(alpha: 0.08),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withValues(alpha: 0.45)),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MarketplacePulseStrip extends StatelessWidget {
+  final int productsCount;
+  final String selectedCategory;
+  final String activeQuery;
+
+  const _MarketplacePulseStrip({
+    required this.productsCount,
+    required this.selectedCategory,
+    required this.activeQuery,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasFilters = selectedCategory != 'All' || activeQuery.isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.golden.withValues(alpha: 0.20),
+                  AppColors.warmEmber.withValues(alpha: 0.14),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: const Icon(Icons.insights_rounded,
+                size: 17, color: AppColors.golden),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              hasFilters
+                  ? '$productsCount curated results for your active filters'
+                  : '$productsCount innovations actively available to explore',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.78),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 360.ms, delay: 120.ms).slideY(begin: 0.16, end: 0);
+  }
+}
+
+class _MarketplaceBentoStrip extends StatelessWidget {
+  final int productsCount;
+  final String selectedCategory;
+  final String activeQuery;
+
+  const _MarketplaceBentoStrip({
+    required this.productsCount,
+    required this.selectedCategory,
+    required this.activeQuery,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasFilters = selectedCategory != 'All' || activeQuery.isNotEmpty;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 900;
+        final children = [
+          _BentoTile(
+            icon: Icons.auto_awesome_rounded,
+            title: 'Curated Innovations',
+            body: hasFilters
+                ? '$productsCount results tuned to your filters'
+                : '$productsCount innovations ready for discovery',
+            color: AppColors.golden,
+          ),
+          _BentoTile(
+            icon: Icons.verified_rounded,
+            title: 'Verified Pipeline',
+            body: 'Trusted innovators with real-world readiness',
+            color: AppColors.teal,
+          ),
+          _BentoTile(
+            icon: Icons.qr_code_2_rounded,
+            title: 'Share in Seconds',
+            body: 'Send QR and links directly from each card',
+            color: AppColors.sky,
+          ),
+        ];
+
+        return isWide
+            ? Row(
+                children: [
+                  Expanded(child: children[0]),
+                  const SizedBox(width: 12),
+                  Expanded(child: children[1]),
+                  const SizedBox(width: 12),
+                  Expanded(child: children[2]),
+                ],
+              )
+            : Column(
+                children: [
+                  children[0],
+                  const SizedBox(height: 10),
+                  children[1],
+                  const SizedBox(height: 10),
+                  children[2],
+                ],
+              );
+      },
+    )
+        .animate()
+        .fadeIn(duration: 420.ms, delay: 120.ms)
+        .slideY(begin: 0.16, end: 0, curve: Curves.easeOutCubic);
+  }
+}
+
+class _BentoTile extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+  final Color color;
+
+  const _BentoTile({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.color,
+  });
+
+  @override
+  State<_BentoTile> createState() => _BentoTileState();
+}
+
+class _BentoTileState extends State<_BentoTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.darkSurface.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hovered
+                ? widget.color.withValues(alpha: 0.55)
+                : Colors.white.withValues(alpha: 0.10),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _hovered
+                  ? widget.color.withValues(alpha: 0.25)
+                  : Colors.black.withValues(alpha: 0.25),
+              blurRadius: _hovered ? 18 : 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: widget.color.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: widget.color.withValues(alpha: 0.45)),
+              ),
+              child: Icon(widget.icon, color: widget.color, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.body,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.60),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MarketplaceSectionedGrid extends StatelessWidget {
+  final List products;
+  final int crossAxisCount;
+  final Animation<double> glowAnim;
+  final int productsCount;
+  final String selectedCategory;
+  final String activeQuery;
+
+  const _MarketplaceSectionedGrid({
+    required this.products,
+    required this.crossAxisCount,
+    required this.glowAnim,
+    required this.productsCount,
+    required this.selectedCategory,
+    required this.activeQuery,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasFilters = selectedCategory != 'All' || activeQuery.isNotEmpty;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: AnimatedBuilder(
+            animation: glowAnim,
+            builder: (context, _) {
+              final t = glowAnim.value;
+              return Opacity(
+                opacity: 0.25,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(-0.6 + t * 0.2, -0.2 + t * 0.2),
+                      radius: 1.1,
+                      colors: [
+                        AppColors.golden.withValues(alpha: 0.20),
+                        AppColors.teal.withValues(alpha: 0.12),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.45, 1.0],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        Positioned.fill(
+          child: Column(
+            children: [
+              _BandBlock(
+                height: 140,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.richNavy.withValues(alpha: 0.65),
+                    AppColors.deepVoid.withValues(alpha: 0.90),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _BandBlock(
+                height: 120,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.darkSurface.withValues(alpha: 0.75),
+                    AppColors.richNavy.withValues(alpha: 0.45),
+                  ],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _BandBlock(
+                height: 120,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.midnight.withValues(alpha: 0.75),
+                    AppColors.deepVoid.withValues(alpha: 0.90),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.deepVoid.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ResultsHeader(
+                count: productsCount,
+                hasFilters: hasFilters,
+                selectedCategory: selectedCategory,
+                activeQuery: activeQuery,
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: products.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 24,
+                  mainAxisSpacing: 24,
+                  childAspectRatio: 0.62,
+                ),
+                itemBuilder: (context, index) => ProductCard(
+                  product: products[index],
+                  index: index,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    )
+        .animate()
+        .fadeIn(duration: 420.ms, delay: 120.ms)
+        .slideY(begin: 0.12, end: 0, curve: Curves.easeOutCubic);
+  }
+}
+
+class _ResultsHeader extends StatelessWidget {
+  final int count;
+  final bool hasFilters;
+  final String selectedCategory;
+  final String activeQuery;
+
+  const _ResultsHeader({
+    required this.count,
+    required this.hasFilters,
+    required this.selectedCategory,
+    required this.activeQuery,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              hasFilters ? 'Filtered Innovations' : 'Innovation Results',
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.golden, AppColors.warmEmber],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '$count found',
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.navy,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          hasFilters
+              ? 'Tuned by your active filters. Tap a card to explore full details.'
+              : 'Every innovation is curated for real-world readiness and impact.',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.60),
+          ),
+        ),
+        if (hasFilters) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (selectedCategory != 'All')
+                _FilterPill(label: selectedCategory, color: AppColors.teal),
+              if (activeQuery.isNotEmpty)
+                _FilterPill(label: activeQuery, color: AppColors.sky),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _FilterPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _BandBlock extends StatelessWidget {
+  final double height;
+  final Gradient gradient;
+
+  const _BandBlock({required this.height, required this.gradient});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(18),
+      ),
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1639,7 +2462,7 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
           animation: _pulse,
           builder: (context, _) => AnimatedContainer(
             duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutBack,
+            curve: Curves.easeOutCubic,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -1655,7 +2478,7 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
             child: AnimatedScale(
               scale: _hovered ? 1.12 : 1.0,
               duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutBack,
+              curve: Curves.easeOutCubic,
               child: Image.asset(
                 'assets/images/logo/final-logo.png',
                 height: 34,
@@ -1670,7 +2493,7 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
         .scaleXY(
             begin: 0.6,
             end: 1.0,
-            curve: Curves.easeOutBack,
+            curve: Curves.easeOutCubic,
             duration: 600.ms);
   }
 }

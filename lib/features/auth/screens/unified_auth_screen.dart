@@ -5,6 +5,7 @@
 // Mobile: Full-screen form card with brand header.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -372,6 +373,8 @@ class _LoginPageState extends ConsumerState<_LoginPage> {
   final _passFocus    = FocusNode();
   bool  _rememberMe   = false;
   bool  _obscurePass  = true;
+  bool  _createHover  = false;
+  bool  _createPress  = false;
 
   @override
   void dispose() {
@@ -599,15 +602,61 @@ class _LoginPageState extends ConsumerState<_LoginPage> {
                         children: [
                           const TextSpan(text: 'Don\'t have an account? '),
                           WidgetSpan(
-                            child: GestureDetector(
-                              onTap: widget.onCreateTap,
-                              child: const Text('Create one',
-                                style: TextStyle(
-                                  fontFamily:  'Poppins',
-                                  fontSize:    14,
-                                  fontWeight:  FontWeight.w700,
-                                  color:       AppColors.golden,
-                                )),
+                            child: MouseRegion(
+                              onEnter: (_) => setState(() => _createHover = true),
+                              onExit: (_) => setState(() {
+                                _createHover = false;
+                                _createPress = false;
+                              }),
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTapDown: (_) => setState(() => _createPress = true),
+                                onTapCancel: () => setState(() => _createPress = false),
+                                onTapUp: (_) => setState(() => _createPress = false),
+                                onTap: widget.onCreateTap,
+                                child: AnimatedScale(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOutCubic,
+                                  scale: _createPress ? 0.96 : (_createHover ? 1.04 : 1),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    curve: Curves.easeOutCubic,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      gradient: _createHover
+                                          ? LinearGradient(
+                                              colors: [
+                                                AppColors.golden.withValues(alpha: 0.22),
+                                                AppColors.warmEmber.withValues(alpha: 0.14),
+                                              ],
+                                            )
+                                          : null,
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: _createHover
+                                            ? AppColors.golden.withValues(alpha: 0.45)
+                                            : Colors.transparent,
+                                      ),
+                                      boxShadow: _createHover
+                                          ? [
+                                              BoxShadow(
+                                                color: AppColors.golden.withValues(alpha: 0.20),
+                                                blurRadius: 14,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ]
+                                          : const [],
+                                    ),
+                                    child: const Text('Create one',
+                                      style: TextStyle(
+                                        fontFamily:  'Poppins',
+                                        fontSize:    14,
+                                        fontWeight:  FontWeight.w700,
+                                        color:       AppColors.golden,
+                                      )),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -1434,9 +1483,10 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Select how you will use Digital Platform.',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white54),
+            const _StepIntroCard(
+              icon: Icons.auto_awesome_rounded,
+              title: 'Choose your journey',
+              subtitle: 'Pick your role to personalize tools, onboarding flow, and dashboard experience.',
             ),
             const SizedBox(height: 12),
             _roleOption('client', 'Client', 'Browse and invest in innovative projects', Icons.person_outline_rounded),
@@ -1457,13 +1507,17 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
             ),
             const SizedBox(height: 10),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: _AuthTextField(label: 'Middle Name', controller: _middleNameCtrl, hint: 'Optional', prefixIcon: Icons.account_circle_outlined)),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _SuffixPicker(
-                    value: _selectedSuffix,
-                    onChanged: (v) => setState(() => _selectedSuffix = v),
+                  child: _LabeledField(
+                    label: 'Suffix',
+                    child: _SuffixPicker(
+                      value: _selectedSuffix,
+                      onChanged: (v) => setState(() => _selectedSuffix = v),
+                    ),
                   ),
                 ),
               ],
@@ -1483,6 +1537,12 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
       case 3:
         return Column(
           children: [
+            const _StepIntroCard(
+              icon: Icons.lock_person_rounded,
+              title: 'Secure access setup',
+              subtitle: 'Build a strong password first, then confirm it to unlock identity verification.',
+            ),
+            const SizedBox(height: 10),
             _AuthTextField(
               label: 'Password',
               controller: _passwordCtrl,
@@ -1497,13 +1557,38 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               score: _passwordScore,
             ),
             const SizedBox(height: 10),
-            _AuthTextField(
-              label: 'Confirm Password',
-              controller: _confirmPassCtrl,
-              isPassword: true,
-              obscure: _obscureConfirm,
-              onObscureToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
-              onChanged: (_) => setState(() {}),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _confirmPassCtrl.text.isEmpty
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : _passwordsMatch
+                          ? AppColors.teal.withValues(alpha: 0.65)
+                          : AppColors.crimson.withValues(alpha: 0.55),
+                ),
+                boxShadow: _confirmPassCtrl.text.isEmpty
+                    ? const []
+                    : [
+                        BoxShadow(
+                          color: (_passwordsMatch ? AppColors.teal : AppColors.crimson)
+                              .withValues(alpha: 0.16),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+              ),
+              child: _AuthTextField(
+                label: 'Confirm Password',
+                controller: _confirmPassCtrl,
+                isPassword: true,
+                obscure: _obscureConfirm,
+                onObscureToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                onChanged: (_) => setState(() {}),
+              ),
             ),
             const SizedBox(height: 10),
             AnimatedContainer(
@@ -1604,10 +1689,20 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               ),
             ),
             const SizedBox(height: 10),
+            Text(
+              'Mobile Number',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.70),
+              ),
+            ),
+            const SizedBox(height: 6),
             Row(
               children: [
                 SizedBox(
-                  width: 90,
+                  width: 104,
                   child: _CountryCodePicker(
                     value: _data.countryCode,
                     onChanged: (v) => setState(() => _data.countryCode = v),
@@ -1615,12 +1710,9 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _AuthTextField(
-                    label: 'Phone Number',
+                  child: _PhoneInputInline(
                     controller: _phoneCtrl,
-                    hint: '9XXXXXXXXX',
-                    prefixIcon: Icons.phone_outlined,
-                    keyboardType: TextInputType.phone,
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
               ],
@@ -1836,7 +1928,7 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               value: _data.privacyAccepted,
               onChanged: (v) => setState(() => _data.privacyAccepted = v ?? false),
               label: 'I agree to the Privacy Notice.',
-              linkLabel: 'Open Privacy Notice',
+              linkLabel: 'Click here to open Privacy Notice',
               onLabelTap: () => _showConsentModule(
                 title: 'Privacy Notice',
                 clauses: const [
@@ -1858,7 +1950,7 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               value: _data.dataConsentAccepted,
               onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false),
               label: 'I agree to Data Consent terms.',
-              linkLabel: 'Open Data Consent Terms',
+              linkLabel: 'Click here to open Data Consent Terms',
               onLabelTap: () => _showConsentModule(
                 title: 'Terms of Service and Consent (Q3 Clauses)',
                 clauses: const [
@@ -1898,9 +1990,30 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
           ],
         );
       case 7:
+        final accountCards = [
+          _ReviewCardData('Role', _data.role, Icons.badge_rounded),
+          _ReviewCardData('Name', '${_data.firstName} ${_data.lastName}', Icons.person_rounded),
+          _ReviewCardData('Username', _data.username, Icons.alternate_email_rounded),
+          _ReviewCardData('Email', _data.email, Icons.email_rounded),
+        ];
+
+        final verificationCards = [
+          _ReviewCardData('Phone', '${_data.countryCode} ${_data.phone}', Icons.phone_rounded),
+          _ReviewCardData('Birth Date', _data.dateOfBirth, Icons.cake_rounded),
+          _ReviewCardData('Province / City', '${_data.province} / ${_data.city}', Icons.location_on_rounded),
+          _ReviewCardData('Government ID', _govIdFileName ?? 'Attached', Icons.credit_card_rounded),
+          _ReviewCardData('Selfie', _selfieFileName ?? 'Attached', Icons.camera_alt_rounded),
+        ];
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const _StepIntroCard(
+              icon: Icons.fact_check_rounded,
+              title: 'Final review before submission',
+              subtitle: 'Check all account, contact, and identity details. You can go back to any step if needed.',
+            ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -1920,29 +2033,36 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Container(
+            const SizedBox(height: 12),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.teal.withValues(alpha: 0.09),
+                    AppColors.golden.withValues(alpha: 0.07),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.golden.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.golden.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.verified_user_rounded, color: AppColors.golden, size: 18),
-                  ),
-                  const SizedBox(width: 10),
+                  Icon(Icons.touch_app_rounded, size: 15, color: AppColors.golden.withValues(alpha: 0.90)),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Review your details carefully before submission.',
+                      'Tip: Tap any detail card to copy value quickly.',
                       style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 12,
@@ -1950,30 +2070,47 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
                       ),
                     ),
                   ),
+                  TextButton(
+                    onPressed: _back,
+                    child: const Text(
+                      'Edit info',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.golden,
+                      ),
+                    ),
+                  ),
                 ],
               ),
+            ).animate().fadeIn(duration: 280.ms).slideY(begin: 0.08, end: 0),
+            const SizedBox(height: 12),
+            const _ReviewSectionHeader(
+              title: 'Account Overview',
+              icon: Icons.person_pin_circle_rounded,
             ),
-            const SizedBox(height: 10),
-            _ReviewRow(label: 'Role', value: _data.role),
-            _ReviewRow(label: 'Name', value: '${_data.firstName} ${_data.lastName}'),
-            _ReviewRow(label: 'Username', value: _data.username),
-            _ReviewRow(label: 'Email', value: _data.email),
-            _ReviewRow(label: 'Phone', value: '${_data.countryCode} ${_data.phone}'),
-            _ReviewRow(label: 'Birth Date', value: _data.dateOfBirth),
-            _ReviewRow(label: 'Province / City', value: '${_data.province} / ${_data.city}'),
-            _ReviewRow(label: 'Government ID', value: _govIdFileName ?? 'Attached'),
-            _ReviewRow(label: 'Selfie', value: _selfieFileName ?? 'Attached'),
+            const SizedBox(height: 8),
+            _ReviewAnimatedGrid(
+              cards: accountCards,
+              baseDelayMs: 20,
+            ),
+            const SizedBox(height: 12),
+            const _ReviewSectionHeader(
+              title: 'Verification Details',
+              icon: Icons.verified_user_rounded,
+            ),
+            const SizedBox(height: 8),
+            _ReviewAnimatedGrid(
+              cards: verificationCards,
+              baseDelayMs: 180,
+            ),
             if ((_govIdBase64 != null && _isImageFile(_govIdFileName)) ||
                 (_selfieBase64 != null && _isImageFile(_selfieFileName))) ...[
               const SizedBox(height: 8),
-              const Text(
-                'Attached Files Preview',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.golden,
-                ),
+              const _ReviewSectionHeader(
+                title: 'Attached Files Preview',
+                icon: Icons.photo_library_rounded,
               ),
               const SizedBox(height: 8),
               Row(
@@ -2082,6 +2219,7 @@ class _SuffixPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 58,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.03),
@@ -2105,6 +2243,144 @@ class _SuffixPicker extends StatelessWidget {
           ],
           onChanged: onChanged,
         ),
+      ),
+    );
+  }
+}
+
+class _LabeledField extends StatelessWidget {
+  const _LabeledField({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.60),
+          ),
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    );
+  }
+}
+
+class _StepIntroCard extends StatelessWidget {
+  const _StepIntroCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.golden.withValues(alpha: 0.15),
+            AppColors.teal.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.golden.withValues(alpha: 0.34)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.golden, size: 17),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.62),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhoneInputInline extends StatelessWidget {
+  const _PhoneInputInline({
+    required this.controller,
+    this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 58,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.phone,
+        style: const TextStyle(
+          fontFamily: 'Poppins',
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          prefixIcon: Icon(Icons.phone_outlined, color: Colors.white.withValues(alpha: 0.54), size: 18),
+          hintText: '9XXXXXXXXX',
+          hintStyle: TextStyle(
+            fontFamily: 'Poppins',
+            color: Colors.white.withValues(alpha: 0.38),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        ),
+        onChanged: onChanged,
       ),
     );
   }
@@ -2210,7 +2486,7 @@ class _CityPicker extends StatelessWidget {
   }
 }
 
-class _DatePickerTile extends StatelessWidget {
+class _DatePickerTile extends StatefulWidget {
   const _DatePickerTile({
     required this.date,
     required this.onTap,
@@ -2222,63 +2498,88 @@ class _DatePickerTile extends StatelessWidget {
   final String? subtitle;
 
   @override
+  State<_DatePickerTile> createState() => _DatePickerTileState();
+}
+
+class _DatePickerTileState extends State<_DatePickerTile> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withValues(alpha: 0.04),
-              AppColors.golden.withValues(alpha: 0.08),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.golden.withValues(alpha: 0.35)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.event_available_rounded,
-                    color: AppColors.golden, size: 18),
-                const SizedBox(width: 10),
-                Text(
-                  date == null
-                      ? 'Date of Birth'
-                      : '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: date == null
-                        ? Colors.white.withValues(alpha: 0.50)
-                        : Colors.white,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white.withValues(alpha: 0.48),
-                  size: 18,
-                ),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withValues(alpha: _hovered ? 0.08 : 0.04),
+                AppColors.golden.withValues(alpha: _hovered ? 0.16 : 0.08),
               ],
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                subtitle!,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.55),
-                ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.golden.withValues(alpha: _hovered ? 0.58 : 0.35),
+            ),
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: AppColors.golden.withValues(alpha: 0.16),
+                      blurRadius: 16,
+                      offset: const Offset(0, 5),
+                    ),
+                  ]
+                : const [],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.event_available_rounded,
+                      color: AppColors.golden, size: 18),
+                  const SizedBox(width: 10),
+                  Text(
+                    widget.date == null
+                        ? 'Date of Birth'
+                        : '${widget.date!.year}-${widget.date!.month.toString().padLeft(2, '0')}-${widget.date!.day.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: widget.date == null
+                          ? Colors.white.withValues(alpha: 0.50)
+                          : Colors.white,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white.withValues(alpha: 0.48),
+                    size: 18,
+                  ),
+                ],
               ),
+              if (widget.subtitle != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  widget.subtitle!,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -2513,7 +2814,7 @@ class _ConsentTile extends StatelessWidget {
                           linkLabel,
                           style: const TextStyle(
                             fontFamily: 'Poppins',
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: AppColors.golden,
                           ),
@@ -2531,50 +2832,200 @@ class _ConsentTile extends StatelessWidget {
   }
 }
 
-class _ReviewRow extends StatelessWidget {
-  const _ReviewRow({required this.label, required this.value});
+class _ReviewFieldCard extends StatefulWidget {
+  const _ReviewFieldCard({required this.label, required this.value, this.icon});
 
   final String label;
   final String value;
+  final IconData? icon;
+
+  @override
+  State<_ReviewFieldCard> createState() => _ReviewFieldCardState();
+}
+
+class _ReviewCardData {
+  const _ReviewCardData(this.label, this.value, this.icon);
+
+  final String label;
+  final String value;
+  final IconData icon;
+}
+
+class _ReviewAnimatedGrid extends StatelessWidget {
+  const _ReviewAnimatedGrid({
+    required this.cards,
+    this.baseDelayMs = 0,
+  });
+
+  final List<_ReviewCardData> cards;
+  final int baseDelayMs;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.42),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 520;
+        final cardWidth = isWide
+            ? (constraints.maxWidth - 8) / 2
+            : constraints.maxWidth;
+
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: List.generate(cards.length, (index) {
+            final card = cards[index];
+            return SizedBox(
+              width: cardWidth,
+              child: _ReviewFieldCard(
+                label: card.label,
+                value: card.value,
+                icon: card.icon,
+              )
+                  .animate(delay: Duration(milliseconds: baseDelayMs + (index * 60)))
+                  .fadeIn(duration: 260.ms)
+                  .slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+class _ReviewFieldCardState extends State<_ReviewFieldCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () async {
+          await Clipboard.setData(ClipboardData(text: widget.value));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${widget.label} copied'),
+              duration: const Duration(milliseconds: 900),
+            ),
+          );
+        },
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 180, maxWidth: 252),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: _hovered ? 0.06 : 0.03),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _hovered
+                    ? AppColors.golden.withValues(alpha: 0.34)
+                    : Colors.white.withValues(alpha: 0.10),
               ),
+              boxShadow: _hovered
+                  ? [
+                      BoxShadow(
+                        color: AppColors.golden.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (widget.icon != null) ...[
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: AppColors.golden.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Icon(widget.icon, size: 12, color: AppColors.golden),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.48),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.copy_rounded,
+                      size: 13,
+                      color: _hovered
+                          ? AppColors.golden.withValues(alpha: 0.82)
+                          : Colors.white.withValues(alpha: 0.28),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.value,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.25,
+                  ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+class _ReviewSectionHeader extends StatelessWidget {
+  const _ReviewSectionHeader({required this.title, required this.icon});
+
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: AppColors.teal.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.teal.withValues(alpha: 0.35)),
+          ),
+          child: Icon(icon, size: 14, color: AppColors.teal),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: Colors.white.withValues(alpha: 0.86),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2739,7 +3190,7 @@ class _PasswordGuidePanel extends StatelessWidget {
                       item.$1,
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight:
                             passed ? FontWeight.w700 : FontWeight.w500,
                         color: passed
@@ -3377,6 +3828,32 @@ class _AuthTextField extends StatefulWidget {
 
 class _AuthTextFieldState extends State<_AuthTextField> {
   bool _focused = false;
+  bool _hovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AuthTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_handleTextChanged);
+      widget.controller.addListener(_handleTextChanged);
+    }
+  }
+
+  void _handleTextChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTextChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3386,73 +3863,99 @@ class _AuthTextFieldState extends State<_AuthTextField> {
         Text(widget.label,
           style: TextStyle(
             fontFamily:  'Poppins',
-            fontSize:    13,
+            fontSize:    14,
             fontWeight:  FontWeight.w600,
             color: Colors.white.withValues(alpha: 0.70),
           )),
         const SizedBox(height: 8),
-        Focus(
-          onFocusChange: (f) => setState(() => _focused = f),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: AppColors.richNavy.withValues(alpha: _focused ? 0.80 : 0.60),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _focused
-                    ? AppColors.golden.withValues(alpha: 0.50)
-                    : AppColors.borderDark,
-                width: _focused ? 1.5 : 1.0,
-              ),
-              boxShadow: _focused
-                  ? [
-                      BoxShadow(
-                        color:      AppColors.golden.withValues(alpha: 0.08),
-                        blurRadius: 12,
-                      ),
-                    ]
-                  : [],
-            ),
-            child: TextFormField(
-              controller:   widget.controller,
-              obscureText:  widget.isPassword ? widget.obscure : false,
-              keyboardType: widget.keyboardType,
-              focusNode:    widget.focusNode,
-              validator:    widget.validator,
-              onChanged:    widget.onChanged,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize:   15,
-                color:      Colors.white,
-              ),
-              decoration: InputDecoration(
-                hintText:      widget.hint,
-                hintStyle: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Colors.white.withValues(alpha: 0.25),
+        MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: Focus(
+            onFocusChange: (f) => setState(() => _focused = f),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.richNavy.withValues(alpha: _focused ? 0.90 : 0.74),
+                    AppColors.midnight.withValues(alpha: _focused ? 0.88 : 0.72),
+                  ],
                 ),
-                border:          InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
-                prefixIcon: Icon(widget.prefixIcon,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
                   color: _focused
-                      ? AppColors.golden.withValues(alpha: 0.70)
-                      : Colors.white.withValues(alpha: 0.30),
-                  size: 20,
+                      ? AppColors.golden.withValues(alpha: 0.62)
+                      : _hovered
+                          ? Colors.white.withValues(alpha: 0.22)
+                          : AppColors.borderDark,
+                  width: _focused ? 1.5 : 1.0,
                 ),
-                suffixIcon: widget.isPassword
-                    ? IconButton(
-                        icon: Icon(
-                          widget.obscure
-                              ? Icons.visibility_off_rounded
-                              : Icons.visibility_rounded,
-                          color: Colors.white.withValues(alpha: 0.35),
-                          size: 20,
+                boxShadow: _focused
+                    ? [
+                        BoxShadow(
+                          color: AppColors.golden.withValues(alpha: 0.12),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
                         ),
-                        onPressed: widget.onObscureToggle,
-                      )
-                    : null,
+                      ]
+                    : [],
               ),
+              child: TextFormField(
+                controller:   widget.controller,
+                obscureText:  widget.isPassword ? widget.obscure : false,
+                keyboardType: widget.keyboardType,
+                focusNode:    widget.focusNode,
+                validator:    widget.validator,
+                onChanged:    widget.onChanged,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize:   15,
+                  color:      Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: InputDecoration(
+                  hintText:      widget.hint,
+                  hintStyle: TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.white.withValues(alpha: 0.34),
+                  ),
+                  border:          InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16),
+                  prefixIcon: Icon(widget.prefixIcon,
+                    color: _focused
+                        ? AppColors.golden.withValues(alpha: 0.80)
+                        : Colors.white.withValues(alpha: 0.42),
+                    size: 20,
+                  ),
+                  suffixIcon: widget.isPassword
+                      ? IconButton(
+                          icon: Icon(
+                            widget.obscure
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            color: Colors.white.withValues(alpha: 0.48),
+                            size: 20,
+                          ),
+                          onPressed: widget.onObscureToggle,
+                        )
+                      : (widget.controller.text.isNotEmpty && (_focused || _hovered)
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.close_rounded,
+                                color: Colors.white.withValues(alpha: 0.48),
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                widget.controller.clear();
+                                widget.onChanged?.call('');
+                              },
+                            )
+                          : null),
+                ),
+            ),
             ),
           ),
         ),

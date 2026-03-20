@@ -39,6 +39,10 @@ class CategoryFilterBar extends StatefulWidget {
 
 class _CategoryFilterBarState extends State<CategoryFilterBar> {
   final ScrollController _scrollCtrl = ScrollController();
+  final List<GlobalKey> _chipKeys = List.generate(
+    CategoryFilterBar.cats.length,
+    (_) => GlobalKey(),
+  );
   bool _showLeftFade = false;
   bool _showRightFade = true;
 
@@ -90,11 +94,25 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
               final cat = CategoryFilterBar.cats[index];
               final isSelected = widget.selected == cat['name'];
               return _CategoryChip(
+                chipKey: _chipKeys[index],
                 name: cat['name'] as String,
                 icon: cat['icon'] as IconData,
                 count: cat['count'] as int?,
                 isSelected: isSelected,
-                onTap: () => widget.onSelect(cat['name'] as String),
+                onTap: () {
+                  widget.onSelect(cat['name'] as String);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final ctx = _chipKeys[index].currentContext;
+                    if (ctx != null) {
+                      Scrollable.ensureVisible(
+                        ctx,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                        alignment: 0.5,
+                      );
+                    }
+                  });
+                },
                 index: index,
               );
             },
@@ -151,6 +169,7 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
 // Individual category chip — dark glass style with count badge
 // ═══════════════════════════════════════════════════════════
 class _CategoryChip extends StatefulWidget {
+  final Key? chipKey;
   final String name;
   final IconData icon;
   final int? count;
@@ -159,6 +178,7 @@ class _CategoryChip extends StatefulWidget {
   final int index;
 
   const _CategoryChip({
+    this.chipKey,
     required this.name,
     required this.icon,
     this.count,
@@ -222,141 +242,160 @@ class _CategoryChipState extends State<_CategoryChip>
     if (widget.isSelected) scale = 1.04;
     if (_hovered && !widget.isSelected) scale = 1.02;
     if (_pressed) scale = 0.95;
+    final lift = _hovered && !widget.isSelected ? -2.0 : 0.0;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
+        key: widget.chipKey,
         onTap: widget.onTap,
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          scale: scale,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          child: AnimatedBuilder(
-            animation: _colorAnim,
-            builder: (context, child) {
-              final t = _colorAnim.value;
-
-              // Background: lerp from dark glass → category color (12% opacity)
-              final bgColor = Color.lerp(
-                const Color(0xFF0B1929),
-                catColor.withValues(alpha: 0.14),
-                t,
-              )!;
-
-              // Border: lerp from white10 → category color
-              final borderColor = Color.lerp(
-                _hovered
-                    ? Colors.white.withValues(alpha: 0.20)
-                    : Colors.white.withValues(alpha: 0.10),
-                catColor.withValues(alpha: 0.70),
-                t,
-              )!;
-
-              // Text/icon color: lerp from white55 → category color
-              final contentColor = Color.lerp(
-                _hovered
-                    ? Colors.white.withValues(alpha: 0.85)
-                    : Colors.white.withValues(alpha: 0.55),
-                catColor,
-                t,
-              )!;
-
-              // Box shadow glow on selected
-              final boxShadows = t > 0
-                  ? [
-                      BoxShadow(
-                        color: catColor.withValues(alpha: 0.25 * t),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                        spreadRadius: 0,
-                      ),
-                    ]
-                  : (_hovered
-                      ? [
-                          BoxShadow(
-                            color: catColor.withValues(alpha: 0.10),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : <BoxShadow>[]);
-
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: borderColor, width: 1.0),
-                  boxShadow: boxShadows,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      widget.icon,
-                      size: 14,
-                      color: contentColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.name,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 13,
-                        fontWeight: t > 0.5
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        color: contentColor,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                    // Count badge
-                    if (widget.count != null) ...[
-                      const SizedBox(width: 6),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: t > 0.5
-                              ? catColor.withValues(alpha: 0.22)
-                              : Colors.white.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
+        child: Transform.translate(
+          offset: Offset(0, lift),
+          child: AnimatedScale(
+            scale: scale,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            child: AnimatedBuilder(
+              animation: _colorAnim,
+              builder: (context, child) {
+                final t = _colorAnim.value;
+                final bgColor = Color.lerp(
+                  const Color(0xFF0B1929),
+                  catColor.withValues(alpha: 0.14),
+                  t,
+                )!;
+                final borderColor = Color.lerp(
+                  _hovered
+                      ? Colors.white.withValues(alpha: 0.20)
+                      : Colors.white.withValues(alpha: 0.10),
+                  catColor.withValues(alpha: 0.70),
+                  t,
+                )!;
+                final contentColor = Color.lerp(
+                  _hovered
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : Colors.white.withValues(alpha: 0.55),
+                  catColor,
+                  t,
+                )!;
+                final boxShadows = t > 0
+                    ? [
+                        BoxShadow(
+                          color: catColor.withValues(alpha: 0.25 * t),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                          spreadRadius: 0,
                         ),
-                        child: Text(
-                          '${widget.count}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: t > 0.5
-                                ? catColor
-                                : Colors.white.withValues(alpha: 0.45),
+                      ]
+                    : (_hovered
+                        ? [
+                            BoxShadow(
+                              color: catColor.withValues(alpha: 0.10),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : <BoxShadow>[]);
+
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderColor),
+                    boxShadow: boxShadows,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(widget.icon, size: 15, color: contentColor),
+                            const SizedBox(width: 7),
+                            Text(
+                              widget.name,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                fontWeight:
+                                    widget.isSelected ? FontWeight.w700 : FontWeight.w500,
+                                color: contentColor,
+                              ),
+                            ),
+                            if (widget.count != null) ...[
+                              const SizedBox(width: 7),
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: widget.isSelected
+                                      ? catColor.withValues(alpha: 0.20)
+                                      : Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${widget.count}',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: widget.isSelected
+                                        ? catColor
+                                        : Colors.white.withValues(alpha: 0.70),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: -8,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            height: 2,
+                            margin: EdgeInsets.symmetric(
+                              horizontal: widget.isSelected ? 8 : 24,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: widget.isSelected
+                                  ? LinearGradient(
+                                      colors: [
+                                        catColor.withValues(alpha: 0.95),
+                                        AppColors.golden.withValues(alpha: 0.85),
+                                      ],
+                                    )
+                                  : null,
+                              color: widget.isSelected
+                                  ? null
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            },
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
     )
-        .animate(delay: Duration(milliseconds: 40 * widget.index))
-        .fadeIn(duration: 400.ms)
-        .slideX(
-          begin: -0.08,
-          end: 0,
-          curve: Curves.easeOutCubic,
-          duration: 400.ms,
-        );
+        .animate(delay: Duration(milliseconds: widget.index * 35))
+        .fadeIn(duration: 340.ms)
+        .slideX(begin: -0.08, end: 0, curve: Curves.easeOutCubic);
   }
 }
