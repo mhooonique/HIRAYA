@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/search_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
@@ -89,6 +90,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             activeFilters: state.filters.activeFilterCount,
             state: state,
           ),
+          // Suggestions overlay
           if (_showSuggestions && state.suggestions.isNotEmpty)
             _SuggestionsDropdown(
               suggestions: state.suggestions,
@@ -154,15 +156,11 @@ class _SearchHeader extends StatelessWidget {
                 onPressed: () => context.pop(),
               ),
               const SizedBox(width: 4),
-              const Text(
-                'Search Innovations',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                ),
-              ),
+              Text('Search Innovations',
+                  style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 12),
@@ -180,16 +178,12 @@ class _SearchHeader extends StatelessWidget {
                     focusNode: focusNode,
                     onChanged: onChanged,
                     onSubmitted: (_) => onSubmit(),
-                    style: const TextStyle(
-                        fontSize: 14, color: AppColors.darkGray, fontFamily: 'Poppins'),
+                    style: GoogleFonts.poppins(fontSize: 14, color: AppColors.darkGray),
                     decoration: InputDecoration(
                       hintText: 'Search innovations, categories, tags...',
-                      hintStyle: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade400,
-                          fontFamily: 'Poppins'),
-                      prefixIcon:
-                          const Icon(Icons.search, color: AppColors.navy, size: 20),
+                      hintStyle: GoogleFonts.poppins(
+                          fontSize: 13, color: Colors.grey.shade400),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.navy, size: 20),
                       suffixIcon: queryCtrl.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear, size: 18),
@@ -256,11 +250,16 @@ class _SearchHeader extends StatelessWidget {
               children: [
                 Text(
                   '${state.totalResults} result${state.totalResults == 1 ? '' : 's'}',
-                  style: const TextStyle(
-                      color: Colors.white70, fontSize: 12, fontFamily: 'Poppins'),
+                  style: GoogleFonts.poppins(
+                      color: Colors.white70, fontSize: 12),
                 ),
                 const Spacer(),
-                _SortChip(current: state.filters.sortBy, onChanged: (_) {}),
+                _SortChip(
+                  current: state.filters.sortBy,
+                  onChanged: (s) =>
+                      // ignore: unused_result
+                      null, // handled in filter sheet
+                ),
               ],
             ),
           ],
@@ -280,6 +279,8 @@ class _SortChip extends ConsumerWidget {
     'newest': 'Newest',
     'rating': 'Top Rated',
     'most_liked': 'Most Liked',
+    'price_asc': 'Price ↑',
+    'price_desc': 'Price ↓',
   };
 
   @override
@@ -298,11 +299,8 @@ class _SortChip extends ConsumerWidget {
           children: [
             const Icon(Icons.sort, color: Colors.white70, size: 14),
             const SizedBox(width: 4),
-            Text(
-              _sortLabels[current] ?? 'Sort',
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 12, fontFamily: 'Poppins'),
-            ),
+            Text(_sortLabels[current] ?? 'Sort',
+                style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
             const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
           ],
         ),
@@ -321,31 +319,25 @@ class _SortChip extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Text(
-                'Sort By',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins'),
-              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text('Sort By',
+                  style: GoogleFonts.poppins(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
             ),
             ..._sortLabels.entries.map((e) => ListTile(
                   leading: Icon(
                     current == e.key
                         ? Icons.radio_button_checked
                         : Icons.radio_button_off,
-                    color: current == e.key ? AppColors.crimson : Colors.grey,
+                    color:
+                        current == e.key ? AppColors.crimson : Colors.grey,
                   ),
-                  title: Text(
-                    e.value,
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight:
-                          current == e.key ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
+                  title: Text(e.value,
+                      style: GoogleFonts.poppins(
+                          fontWeight: current == e.key
+                              ? FontWeight.w600
+                              : FontWeight.normal)),
                   onTap: () {
                     ref.read(searchProvider.notifier).setSortBy(e.key);
                     Navigator.pop(context);
@@ -365,7 +357,9 @@ class _SuggestionsDropdown extends StatelessWidget {
   final List<String> history;
   final ValueChanged<String> onTap;
   const _SuggestionsDropdown(
-      {required this.suggestions, required this.history, required this.onTap});
+      {required this.suggestions,
+      required this.history,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -382,11 +376,8 @@ class _SuggestionsDropdown extends StatelessWidget {
               color: Colors.grey,
               size: 18,
             ),
-            title: Text(
-              s,
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.darkGray, fontFamily: 'Poppins'),
-            ),
+            title: Text(s,
+                style: GoogleFonts.poppins(fontSize: 13, color: AppColors.darkGray)),
             onTap: () => onTap(s),
           );
         }).toList(),
@@ -395,7 +386,7 @@ class _SuggestionsDropdown extends StatelessWidget {
   }
 }
 
-// ── Idle View ─────────────────────────────────────────────────────────────────
+// ── Idle View (no query yet) ──────────────────────────────────────────────────
 
 class _IdleView extends ConsumerWidget {
   final SearchState state;
@@ -409,6 +400,7 @@ class _IdleView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Search History
           if (state.searchHistory.isNotEmpty) ...[
             _SectionHeader(
               title: 'Recent Searches',
@@ -432,6 +424,8 @@ class _IdleView extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
           ],
+
+          // Trending Topics
           if (state.trendingTopics.isNotEmpty) ...[
             _SectionHeader(title: '🔥 Trending Topics'),
             const SizedBox(height: 12),
@@ -443,20 +437,23 @@ class _IdleView extends ConsumerWidget {
                 )),
             const SizedBox(height: 24),
           ],
+
+          // Trending Products
           if (state.trendingProducts.isNotEmpty) ...[
             _SectionHeader(title: '⚡ Popular Innovations'),
             const SizedBox(height: 12),
             SizedBox(
-              height: 320,
+              height: 260,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: state.trendingProducts.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (_, i) => SizedBox(
-                  width: 220,
+                  width: 200,
                   child: ProductCard(
                     product: state.trendingProducts[i],
-                    index: i,
+                    onTap: () => context.push(
+                        '/product/${state.trendingProducts[i].id}'),
                   ),
                 ),
               ),
@@ -478,24 +475,18 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.navy,
-            fontFamily: 'Poppins',
-          ),
-        ),
+        Text(title,
+            style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.navy)),
         const Spacer(),
         if (action != null)
           TextButton(
             onPressed: onAction,
-            child: Text(
-              action!,
-              style: const TextStyle(
-                  color: AppColors.crimson, fontSize: 12, fontFamily: 'Poppins'),
-            ),
+            child: Text(action!,
+                style: GoogleFonts.poppins(
+                    color: AppColors.crimson, fontSize: 12)),
           ),
       ],
     );
@@ -526,8 +517,8 @@ class _HistoryChip extends StatelessWidget {
             const Icon(Icons.history, size: 14, color: Colors.grey),
             const SizedBox(width: 6),
             Text(label,
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.darkGray, fontFamily: 'Poppins')),
+                style: GoogleFonts.poppins(
+                    fontSize: 12, color: AppColors.darkGray)),
             const SizedBox(width: 6),
             GestureDetector(
               onTap: onRemove,
@@ -560,16 +551,11 @@ class _TrendingTopicTile extends StatelessWidget {
         ),
         child: const Icon(Icons.trending_up, color: AppColors.navy, size: 18),
       ),
-      title: Text(
-        topic.keyword,
-        style: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Poppins'),
-      ),
-      subtitle: Text(
-        '${topic.searchCount} searches',
-        style: const TextStyle(
-            fontSize: 11, color: Colors.grey, fontFamily: 'Poppins'),
-      ),
+      title: Text(topic.keyword,
+          style:
+              GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500)),
+      subtitle: Text('${topic.searchCount} searches',
+          style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey)),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
@@ -580,12 +566,10 @@ class _TrendingTopicTile extends StatelessWidget {
         ),
         child: Text(
           '${isUp ? '+' : ''}${topic.changePercent.toStringAsFixed(1)}%',
-          style: TextStyle(
-            fontSize: 11,
-            color: isUp ? Colors.green.shade700 : Colors.red.shade700,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
-          ),
+          style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: isUp ? Colors.green.shade700 : Colors.red.shade700,
+              fontWeight: FontWeight.w600),
         ),
       ),
       onTap: onTap,
@@ -606,10 +590,13 @@ class _ResultsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
+        // Active filter chips
         if (state.filters.hasActiveFilters)
           SliverToBoxAdapter(
             child: _ActiveFilterChips(filters: state.filters),
           ),
+
+        // Grid
         SliverPadding(
           padding: const EdgeInsets.all(16),
           sliver: SliverGrid(
@@ -620,21 +607,18 @@ class _ResultsView extends StatelessWidget {
                       ? Center(
                           child: TextButton(
                             onPressed: onLoadMore,
-                            child: const Text(
-                              'Load more',
-                              style: TextStyle(
-                                color: AppColors.navy,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
+                            child: Text('Load more',
+                                style: GoogleFonts.poppins(
+                                    color: AppColors.navy,
+                                    fontWeight: FontWeight.w600)),
                           ),
                         )
                       : const SizedBox();
                 }
+                final p = state.results[i];
                 return ProductCard(
-                  product: state.results[i],
-                  index: i,
+                  product: p,
+                  onTap: () => context.push('/product/${p.id}'),
                 );
               },
               childCount: state.results.length + 1,
@@ -643,7 +627,7 @@ class _ResultsView extends StatelessWidget {
               crossAxisCount: isWide ? 4 : 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.65,
+              childAspectRatio: 0.75,
             ),
           ),
         ),
@@ -660,28 +644,13 @@ class _ActiveFilterChips extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chips = <Widget>[];
     if (filters.category != null)
-      chips.add(_Chip(
-          label: filters.category!,
-          onRemove: () => ref
-              .read(searchProvider.notifier)
-              .updateFilters(filters.copyWith(clearCategory: true))));
+      chips.add(_Chip(label: filters.category!, onRemove: () => ref.read(searchProvider.notifier).updateFilters(filters.copyWith(clearCategory: true))));
     if (filters.stage != null)
-      chips.add(_Chip(
-          label: _stageLabel(filters.stage!),
-          onRemove: () => ref
-              .read(searchProvider.notifier)
-              .updateFilters(filters.copyWith(clearStage: true))));
+      chips.add(_Chip(label: _stageLabel(filters.stage!), onRemove: () => ref.read(searchProvider.notifier).updateFilters(filters.copyWith(clearStage: true))));
     if (filters.minRating != null)
-      chips.add(_Chip(
-          label: '${filters.minRating}★+',
-          onRemove: () => ref
-              .read(searchProvider.notifier)
-              .updateFilters(filters.copyWith(clearMinRating: true))));
+      chips.add(_Chip(label: '${filters.minRating}★+', onRemove: () => ref.read(searchProvider.notifier).updateFilters(filters.copyWith(clearMinRating: true))));
     if (filters.sortBy != 'trending')
-      chips.add(_Chip(
-          label: 'Sort: ${filters.sortBy}',
-          onRemove: () =>
-              ref.read(searchProvider.notifier).setSortBy('trending')));
+      chips.add(_Chip(label: 'Sort: ${filters.sortBy}', onRemove: () => ref.read(searchProvider.notifier).setSortBy('trending')));
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -691,12 +660,10 @@ class _ActiveFilterChips extends ConsumerWidget {
           ...chips,
           TextButton(
             onPressed: () => ref.read(searchProvider.notifier).clearFilters(),
-            child: const Text(
-              'Clear all',
-              style: TextStyle(
-                  color: AppColors.crimson, fontSize: 12, fontFamily: 'Poppins'),
-            ),
-          ),
+            child: Text('Clear all',
+                style: GoogleFonts.poppins(
+                    color: AppColors.crimson, fontSize: 12)),
+          )
         ],
       ),
     );
@@ -730,15 +697,11 @@ class _Chip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
-            ),
-          ),
+          Text(label,
+              style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500)),
           const SizedBox(width: 6),
           GestureDetector(
             onTap: onRemove,
@@ -763,7 +726,7 @@ class _LoadingShimmer extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.65,
+        childAspectRatio: 0.75,
       ),
       itemCount: 6,
       itemBuilder: (_, __) => Container(
@@ -788,9 +751,14 @@ class _LoadingShimmer extends StatelessWidget {
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    Container(height: 10, color: Colors.grey.shade300),
+                    Container(
+                        height: 10,
+                        color: Colors.grey.shade300),
                     const SizedBox(height: 4),
-                    Container(height: 8, width: 80, color: Colors.grey.shade300),
+                    Container(
+                        height: 8,
+                        width: 80,
+                        color: Colors.grey.shade300),
                   ],
                 ),
               ),
@@ -816,20 +784,15 @@ class _EmptyResults extends StatelessWidget {
         children: [
           const Icon(Icons.search_off_rounded, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          Text(
-            'No results for "$query"',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGray,
-              fontFamily: 'Poppins',
-            ),
-          ),
+          Text('No results for "$query"',
+              style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGray)),
           const SizedBox(height: 8),
-          Text(
-            'Try different keywords or adjust filters',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade500, fontFamily: 'Poppins'),
-          ),
+          Text('Try different keywords or adjust filters',
+              style: GoogleFonts.poppins(
+                  fontSize: 13, color: Colors.grey.shade500)),
         ],
       ),
     );
@@ -866,7 +829,10 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
   void initState() {
     super.initState();
     _local = ref.read(searchProvider).filters;
-    _priceRange = RangeValues(_local.minPrice ?? 0, _local.maxPrice ?? 500000);
+    _priceRange = RangeValues(
+      _local.minPrice ?? 0,
+      _local.maxPrice ?? 500000,
+    );
     _minRating = _local.minRating ?? 0;
   }
 
@@ -893,6 +859,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
         ),
         child: Column(
           children: [
+            // Handle
             Container(
               margin: const EdgeInsets.only(top: 10),
               width: 40,
@@ -905,27 +872,21 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  const Text(
-                    'Filters',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Poppins'),
-                  ),
+                  Text('Filters',
+                      style: GoogleFonts.poppins(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        _local = const SearchFilters(query: '');
+                        _local = const SearchFilters(
+                            query: ''); // will be set from current query
                         _priceRange = const RangeValues(0, 500000);
                         _minRating = 0;
                       });
                     },
-                    child: const Text(
-                      'Reset',
-                      style: TextStyle(
-                          color: AppColors.crimson, fontFamily: 'Poppins'),
-                    ),
+                    child: Text('Reset',
+                        style: GoogleFonts.poppins(color: AppColors.crimson)),
                   ),
                 ],
               ),
@@ -935,6 +896,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                 controller: ctrl,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
+                  // Category
                   _FilterSection(
                     title: 'Category',
                     child: Wrap(
@@ -955,6 +917,8 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Stage
                   _FilterSection(
                     title: 'Innovation Stage',
                     child: Wrap(
@@ -975,9 +939,11 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Price Range
                   _FilterSection(
                     title:
-                        'Price Range (₱${_priceRange.start.toInt()} – ${_priceRange.end >= 500000 ? 'Any' : '₱${_priceRange.end.toInt()}'})',
+                        'Price Range (₱${_priceRange.start.toInt().toString()} – ${_priceRange.end >= 500000 ? 'Any' : '₱${_priceRange.end.toInt()}'})',
                     child: RangeSlider(
                       values: _priceRange,
                       min: 0,
@@ -989,6 +955,8 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Minimum Rating
                   _FilterSection(
                     title:
                         'Minimum Rating${_minRating > 0 ? ': ${_minRating.toStringAsFixed(1)}★' : ''}',
@@ -1006,15 +974,15 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Toggles
                   _FilterSection(
                     title: 'Additional Filters',
                     child: Column(
                       children: [
                         SwitchListTile(
-                          title: const Text(
-                            'Verified Innovators Only',
-                            style: TextStyle(fontSize: 13, fontFamily: 'Poppins'),
-                          ),
+                          title: Text('Verified Innovators Only',
+                              style: GoogleFonts.poppins(fontSize: 13)),
                           value: _local.showOnlyVerified,
                           onChanged: (v) => setState(
                               () => _local = _local.copyWith(showOnlyVerified: v)),
@@ -1022,13 +990,11 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                           contentPadding: EdgeInsets.zero,
                         ),
                         SwitchListTile(
-                          title: const Text(
-                            'Available for Investment',
-                            style: TextStyle(fontSize: 13, fontFamily: 'Poppins'),
-                          ),
+                          title: Text('Available for Investment',
+                              style: GoogleFonts.poppins(fontSize: 13)),
                           value: _local.showOnlyAvailable,
-                          onChanged: (v) => setState(
-                              () => _local = _local.copyWith(showOnlyAvailable: v)),
+                          onChanged: (v) => setState(() =>
+                              _local = _local.copyWith(showOnlyAvailable: v)),
                           activeColor: AppColors.navy,
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -1051,15 +1017,11 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text(
-                    'Apply Filters',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  child: Text('Apply Filters',
+                      style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15)),
                 ),
               ),
             ),
@@ -1080,15 +1042,11 @@ class _FilterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.navy,
-            fontFamily: 'Poppins',
-          ),
-        ),
+        Text(title,
+            style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.navy)),
         const SizedBox(height: 10),
         child,
       ],
@@ -1114,15 +1072,16 @@ class _SelectableChip extends StatelessWidget {
           color: selected ? AppColors.navy : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: selected ? AppColors.navy : AppColors.lightGray),
+            color: selected ? AppColors.navy : AppColors.lightGray,
+          ),
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             fontSize: 12,
             color: selected ? Colors.white : AppColors.darkGray,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-            fontFamily: 'Poppins',
+            fontWeight:
+                selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),

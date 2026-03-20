@@ -9,11 +9,11 @@ import '../../../core/services/api_service.dart';
 class SearchFilters {
   final String query;
   final String? category;
-  final String? stage;
-  final double? minRating;
+  final String? stage; // concept | prototype | mvp | market_ready
   final double? minPrice;
   final double? maxPrice;
-  final String sortBy;
+  final double? minRating;
+  final String sortBy; // trending | newest | rating | price_asc | price_desc | most_liked
   final List<String> tags;
   final bool showOnlyVerified;
   final bool showOnlyAvailable;
@@ -22,9 +22,9 @@ class SearchFilters {
     this.query = '',
     this.category,
     this.stage,
-    this.minRating,
     this.minPrice,
     this.maxPrice,
+    this.minRating,
     this.sortBy = 'trending',
     this.tags = const [],
     this.showOnlyVerified = false,
@@ -35,24 +35,26 @@ class SearchFilters {
     String? query,
     String? category,
     String? stage,
-    double? minRating,
     double? minPrice,
     double? maxPrice,
+    double? minRating,
     String? sortBy,
     List<String>? tags,
     bool? showOnlyVerified,
     bool? showOnlyAvailable,
     bool clearCategory = false,
     bool clearStage = false,
+    bool clearMinPrice = false,
+    bool clearMaxPrice = false,
     bool clearMinRating = false,
   }) {
     return SearchFilters(
       query: query ?? this.query,
       category: clearCategory ? null : (category ?? this.category),
       stage: clearStage ? null : (stage ?? this.stage),
+      minPrice: clearMinPrice ? null : (minPrice ?? this.minPrice),
+      maxPrice: clearMaxPrice ? null : (maxPrice ?? this.maxPrice),
       minRating: clearMinRating ? null : (minRating ?? this.minRating),
-      minPrice: minPrice ?? this.minPrice,
-      maxPrice: maxPrice ?? this.maxPrice,
       sortBy: sortBy ?? this.sortBy,
       tags: tags ?? this.tags,
       showOnlyVerified: showOnlyVerified ?? this.showOnlyVerified,
@@ -63,6 +65,8 @@ class SearchFilters {
   bool get hasActiveFilters =>
       category != null ||
       stage != null ||
+      minPrice != null ||
+      maxPrice != null ||
       minRating != null ||
       tags.isNotEmpty ||
       showOnlyVerified ||
@@ -73,6 +77,7 @@ class SearchFilters {
     int count = 0;
     if (category != null) count++;
     if (stage != null) count++;
+    if (minPrice != null || maxPrice != null) count++;
     if (minRating != null) count++;
     if (tags.isNotEmpty) count += tags.length;
     if (showOnlyVerified) count++;
@@ -81,11 +86,13 @@ class SearchFilters {
     return count;
   }
 
-  Map<String, String> toQueryParams() {
+  Map<String, dynamic> toQueryParams() {
     return {
       if (query.isNotEmpty) 'q': query,
-      if (category != null) 'category': category!,
-      if (stage != null) 'stage': stage!,
+      if (category != null) 'category': category,
+      if (stage != null) 'stage': stage,
+      if (minPrice != null) 'min_price': minPrice.toString(),
+      if (maxPrice != null) 'max_price': maxPrice.toString(),
       if (minRating != null) 'min_rating': minRating.toString(),
       'sort': sortBy,
       if (tags.isNotEmpty) 'tags': tags.join(','),
@@ -98,7 +105,7 @@ class SearchFilters {
 class TrendingTopic {
   final String keyword;
   final int searchCount;
-  final double changePercent;
+  final double changePercent; // positive = trending up
 
   const TrendingTopic({
     required this.keyword,
@@ -188,7 +195,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     final history = prefs.getStringList(_historyKey) ?? [];
 
     try {
-      final res = await _api.get('search/trending');
+      final res = await _api.get('/search/trending');
       final trending = (res['trending_products'] as List? ?? [])
           .map((e) => ProductModel.fromJson(e))
           .toList();
@@ -203,6 +210,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         searchHistory: history,
       );
     } catch (_) {
+      // Use dummy data if API unavailable
       state = state.copyWith(
         isLoading: false,
         searchHistory: history,
@@ -222,15 +230,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
     if (!loadMore) state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final params = {
-        ...state.filters.toQueryParams(),
-        'page': page.toString(),
-      };
-      final res = await _api.get('search', queryParams: params);
+      final params = {...state.filters.toQueryParams(), 'page': page.toString()};
+      final res = await _api.get('/search', queryParams: params);
       final newResults = (res['products'] as List? ?? [])
           .map((e) => ProductModel.fromJson(e))
           .toList();
 
+      // Save to history
       if (state.filters.query.isNotEmpty && !loadMore) {
         await _addToHistory(state.filters.query);
       }
@@ -240,7 +246,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         results: loadMore ? [...state.results, ...newResults] : newResults,
         totalResults: res['total'] ?? newResults.length,
         currentPage: page,
-        hasMore: res['has_more'] ?? false,
+        hasMore: (res['has_more'] ?? false),
       );
     } catch (e) {
       state = state.copyWith(
@@ -258,21 +264,17 @@ class SearchNotifier extends StateNotifier<SearchState> {
       return;
     }
     try {
-      final res = await _api.get(
-        'search/suggestions',
-        queryParams: {'q': query},
-      );
+      final res = await _api.get('/search/suggestions', queryParams: {'q': query});
       final suggestions = List<String>.from(res['suggestions'] ?? []);
       state = state.copyWith(suggestions: suggestions);
     } catch (_) {
+      // Dummy suggestions
       final dummy = [
         'Solar energy Philippines',
         'Smart irrigation system',
         'Coconut fiber composite',
         'Telemedicine platform',
-      ]
-          .where((s) => s.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      ].where((s) => s.toLowerCase().contains(query.toLowerCase())).toList();
       state = state.copyWith(suggestions: dummy);
     }
   }
@@ -282,10 +284,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
     if (filters.query.isNotEmpty || filters.hasActiveFilters) search();
   }
 
-  void setQuery(String q) => updateFilters(state.filters.copyWith(query: q));
+  void setQuery(String q) {
+    updateFilters(state.filters.copyWith(query: q));
+  }
 
-  void setSortBy(String sort) =>
-      updateFilters(state.filters.copyWith(sortBy: sort));
+  void setSortBy(String sort) {
+    updateFilters(state.filters.copyWith(sortBy: sort));
+  }
 
   void clearFilters() {
     state = state.copyWith(
@@ -295,11 +300,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
     if (state.filters.query.isNotEmpty) search();
   }
 
-  void searchFromHistory(String term) =>
-      updateFilters(state.filters.copyWith(query: term));
+  void searchFromHistory(String term) {
+    updateFilters(state.filters.copyWith(query: term));
+  }
 
-  void searchTrending(String keyword) =>
-      updateFilters(SearchFilters(query: keyword));
+  void searchTrending(String keyword) {
+    updateFilters(SearchFilters(query: keyword));
+  }
 
   Future<void> clearHistory() async {
     final prefs = await SharedPreferences.getInstance();
@@ -324,136 +331,33 @@ class SearchNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(searchHistory: history);
   }
 
-  // ── Dummy data — matches exact ProductModel fields ────────────────────────
+  // ── Dummy data fallback ──────────────────────────────────────────────────
 
   List<ProductModel> _dummyTrending() => [
-        ProductModel(
-          id: 1,
-          name: 'SolarNet Mini Grid',
-          description: 'Affordable solar micro-grid for off-grid communities.',
-          category: 'Energy',
-          images: [],
-          likes: 234,
-          views: 1820,
-          interestCount: 45,
-          status: 'approved',
-          innovatorName: 'Miguel Reyes',
-          innovatorUsername: 'miguelreyes',
-          innovatorId: 101,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 10)),
-        ),
-        ProductModel(
-          id: 2,
-          name: 'AquaRice Smart Irrigation',
-          description: 'IoT-based irrigation system for rice paddies.',
-          category: 'Agriculture',
-          images: [],
-          likes: 189,
-          views: 1240,
-          interestCount: 32,
-          status: 'approved',
-          innovatorName: 'Ana Santos',
-          innovatorUsername: 'anasantos',
-          innovatorId: 102,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 15)),
-        ),
-        ProductModel(
-          id: 3,
-          name: 'CocoComposite Panel',
-          description: 'Building panels made from recycled coconut husks.',
-          category: 'Construction',
-          images: [],
-          likes: 156,
-          views: 980,
-          interestCount: 18,
-          status: 'approved',
-          innovatorName: 'Rodel Cruz',
-          innovatorUsername: 'rodelcruz',
-          innovatorId: 103,
-          kycStatus: 'unverified',
-          createdAt: DateTime.now().subtract(const Duration(days: 20)),
-        ),
-        ProductModel(
-          id: 4,
-          name: 'TeleMed Lite',
-          description: 'Low-bandwidth telemedicine platform for rural areas.',
-          category: 'Healthcare',
-          images: [],
-          likes: 312,
-          views: 2400,
-          interestCount: 67,
-          status: 'approved',
-          innovatorName: 'Dr. Liza Tan',
-          innovatorUsername: 'drlizatan',
-          innovatorId: 104,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 5)),
-        ),
-        ProductModel(
-          id: 5,
-          name: 'GreenBuild AI',
-          description: 'AI-powered sustainable building design assistant.',
-          category: 'Construction',
-          images: [],
-          likes: 98,
-          views: 760,
-          interestCount: 12,
-          status: 'approved',
-          innovatorName: 'Carlo Mendoza',
-          innovatorUsername: 'carlomendoza',
-          innovatorId: 105,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        ),
-        ProductModel(
-          id: 6,
-          name: 'FishTrack IoT',
-          description: 'Real-time fish pond monitoring using IoT sensors.',
-          category: 'Agriculture',
-          images: [],
-          likes: 143,
-          views: 890,
-          interestCount: 21,
-          status: 'approved',
-          innovatorName: 'Ben Aquino',
-          innovatorUsername: 'benaquino',
-          innovatorId: 106,
-          kycStatus: 'unverified',
-          createdAt: DateTime.now().subtract(const Duration(days: 25)),
-        ),
+        ProductModel(id: 1, title: 'SolarNet Mini Grid', category: 'Energy', price: 45000, innovatorName: 'Miguel Reyes', imageUrl: null, likes: 234, views: 1820, stage: 'mvp', rating: 4.7),
+        ProductModel(id: 2, title: 'AquaRice Smart Irrigation', category: 'Agriculture', price: 12000, innovatorName: 'Ana Santos', imageUrl: null, likes: 189, views: 1240, stage: 'market_ready', rating: 4.5),
+        ProductModel(id: 3, title: 'CocoComposite Panel', category: 'Construction', price: 8500, innovatorName: 'Rodel Cruz', imageUrl: null, likes: 156, views: 980, stage: 'prototype', rating: 4.2),
+        ProductModel(id: 4, title: 'TeleMed Lite', category: 'Healthcare', price: 0, innovatorName: 'Dr. Liza Tan', imageUrl: null, likes: 312, views: 2400, stage: 'market_ready', rating: 4.8),
+        ProductModel(id: 5, title: 'GreenBuild AI', category: 'Construction', price: 25000, innovatorName: 'Carlo Mendoza', imageUrl: null, likes: 98, views: 760, stage: 'mvp', rating: 4.1),
+        ProductModel(id: 6, title: 'FishTrack IoT', category: 'Agriculture', price: 15000, innovatorName: 'Ben Aquino', imageUrl: null, likes: 143, views: 890, stage: 'prototype', rating: 4.3),
       ];
 
   List<TrendingTopic> _dummyTopics() => [
-        const TrendingTopic(
-            keyword: 'Solar energy', searchCount: 1240, changePercent: 34.2),
-        const TrendingTopic(
-            keyword: 'Smart farming', searchCount: 980, changePercent: 21.5),
-        const TrendingTopic(
-            keyword: 'Telemedicine', searchCount: 870, changePercent: 18.9),
-        const TrendingTopic(
-            keyword: 'IoT sensors', searchCount: 740, changePercent: 12.1),
-        const TrendingTopic(
-            keyword: 'Coconut products', searchCount: 620, changePercent: 8.4),
-        const TrendingTopic(
-            keyword: 'Water purification',
-            searchCount: 590,
-            changePercent: -3.2),
-        const TrendingTopic(
-            keyword: 'Drone delivery', searchCount: 480, changePercent: 45.7),
-        const TrendingTopic(
-            keyword: 'Bamboo materials', searchCount: 430, changePercent: 5.1),
+        const TrendingTopic(keyword: 'Solar energy', searchCount: 1240, changePercent: 34.2),
+        const TrendingTopic(keyword: 'Smart farming', searchCount: 980, changePercent: 21.5),
+        const TrendingTopic(keyword: 'Telemedicine', searchCount: 870, changePercent: 18.9),
+        const TrendingTopic(keyword: 'IoT sensors', searchCount: 740, changePercent: 12.1),
+        const TrendingTopic(keyword: 'Coconut products', searchCount: 620, changePercent: 8.4),
+        const TrendingTopic(keyword: 'Water purification', searchCount: 590, changePercent: -3.2),
+        const TrendingTopic(keyword: 'Drone delivery', searchCount: 480, changePercent: 45.7),
+        const TrendingTopic(keyword: 'Bamboo materials', searchCount: 430, changePercent: 5.1),
       ];
 
   List<ProductModel> _dummyResults(String q) => _dummyTrending()
-      .where((p) =>
-          p.name.toLowerCase().contains(q.toLowerCase()) ||
-          p.category.toLowerCase().contains(q.toLowerCase()))
+      .where((p) => p.title.toLowerCase().contains(q.toLowerCase()) || p.category.toLowerCase().contains(q.toLowerCase()))
       .toList();
 }
 
-final searchProvider =
-    StateNotifierProvider<SearchNotifier, SearchState>((ref) {
+final searchProvider = StateNotifierProvider<SearchNotifier, SearchState>((ref) {
   return SearchNotifier(ref.read(apiServiceProvider));
 });
