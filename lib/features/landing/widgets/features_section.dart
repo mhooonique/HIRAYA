@@ -110,25 +110,8 @@ class _FeaturesSectionState extends State<FeaturesSection>
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
     final w = MediaQuery.of(context).size.width;
     final isDesktop = w >= 900;
-=======
-    return Container(
-      color: AppColors.offWhite,
-      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 24),
-      child: Column(
-        children: [
-          const Text(
-            'Why the DIGITAL PLATFORM?',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 36,
-              fontWeight: FontWeight.w800,
-              color: AppColors.navy,
-            ),
-          ).animate().fadeIn(duration: 600.ms),
->>>>>>> origin/master
 
     return AnimatedBuilder(
       animation: _orbCtrl,

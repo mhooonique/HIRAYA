@@ -17,6 +17,7 @@ class DemoProductScreen extends ConsumerStatefulWidget {
 class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
   final PageController _pageCtrl = PageController();
   int _currentPage = 0;
+  bool _qrExpanded = false;
 
   @override
   void dispose() {
@@ -110,7 +111,6 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.golden.withValues(alpha: 0.4)),
                     ),
-<<<<<<< HEAD
                     child: const Row(
                       children: [
                         Icon(Icons.info_outline_rounded, color: AppColors.golden, size: 18),
@@ -119,98 +119,6 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
                           child: Text(
                             'This is a showcase post. Sign in to interact with real innovations.',
                             style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden),
-=======
-                    child: const Row(children: [
-                      Icon(Icons.info_outline_rounded, color: AppColors.golden, size: 18),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'This is a showcase post. Sign in to interact with real innovations.',
-                          style: TextStyle(fontFamily: 'Poppins', fontSize: 12,
-                              color: AppColors.golden),
-                        ),
-                      ),
-                    ]),
-                  ).animate().fadeIn(),
-
-                  // Innovator card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderCol),
-                    ),
-                    child: Row(children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: color.withValues(alpha: 0.15),
-                        child: Text(
-                          p.innovatorName.isNotEmpty
-                              ? p.innovatorName[0].toUpperCase() : 'I',
-                          style: TextStyle(fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w700, color: color, fontSize: 18),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(p.innovatorName, style: TextStyle(fontFamily: 'Poppins',
-                              fontSize: 15, fontWeight: FontWeight.w700, color: primaryText)),
-                          Text('@${p.innovatorUsername}', style: TextStyle(
-                              fontFamily: 'Poppins', fontSize: 13,
-                              color: isDark ? Colors.white38 : Colors.black45)),
-                        ],
-                      )),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: AppColors.teal.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
-                        ),
-                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.verified_rounded, color: AppColors.teal, size: 12),
-                          SizedBox(width: 4),
-                          Text('Verified', style: TextStyle(fontFamily: 'Poppins',
-                              fontSize: 11, color: AppColors.teal,
-                              fontWeight: FontWeight.w600)),
-                        ]),
-                      ),
-                    ]),
-                  ).animate().fadeIn(duration: 400.ms),
-
-                  // Guest sign-in banner
-                  if (!isLoggedIn) ...[
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () => context.go('/login'),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.sky.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: AppColors.sky.withValues(alpha: 0.4)),
-                        ),
-                        child: const Row(children: [
-                          Icon(Icons.info_outline_rounded,
-                              color: AppColors.sky, size: 18),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text.rich(TextSpan(
-                              style: TextStyle(fontFamily: 'Poppins',
-                                  fontSize: 12, color: AppColors.sky),
-                              children: [
-                                TextSpan(text: 'Join as a CLIENT'),
-                                TextSpan(
-                                    text: 'to like, message, bookmark, and express interest.',
-                                    style: TextStyle(fontWeight: FontWeight.w600)),
-                              ],
-                            )),
->>>>>>> origin/master
                           ),
                         ),
                       ],
@@ -315,6 +223,15 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  _sectionTitle('Scan Product QR', Icons.qr_code_2_rounded),
+                  const SizedBox(height: 10),
+                  _ProductQrCard(
+                    seed: '${product.id}-${product.name}-${product.category}',
+                    color: color,
+                    expanded: _qrExpanded,
+                    onToggle: () => setState(() => _qrExpanded = !_qrExpanded),
+                  ).animate(delay: 90.ms).fadeIn().slideY(begin: 0.06, end: 0),
                   const SizedBox(height: 20),
                   Container(
                     width: double.infinity,
@@ -501,6 +418,121 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
         ],
       ),
       child: child,
+    );
+  }
+}
+
+class _ProductQrCard extends StatelessWidget {
+  const _ProductQrCard({
+    required this.seed,
+    required this.color,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final String seed;
+  final Color color;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              color.withValues(alpha: 0.18),
+              AppColors.richNavy.withValues(alpha: 0.72),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              width: expanded ? 112 : 88,
+              height: expanded ? 112 : 88,
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: _PseudoQrMatrix(seed: seed),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Interactive Product QR',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    expanded
+                        ? 'Tap again to collapse. Share this code to open this demo innovation quickly.'
+                        : 'Tap to enlarge QR preview for quick sharing and scanning.',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.68),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
+              color: Colors.white.withValues(alpha: 0.72),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PseudoQrMatrix extends StatelessWidget {
+  const _PseudoQrMatrix({required this.seed});
+  final String seed;
+
+  @override
+  Widget build(BuildContext context) {
+    final hash = seed.codeUnits.fold<int>(0, (a, b) => (a * 31 + b) & 0x7fffffff);
+    const size = 21;
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: size * size,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: size,
+      ),
+      itemBuilder: (_, i) {
+        final x = i % size;
+        final y = i ~/ size;
+        final finder = (x < 7 && y < 7) ||
+            (x > size - 8 && y < 7) ||
+            (x < 7 && y > size - 8);
+        final on = finder || (((hash + x * 17 + y * 31) % 7) < 3);
+        return Container(
+          margin: const EdgeInsets.all(0.15),
+          color: on ? Colors.black : Colors.white,
+        );
+      },
     );
   }
 }

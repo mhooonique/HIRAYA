@@ -42,6 +42,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   bool _liked = false;
   bool _bookmarked = false;
   bool _interestSent = false;
+  bool _qrExpanded = false;
 
   @override
   void dispose() {
@@ -321,23 +322,38 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   const SizedBox(height: 24),
                   _sectionTitle('Details', Icons.info_outline_rounded),
                   const SizedBox(height: 10),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 2.5,
-                    children: [
-                      _detailChip(Icons.category_rounded, 'Category', product.category, color),
-                      _detailChip(Icons.verified_user_rounded, 'KYC', product.kycStatus.toUpperCase(),
-                          product.isVerifiedInnovator ? AppColors.teal : AppColors.golden),
-                      _detailChip(Icons.calendar_today_rounded, 'Listed',
-                          '${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
-                          AppColors.sky),
-                      _detailChip(Icons.bar_chart_rounded, 'Status', product.status.toUpperCase(), AppColors.teal),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final crossAxisCount = constraints.maxWidth < 560 ? 1 : 2;
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: crossAxisCount == 1 ? 3.1 : 2.5,
+                        children: [
+                          _detailChip(Icons.category_rounded, 'Category', product.category, color),
+                          _detailChip(Icons.verified_user_rounded, 'KYC', product.kycStatus.toUpperCase(),
+                              product.isVerifiedInnovator ? AppColors.teal : AppColors.golden),
+                          _detailChip(Icons.calendar_today_rounded, 'Listed',
+                              '${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
+                              AppColors.sky),
+                          _detailChip(Icons.bar_chart_rounded, 'Status', product.status.toUpperCase(), AppColors.teal),
+                        ],
+                      );
+                    },
                   ),
+
+                  const SizedBox(height: 24),
+                  _sectionTitle('Scan Product QR', Icons.qr_code_2_rounded),
+                  const SizedBox(height: 10),
+                  _ProductQrCard(
+                    seed: '${product.id}-${product.name}-${product.category}',
+                    color: color,
+                    expanded: _qrExpanded,
+                    onToggle: () => setState(() => _qrExpanded = !_qrExpanded),
+                  ).animate(delay: 140.ms).fadeIn().slideY(begin: 0.06, end: 0),
 
                   if (product.externalLink != null && product.externalLink!.isNotEmpty) ...[
                     const SizedBox(height: 24),
@@ -684,6 +700,129 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProductQrCard extends StatelessWidget {
+  const _ProductQrCard({
+    required this.seed,
+    required this.color,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final String seed;
+  final Color color;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              color.withValues(alpha: 0.18),
+              AppColors.richNavy.withValues(alpha: 0.70),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.18),
+              blurRadius: expanded ? 24 : 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              width: expanded ? 112 : 88,
+              height: expanded ? 112 : 88,
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: _PseudoQrMatrix(seed: seed),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Interactive Product QR',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    expanded
+                        ? 'Tap again to collapse. Share this code for quick access to this innovation profile.'
+                        : 'Tap to enlarge QR preview for better scanning and sharing.',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.68),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
+              color: Colors.white.withValues(alpha: 0.72),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PseudoQrMatrix extends StatelessWidget {
+  const _PseudoQrMatrix({required this.seed});
+  final String seed;
+
+  @override
+  Widget build(BuildContext context) {
+    final hash = seed.codeUnits.fold<int>(0, (a, b) => (a * 31 + b) & 0x7fffffff);
+    const size = 21;
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: size * size,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: size,
+      ),
+      itemBuilder: (_, i) {
+        final x = i % size;
+        final y = i ~/ size;
+        final finder = (x < 7 && y < 7) ||
+            (x > size - 8 && y < 7) ||
+            (x < 7 && y > size - 8);
+        final on = finder || (((hash + x * 17 + y * 31) % 7) < 3);
+        return Container(
+          margin: const EdgeInsets.all(0.15),
+          color: on ? Colors.black : Colors.white,
+        );
+      },
     );
   }
 }

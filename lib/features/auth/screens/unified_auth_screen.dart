@@ -712,6 +712,21 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
 
   String get _otpCode => _otpControllers.map((c) => c.text).join();
 
+  int get _passwordScore {
+    final password = _passwordCtrl.text;
+    int score = 0;
+    if (password.length >= 8) score++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
+    if (RegExp(r'[a-z]').hasMatch(password)) score++;
+    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp(r'[^A-Za-z0-9]').hasMatch(password)) score++;
+    return score;
+  }
+
+  bool get _passwordsMatch =>
+      _confirmPassCtrl.text.isNotEmpty &&
+      _passwordCtrl.text == _confirmPassCtrl.text;
+
   void _goStep(int step) {
     setState(() {
       _prevStep = _step;
@@ -1141,6 +1156,15 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
                   },
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: _GoldenButton(
+                  label: 'I Understand',
+                  icon: Icons.check_rounded,
+                  isLoading: false,
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+              ),
             ],
           ),
         ),
@@ -1465,6 +1489,12 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               isPassword: true,
               obscure: _obscurePass,
               onObscureToggle: () => setState(() => _obscurePass = !_obscurePass),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 10),
+            _PasswordGuidePanel(
+              password: _passwordCtrl.text,
+              score: _passwordScore,
             ),
             const SizedBox(height: 10),
             _AuthTextField(
@@ -1473,6 +1503,67 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               isPassword: true,
               obscure: _obscureConfirm,
               onObscureToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 10),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: _confirmPassCtrl.text.isEmpty
+                    ? Colors.white.withValues(alpha: 0.03)
+                    : _passwordsMatch
+                        ? AppColors.teal.withValues(alpha: 0.14)
+                        : AppColors.crimson.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _confirmPassCtrl.text.isEmpty
+                      ? Colors.white.withValues(alpha: 0.10)
+                      : _passwordsMatch
+                          ? AppColors.teal.withValues(alpha: 0.45)
+                          : AppColors.crimson.withValues(alpha: 0.45),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _confirmPassCtrl.text.isEmpty
+                        ? Icons.lock_clock_rounded
+                        : _passwordsMatch
+                            ? Icons.verified_rounded
+                            : Icons.error_outline_rounded,
+                    color: _confirmPassCtrl.text.isEmpty
+                        ? Colors.white54
+                        : _passwordsMatch
+                            ? AppColors.teal
+                            : AppColors.crimson,
+                    size: 17,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _confirmPassCtrl.text.isEmpty
+                          ? 'Confirm your password to validate match.'
+                          : _passwordsMatch
+                              ? 'Passwords match. You are ready to continue.'
+                              : 'Passwords do not match yet. Please review both fields.',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        fontWeight:
+                            _passwordsMatch ? FontWeight.w700 : FontWeight.w500,
+                        color: _confirmPassCtrl.text.isEmpty
+                            ? Colors.white.withValues(alpha: 0.56)
+                            : _passwordsMatch
+                                ? AppColors.teal
+                                : AppColors.crimson,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         );
@@ -1480,6 +1571,39 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.teal.withValues(alpha: 0.18),
+                    AppColors.golden.withValues(alpha: 0.10),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border:
+                    Border.all(color: AppColors.teal.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.sms_rounded, color: AppColors.teal, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Secure phone verification protects your account with multi-factor authentication.',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.70),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 SizedBox(
@@ -1558,36 +1682,61 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
             ),
             if (_phoneOtpSent) ...[
               const SizedBox(height: 12),
+              Text(
+                'Enter the 6-digit code sent to ${_data.countryCode}${_phoneCtrl.text.trim()}',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.55),
+                ),
+              ),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) {
+                  final filled = _otpControllers[index].text.isNotEmpty;
                   return SizedBox(
                     width: 42,
-                    child: TextField(
-                      controller: _otpControllers[index],
-                      focusNode: _otpFocusNodes[index],
-                      textAlign: TextAlign.center,
-                      maxLength: 1,
-                      style: const TextStyle(fontFamily: 'Poppins', color: Colors.white),
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        counterText: '',
-                        filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.03),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      decoration: BoxDecoration(
+                        color: filled
+                            ? AppColors.golden.withValues(alpha: 0.16)
+                            : Colors.white.withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: filled
+                              ? AppColors.golden.withValues(alpha: 0.70)
+                              : Colors.white.withValues(alpha: 0.12),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: AppColors.golden.withValues(alpha: 0.65)),
-                        ),
+                        boxShadow: filled
+                            ? [
+                                BoxShadow(
+                                  color:
+                                      AppColors.golden.withValues(alpha: 0.20),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ]
+                            : const [],
                       ),
-                      onChanged: (v) => _onOtpChanged(index, v),
+                      child: TextField(
+                        controller: _otpControllers[index],
+                        focusNode: _otpFocusNodes[index],
+                        textAlign: TextAlign.center,
+                        maxLength: 1,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          counterText: '',
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (v) => _onOtpChanged(index, v),
+                      ),
                     ),
                   );
                 }),
@@ -1609,6 +1758,7 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
             _DatePickerTile(
               date: _dateOfBirth,
               onTap: _pickDateOfBirth,
+              subtitle: 'Tap to open the interactive calendar picker',
             ),
             const SizedBox(height: 10),
             _ProvincePicker(
@@ -1629,31 +1779,16 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               title: 'Government ID',
               fileName: _govIdFileName,
               onTap: () => _pickFile(true),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.golden.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.golden.withValues(alpha: 0.22)),
-              ),
-              child: Text(
-                'Valid Government IDs: Philippine Passport, Driver\'s License, SSS ID, PhilSys National ID, UMID, Voter\'s ID, PRC License, and School/Student ID (for students).',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.70),
-                  height: 1.5,
-                ),
-              ),
+              hoverMessage:
+                  'Accepted IDs: Philippine Passport, Driver\'s License, SSS ID, PhilSys National ID, UMID, Voter\'s ID, PRC License, School/Student ID.',
             ),
             const SizedBox(height: 10),
             _UploadTile(
               title: 'Selfie Photo',
               fileName: _selfieFileName,
               onTap: () => _pickFile(false),
+              hoverMessage:
+                  'Upload a clear photo of yourself while holding your valid government ID. Your face and ID details must be visible.',
             ),
             if ((_govIdBase64 != null && _isImageFile(_govIdFileName)) ||
                 (_selfieBase64 != null && _isImageFile(_selfieFileName))) ...[
@@ -1701,6 +1836,7 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               value: _data.privacyAccepted,
               onChanged: (v) => setState(() => _data.privacyAccepted = v ?? false),
               label: 'I agree to the Privacy Notice.',
+              linkLabel: 'Open Privacy Notice',
               onLabelTap: () => _showConsentModule(
                 title: 'Privacy Notice',
                 clauses: const [
@@ -1722,6 +1858,7 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
               value: _data.dataConsentAccepted,
               onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false),
               label: 'I agree to Data Consent terms.',
+              linkLabel: 'Open Data Consent Terms',
               onLabelTap: () => _showConsentModule(
                 title: 'Terms of Service and Consent (Q3 Clauses)',
                 clauses: const [
@@ -1764,6 +1901,26 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _ReviewStatPill(
+                    icon: Icons.shield_rounded,
+                    label: 'KYC Ready',
+                    color: AppColors.teal,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ReviewStatPill(
+                    icon: Icons.rule_folder_rounded,
+                    label: 'Consent Complete',
+                    color: AppColors.golden,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
@@ -2054,50 +2211,15 @@ class _CityPicker extends StatelessWidget {
 }
 
 class _DatePickerTile extends StatelessWidget {
-  const _DatePickerTile({required this.date, required this.onTap});
+  const _DatePickerTile({
+    required this.date,
+    required this.onTap,
+    this.subtitle,
+  });
 
   final DateTime? date;
   final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.cake_outlined, color: Colors.white70, size: 18),
-            const SizedBox(width: 10),
-            Text(
-              date == null
-                  ? 'Date of Birth'
-                  : '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: date == null ? Colors.white.withValues(alpha: 0.35) : Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _UploadTile extends StatelessWidget {
-  const _UploadTile({required this.title, required this.fileName, required this.onTap});
-
-  final String title;
-  final String? fileName;
-  final VoidCallback onTap;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -2107,26 +2229,133 @@ class _UploadTile extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withValues(alpha: 0.04),
+              AppColors.golden.withValues(alpha: 0.08),
+            ],
+          ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          border: Border.all(color: AppColors.golden.withValues(alpha: 0.35)),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.upload_file_rounded, color: Colors.white70, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                fileName ?? title,
+            Row(
+              children: [
+                const Icon(Icons.event_available_rounded,
+                    color: AppColors.golden, size: 18),
+                const SizedBox(width: 10),
+                Text(
+                  date == null
+                      ? 'Date of Birth'
+                      : '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: date == null
+                        ? Colors.white.withValues(alpha: 0.50)
+                        : Colors.white,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white.withValues(alpha: 0.48),
+                  size: 18,
+                ),
+              ],
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                subtitle!,
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
-                  color: fileName == null ? Colors.white.withValues(alpha: 0.40) : AppColors.teal,
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.55),
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UploadTile extends StatelessWidget {
+  const _UploadTile({
+    required this.title,
+    required this.fileName,
+    required this.onTap,
+    this.hoverMessage,
+  });
+
+  final String title;
+  final String? fileName;
+  final VoidCallback onTap;
+  final String? hoverMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: hoverMessage ?? '',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.upload_file_rounded,
+                        color: Colors.white70, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        fileName ?? title,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          color: fileName == null
+                              ? Colors.white.withValues(alpha: 0.40)
+                              : AppColors.teal,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 15,
+                      color: Colors.white.withValues(alpha: 0.50),
+                    ),
+                  ],
+                ),
+                if (hoverMessage != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Hover for upload guide',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.40),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -2221,12 +2450,14 @@ class _ConsentTile extends StatelessWidget {
     required this.value,
     required this.onChanged,
     required this.label,
+    required this.linkLabel,
     this.onLabelTap,
   });
 
   final bool value;
   final ValueChanged<bool?> onChanged;
   final String label;
+  final String linkLabel;
   final VoidCallback? onLabelTap;
 
   @override
@@ -2243,18 +2474,55 @@ class _ConsentTile extends StatelessWidget {
         children: [
           Checkbox(value: value, activeColor: AppColors.golden, onChanged: onChanged),
           Expanded(
-            child: GestureDetector(
-              onTap: onLabelTap,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.55),
-                  decoration: onLabelTap != null ? TextDecoration.underline : TextDecoration.none,
-                  decorationColor: AppColors.golden.withValues(alpha: 0.65),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.62),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: onLabelTap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.golden.withValues(alpha: 0.24),
+                          AppColors.warmEmber.withValues(alpha: 0.16),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: AppColors.golden.withValues(alpha: 0.50),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.auto_stories_rounded,
+                            size: 14, color: AppColors.golden),
+                        const SizedBox(width: 6),
+                        Text(
+                          linkLabel,
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.golden,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -2304,6 +2572,185 @@ class _ReviewRow extends StatelessWidget {
               ),
               textAlign: TextAlign.right,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewStatPill extends StatelessWidget {
+  const _ReviewStatPill({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PasswordGuidePanel extends StatelessWidget {
+  const _PasswordGuidePanel({
+    required this.password,
+    required this.score,
+  });
+
+  final String password;
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    final checks = <(String, bool)>[
+      ('8+ characters', password.length >= 8),
+      ('Uppercase letter', RegExp(r'[A-Z]').hasMatch(password)),
+      ('Lowercase letter', RegExp(r'[a-z]').hasMatch(password)),
+      ('Number', RegExp(r'[0-9]').hasMatch(password)),
+      ('Special symbol', RegExp(r'[^A-Za-z0-9]').hasMatch(password)),
+    ];
+
+    final barColor = switch (score) {
+      <= 1 => AppColors.crimson,
+      2 || 3 => AppColors.golden,
+      _ => AppColors.teal,
+    };
+
+    final label = switch (score) {
+      <= 1 => 'Weak',
+      2 || 3 => 'Improving',
+      4 => 'Good',
+      _ => 'Strong',
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Password Strength',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withValues(alpha: 0.70),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: barColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: List.generate(5, (i) {
+              final active = i < score;
+              return Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  margin: EdgeInsets.only(right: i < 4 ? 4 : 0),
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? barColor
+                        : Colors.white.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: checks.map((item) {
+              final passed = item.$2;
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: passed
+                      ? AppColors.teal.withValues(alpha: 0.15)
+                      : Colors.white.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: passed
+                        ? AppColors.teal.withValues(alpha: 0.45)
+                        : Colors.white.withValues(alpha: 0.10),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      passed
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 12,
+                      color: passed ? AppColors.teal : Colors.white38,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      item.$1,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 10,
+                        fontWeight:
+                            passed ? FontWeight.w700 : FontWeight.w500,
+                        color: passed
+                            ? AppColors.teal
+                            : Colors.white.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -2909,6 +3356,7 @@ class _AuthTextField extends StatefulWidget {
     this.focusNode,
     this.onObscureToggle,
     this.validator,
+    this.onChanged,
   });
 
   final String                   label;
@@ -2921,6 +3369,7 @@ class _AuthTextField extends StatefulWidget {
   final FocusNode?               focusNode;
   final VoidCallback?            onObscureToggle;
   final FormFieldValidator<String>? validator;
+  final ValueChanged<String>?    onChanged;
 
   @override
   State<_AuthTextField> createState() => _AuthTextFieldState();
@@ -2970,6 +3419,7 @@ class _AuthTextFieldState extends State<_AuthTextField> {
               keyboardType: widget.keyboardType,
               focusNode:    widget.focusNode,
               validator:    widget.validator,
+              onChanged:    widget.onChanged,
               style: const TextStyle(
                 fontFamily: 'Poppins',
                 fontSize:   15,

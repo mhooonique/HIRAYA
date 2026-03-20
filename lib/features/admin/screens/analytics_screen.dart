@@ -974,11 +974,7 @@ class _ExportButton extends ConsumerWidget {
   void _exportCsv(AnalyticsState s) {
     final buf = StringBuffer();
 
-<<<<<<< HEAD
     buf.writeln('Digital Platform Analytics Export');
-=======
-    buf.writeln('DIGITAL PLATFORM Analytics Export');
->>>>>>> origin/master
     buf.writeln('Generated,${DateTime.now().toIso8601String()}');
     buf.writeln();
 

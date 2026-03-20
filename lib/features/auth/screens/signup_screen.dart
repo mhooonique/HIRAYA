@@ -581,14 +581,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   Widget _buildStep1() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-<<<<<<< HEAD
       _StepHeading(title: 'Choose Your Role', subtitle: 'Select how you will use Digital Platform.')
           .animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-=======
-      const Text('Choose Your Role', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _dark)),
-      const SizedBox(height: 8),
-      const Text('Select how you will use the Digital Platform.', style: TextStyle(color: Colors.black54)),
->>>>>>> origin/master
       const SizedBox(height: 24),
 
       _DarkRoleCard(
@@ -1081,7 +1075,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       _StepHeading(title: 'Terms & Consent', subtitle: 'Please review and accept the following.')
           .animate().fadeIn(duration: 400.ms),
       const SizedBox(height: 24),
-<<<<<<< HEAD
       _DarkConsentTile(
         title: 'Privacy Policy',
         subtitle: 'I have read and agree to the Digital Platform Privacy Policy and Terms of Service.',
@@ -1095,11 +1088,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
         value: _data.dataConsentAccepted,
         onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false),
       ),
-=======
-      _ConsentTile(title: 'Privacy Policy', subtitle: 'I have read and agree to the DIGITAL PLATFORM Privacy Policy and Terms of Service.', value: _data.privacyAccepted, onChanged: (v) => setState(() => _data.privacyAccepted = v ?? false)),
-      const SizedBox(height: 12),
-      _ConsentTile(title: 'Data Processing Consent', subtitle: 'I consent to DIGITAL PLATFORM collecting and processing my personal data including KYC documents under RA 10173.', value: _data.dataConsentAccepted, onChanged: (v) => setState(() => _data.dataConsentAccepted = v ?? false)),
->>>>>>> origin/master
     ],
   );
 

@@ -146,7 +146,6 @@ class _InnovatorSidebar extends ConsumerWidget {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
-<<<<<<< HEAD
             child: ShaderMask(
               shaderCallback: (bounds) => const LinearGradient(
                 colors: [AppColors.golden, AppColors.warmEmber],
@@ -159,29 +158,6 @@ class _InnovatorSidebar extends ConsumerWidget {
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                   letterSpacing: 3,
-=======
-            child: Row(
-              children: [
-                Image.asset('assets/images/logo/final-logo.png', height: 36),
-                const SizedBox(width: 10),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Digital',
-                        style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.navy,
-                            letterSpacing: 2)),
-                    Text('Innovator',
-                        style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 10,
-                            color: AppColors.teal,
-                            fontWeight: FontWeight.w600)),
-                  ],
->>>>>>> origin/master
                 ),
               ),
             ),

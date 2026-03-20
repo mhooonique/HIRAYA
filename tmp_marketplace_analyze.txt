@@ -1,0 +1,10 @@
+Analyzing marketplace_screen.dart...
+
+  error - marketplace_screen.dart:933:19 - Expected to find ']'. - expected_token
+   info - marketplace_screen.dart:720:15 - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation. - prefer_const_constructors
+   info - marketplace_screen.dart:725:24 - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation. - prefer_const_constructors
+   info - marketplace_screen.dart:726:31 - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation. - prefer_const_constructors
+   info - marketplace_screen.dart:727:31 - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation. - prefer_const_constructors
+   info - marketplace_screen.dart:730:31 - Use 'const' literals as arguments to constructors of '@immutable' classes. Try adding 'const' before the literal. - prefer_const_literals_to_create_immutables
+
+6 issues found.

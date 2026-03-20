@@ -114,7 +114,6 @@ class _AdminSidebar extends ConsumerWidget {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
-<<<<<<< HEAD
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               ShaderMask(
                 shaderCallback: (bounds) => const LinearGradient(
@@ -135,15 +134,6 @@ class _AdminSidebar extends ConsumerWidget {
                 ),
                 child: const Text('ADMIN PANEL', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.crimson, letterSpacing: 1.5)),
               ),
-=======
-            child: Row(children: [
-              Image.asset('assets/images/logo/final-logo.png', height: 36),
-              const SizedBox(width: 10),
-              const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('DIGITAL', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2)),
-                Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, color: AppColors.golden, letterSpacing: 1)),
-              ]),
->>>>>>> origin/master
             ]),
           ),
           const Divider(color: Colors.white10, height: 1),
