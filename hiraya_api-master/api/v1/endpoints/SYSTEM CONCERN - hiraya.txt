@@ -1,0 +1,33 @@
+SYSTEM CONCERN:
+
+Logo should be bigger on the register/login module 
+KYC(full meaning of the abbreviation
+The identity verification shouldn't be pended-- hence it should be filled up and so the admin can scan and verify the user/// the squares should be aligned w each other or the cards
+make the WHY HIRAYA have more reasons-- make it like this HIRAYA is worth the work.
+remove notification icon if not yet signed up(marketplace)
+better back navigation/visual guide for new user or with old age
+
+shouldn't be the marketplace and the discover page of the client be the same? also i want a better interface for the DISCOVER/marketplace-- i want a carousel or a fade in effect(idk which is better)
+/
+put date on the innovator dashboard
+add message icon on the navbar(innovator)
+
+the system should notify that the innovator exceeded the image limit
+
+update the google authenticator backend and the forgot password part
+
+also the voice and video call backend
+
+MAKE SURE TO MAKE THE CLIENT DOWNLOAD THE QR
+
+ALSO MAKE SURE THE RATINGS AND REVIEWS WORK ALSO THE SHARE BUTTON ON THE RIGHT CORNER WORK
+
+MAKE SURE THAT THE NOTIFICATION FOR SUBMITTED REGISTRATION IN THE SIGN UP-- ACCOUNT VIEW IS BLUE AND HAS A FRIENDLY TONE
+
+after signing up, the user should be back to the landing page immediately after notified that their account is pending for request
+
+the user's middle name and suffix should show cause they filled it up unless they didn't
+
+make sure to add date of birth and address
+
+1 - yes, its running. 2- yes, the same wifi. 3- 
