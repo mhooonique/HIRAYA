@@ -1,4 +1,4 @@
-// lib/features/search/providers/search_provider.dart
+﻿// lib/features/search/providers/search_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/product_model.dart';
@@ -137,7 +137,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     final prefs   = await SharedPreferences.getInstance();
     final history = prefs.getStringList(_historyKey) ?? [];
     try {
-      // ✅ No leading slash
+      // Γ£à No leading slash
       final res      = await _api.get('search/trending');
       final trending = (res['trending_products'] as List? ?? [])
           .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
@@ -146,7 +146,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
           .map((e) => TrendingTopic.fromJson(e as Map<String, dynamic>))
           .toList();
 
-      // ✅ Merge real trending with dummy products for a richer idle view
+      // Γ£à Merge real trending with dummy products for a richer idle view
       final mergedTrending = [
         ...trending,
         ...dummyProducts.take(6 - trending.length > 0 ? 6 - trending.length : 0),
@@ -178,7 +178,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     if (!loadMore) state = state.copyWith(isLoading: true, error: null);
     try {
       final params = {...state.filters.toQueryParams(), 'page': page.toString()};
-      // ✅ No leading slash
+      // Γ£à No leading slash
       final res        = await _api.get('search', queryParams: params);
       final newResults = (res['products'] as List? ?? [])
           .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
@@ -188,7 +188,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         await _addToHistory(state.filters.query);
       }
 
-      // ✅ If API returns no results, search dummy products locally too
+      // Γ£à If API returns no results, search dummy products locally too
       final allResults = newResults.isEmpty
           ? _searchDummies(state.filters.query)
           : newResults;
@@ -228,7 +228,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
       return;
     }
     try {
-      // ✅ No leading slash
+      // Γ£à No leading slash
       final res         = await _api.get('search/suggestions',
           queryParams: {'q': query});
       final suggestions = List<String>.from(res['suggestions'] ?? []);
@@ -294,107 +294,6 @@ class SearchNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(searchHistory: history);
   }
 
-<<<<<<< HEAD
-  // ── Dummy data — matches exact ProductModel fields ────────────────────────
-
-  List<ProductModel> _dummyTrending() => [
-        ProductModel(
-          id: 1,
-          name: 'SolarNet Mini Grid',
-          description: 'Affordable solar micro-grid for off-grid communities.',
-          category: 'Energy, Utilities, and Environment',
-          images: [],
-          likes: 234,
-          views: 1820,
-          interestCount: 45,
-          status: 'approved',
-          innovatorName: 'Miguel Reyes',
-          innovatorUsername: 'miguelreyes',
-          innovatorId: 101,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 10)),
-        ),
-        ProductModel(
-          id: 2,
-          name: 'AquaRice Smart Irrigation',
-          description: 'IoT-based irrigation system for rice paddies.',
-          category: 'Agri-Aqua and Forestry',
-          images: [],
-          likes: 189,
-          views: 1240,
-          interestCount: 32,
-          status: 'approved',
-          innovatorName: 'Ana Santos',
-          innovatorUsername: 'anasantos',
-          innovatorId: 102,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 15)),
-        ),
-        ProductModel(
-          id: 3,
-          name: 'CocoComposite Panel',
-          description: 'Building panels made from recycled coconut husks.',
-          category: 'Advanced Manufacturing and Engineering',
-          images: [],
-          likes: 156,
-          views: 980,
-          interestCount: 18,
-          status: 'approved',
-          innovatorName: 'Rodel Cruz',
-          innovatorUsername: 'rodelcruz',
-          innovatorId: 103,
-          kycStatus: 'unverified',
-          createdAt: DateTime.now().subtract(const Duration(days: 20)),
-        ),
-        ProductModel(
-          id: 4,
-          name: 'TeleMed Lite',
-          description: 'Low-bandwidth telemedicine platform for rural areas.',
-          category: 'Health and Medical Sciences',
-          images: [],
-          likes: 312,
-          views: 2400,
-          interestCount: 67,
-          status: 'approved',
-          innovatorName: 'Dr. Liza Tan',
-          innovatorUsername: 'drlizatan',
-          innovatorId: 104,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 5)),
-        ),
-        ProductModel(
-          id: 5,
-          name: 'GreenBuild AI',
-          description: 'AI-powered sustainable building design assistant.',
-          category: 'Advanced Manufacturing and Engineering',
-          images: [],
-          likes: 98,
-          views: 760,
-          interestCount: 12,
-          status: 'approved',
-          innovatorName: 'Carlo Mendoza',
-          innovatorUsername: 'carlomendoza',
-          innovatorId: 105,
-          kycStatus: 'verified',
-          createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        ),
-        ProductModel(
-          id: 6,
-          name: 'FishTrack IoT',
-          description: 'Real-time fish pond monitoring using IoT sensors.',
-          category: 'Agri-Aqua and Forestry',
-          images: [],
-          likes: 143,
-          views: 890,
-          interestCount: 21,
-          status: 'approved',
-          innovatorName: 'Ben Aquino',
-          innovatorUsername: 'benaquino',
-          innovatorId: 106,
-          kycStatus: 'unverified',
-          createdAt: DateTime.now().subtract(const Duration(days: 25)),
-        ),
-=======
   List<TrendingTopic> _dummyTopics() => const [
         TrendingTopic(keyword: 'Solar energy',       searchCount: 1240, changePercent: 34.2),
         TrendingTopic(keyword: 'Smart farming',      searchCount: 980,  changePercent: 21.5),
@@ -404,7 +303,6 @@ class SearchNotifier extends StateNotifier<SearchState> {
         TrendingTopic(keyword: 'Water purification', searchCount: 590,  changePercent: -3.2),
         TrendingTopic(keyword: 'Drone delivery',     searchCount: 480,  changePercent: 45.7),
         TrendingTopic(keyword: 'Bamboo materials',   searchCount: 430,  changePercent: 5.1),
->>>>>>> origin/master
       ];
 }
 

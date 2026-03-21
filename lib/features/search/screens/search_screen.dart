@@ -1,10 +1,11 @@
-// lib/features/search/screens/search_screen.dart
+﻿// lib/features/search/screens/search_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/search_provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/models/product_model.dart';
 import '../../marketplace/widgets/product_card.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -110,7 +111,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   }
 }
 
-// ── Search Header ─────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Search Header ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _SearchHeader extends StatelessWidget {
   final TextEditingController queryCtrl;
   final FocusNode focusNode;
@@ -280,7 +281,7 @@ class _SortChip extends ConsumerWidget {
   }
 }
 
-// ── Suggestions Dropdown ──────────────────────────────────────────────────────
+// ΓöÇΓöÇ Suggestions Dropdown ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _SuggestionsDropdown extends StatelessWidget {
   final List<String> suggestions;
   final List<String> history;
@@ -310,7 +311,7 @@ class _SuggestionsDropdown extends StatelessWidget {
   }
 }
 
-// ── Idle View ─────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Idle View ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _IdleView extends ConsumerWidget {
   final SearchState state;
   final ValueChanged<String> onSearch;
@@ -340,7 +341,7 @@ class _IdleView extends ConsumerWidget {
           const SizedBox(height: 24),
         ],
         if (state.trendingTopics.isNotEmpty) ...[
-          _SectionHeader(title: '🔥 Trending Topics'),
+          _SectionHeader(title: '≡ƒöÑ Trending Topics'),
           const SizedBox(height: 12),
           ...state.trendingTopics.take(6).map((t) => _TrendingTopicTile(
                 topic: t,
@@ -350,7 +351,7 @@ class _IdleView extends ConsumerWidget {
           const SizedBox(height: 24),
         ],
         if (state.trendingProducts.isNotEmpty) ...[
-          _SectionHeader(title: '⚡ Popular Innovations'),
+          _SectionHeader(title: 'ΓÜí Popular Innovations'),
           const SizedBox(height: 12),
           SizedBox(
             height: 320,
@@ -462,7 +463,7 @@ class _TrendingTopicTile extends StatelessWidget {
   }
 }
 
-// ── Results View ──────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Results View ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _ResultsView extends StatelessWidget {
   final SearchState state;
   final bool isWide;
@@ -561,7 +562,7 @@ class _Chip extends StatelessWidget {
   }
 }
 
-// ── Loading Shimmer ───────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Loading Shimmer ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _LoadingShimmer extends StatelessWidget {
   const _LoadingShimmer();
 
@@ -595,7 +596,7 @@ class _LoadingShimmer extends StatelessWidget {
   }
 }
 
-// ── Empty Results ─────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Empty Results ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _EmptyResults extends StatelessWidget {
   final String query;
   const _EmptyResults({required this.query});
@@ -617,7 +618,7 @@ class _EmptyResults extends StatelessWidget {
   }
 }
 
-// ── Filter Bottom Sheet — Category only ───────────────────────────────────────
+// ΓöÇΓöÇ Filter Bottom Sheet ΓÇö Category only ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _FilterSheet extends ConsumerStatefulWidget {
   final WidgetRef ref;
   const _FilterSheet({required this.ref});
@@ -630,19 +631,8 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
   late SearchFilters _local;
 
   static const _categories = [
-<<<<<<< HEAD
-    'Agri-Aqua and Forestry', 'Food Processing and Nutrition', 'Health and Medical Sciences', 'Energy, Utilities, and Environment',
-    'Advanced Manufacturing and Engineering', 'Creative Industries and Product Design', 'Information and Communications Technology (ICT)'
-  ];
-  static const _stages = [
-    ('concept', 'Concept'),
-    ('prototype', 'Prototype'),
-    ('mvp', 'MVP'),
-    ('market_ready', 'Market Ready'),
-=======
     'Agriculture', 'Healthcare', 'Energy',
     'Construction', 'Product Design', 'Information Technology',
->>>>>>> origin/master
   ];
 
   @override

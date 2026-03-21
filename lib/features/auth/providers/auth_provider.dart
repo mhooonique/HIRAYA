@@ -1,14 +1,12 @@
-// lib/features/auth/providers/auth_provider.dart
+﻿// lib/features/auth/providers/auth_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:dio/dio.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/api_service.dart';
 import 'otp_provider.dart';
 
-// ── GoogleSignIn singleton — one instance for the entire app ──────────────────
+// ΓöÇΓöÇ GoogleSignIn singleton ΓÇö one instance for the entire app ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Keeping this at file level prevents multiple initialize() calls on the web
 // (which triggers the GSI_LOGGER warning when the provider is recreated).
 final _googleSignIn = GoogleSignIn(
@@ -17,7 +15,7 @@ final _googleSignIn = GoogleSignIn(
   scopes:   ['email', 'profile', 'openid'],
 );
 
-// ── SignupData ─────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ SignupData ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class SignupData {
   String role;
   String firstName;
@@ -66,7 +64,7 @@ class SignupData {
   });
 }
 
-// ── AuthState ─────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ AuthState ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 enum LoginStatus { idle, pending, rejected }
 
 // Sentinel used by copyWith so that passing no error argument preserves the
@@ -157,7 +155,7 @@ class AuthState {
       );
 }
 
-// ── Provider ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Provider ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
   (ref) => AuthNotifier(ref.read(apiServiceProvider)),
 );
@@ -165,58 +163,11 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiService _api;
 
-<<<<<<< HEAD
-  static GoogleSignIn? _googleSignInInstance;
-
-  GoogleSignIn get _googleSignIn {
-    return _googleSignInInstance ??= GoogleSignIn(
-      clientId: '31131385571-rhrhdr9hk5t2jsrah4gho23k8rj4ctlf.apps.googleusercontent.com',
-      scopes: ['email', 'profile', 'openid'],
-    );
-  }
-
-=======
->>>>>>> origin/master
   AuthNotifier(this._api) : super(const AuthState()) {
     _rehydrate();
   }
 
-<<<<<<< HEAD
-  Future<bool> _tryOfflineDevLogin(String email, String password) async {
-    if (!kDebugMode) return false;
-
-    const devEmail = 'mhoniqueprosia@gmail.com';
-    const devPassword = 'Inn0vator_';
-    if (email.trim().toLowerCase() != devEmail || password != devPassword) {
-      return false;
-    }
-
-    final user = UserModel(
-      id: 16,
-      firstName: 'First',
-      lastName: 'Innovator',
-      username: 'first_innovator',
-      email: devEmail,
-      role: 'innovator',
-      kycStatus: 'verified',
-      userStatus: 1,
-      phone: '+639165737057',
-    );
-
-    state = state.copyWith(
-      isLoading: false,
-      user: user,
-      token: 'offline-dev-token',
-      error: null,
-      loginStatus: LoginStatus.idle,
-      requires2fa: false,
-    );
-    return true;
-  }
-
-=======
-  // ── Rehydrate session on cold start ────────────────────────────────────────
->>>>>>> origin/master
+  // ΓöÇΓöÇ Rehydrate session on cold start ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   Future<void> _rehydrate() async {
     try {
       final token = await _api.getStoredToken();
@@ -245,7 +196,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isRehydrating: false);
   }
 
-  // ── Helper: fetch full profile after login ──────────────────────────────────
+  // ΓöÇΓöÇ Helper: fetch full profile after login ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   Future<UserModel> _fetchFullUser(Map<String, dynamic> fallback) async {
     try {
       final res      = await _api.get('users/me', auth: true);
@@ -257,7 +208,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return UserModel.fromJson(fallback);
   }
 
-  // ── Email / password login ─────────────────────────────────────────────────
+  // ΓöÇΓöÇ Email / password login ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   Future<void> login(String email, String password) async {
     state = state.copyWith(
       isLoading:   true,
@@ -267,15 +218,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final deviceId = await getDeviceId();
       final res = await _api.post('auth/login', {
-<<<<<<< HEAD
-        'email': email, 'password': password, 'device_id': deviceId,
-      }, auth: false);
-=======
         'email':     email,
         'password':  password,
         'device_id': deviceId,
       });
->>>>>>> origin/master
 
       if (res['error'] != null) {
         final s = res['status'] as String?;
@@ -308,76 +254,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user:      user,
         token:     res['token'] as String,
       );
-<<<<<<< HEAD
-    } catch (e) {
-      if (e is DioException &&
-          (e.type == DioExceptionType.connectionError ||
-              e.type == DioExceptionType.connectionTimeout ||
-              e.type == DioExceptionType.sendTimeout ||
-              e.type == DioExceptionType.receiveTimeout)) {
-        final usedFallback = await _tryOfflineDevLogin(email, password);
-        if (usedFallback) return;
-      }
-
-      String message;
-
-      if (e is DioException) {
-        String? probeIssue;
-        if (e.type == DioExceptionType.connectionError ||
-            e.type == DioExceptionType.connectionTimeout ||
-            e.type == DioExceptionType.sendTimeout ||
-            e.type == DioExceptionType.receiveTimeout) {
-          probeIssue = await _api.diagnoseConnection();
-        }
-
-        final payload = e.response?.data;
-        if (payload is Map<String, dynamic>) {
-          final backendError = (payload['error'] ?? payload['message'])?.toString();
-          if (backendError != null && backendError.isNotEmpty) {
-            message = backendError;
-          } else {
-            message = 'Login failed (${e.response?.statusCode ?? 'unknown'}).';
-          }
-        } else {
-          switch (e.type) {
-            case DioExceptionType.connectionError:
-              message = probeIssue ??
-                  'Cannot reach API server (${e.requestOptions.uri.host}). Check dev tunnel/CORS/backend availability.';
-              break;
-            case DioExceptionType.connectionTimeout:
-            case DioExceptionType.sendTimeout:
-            case DioExceptionType.receiveTimeout:
-              message = probeIssue ??
-                  'Login request timed out (${e.requestOptions.uri.host}). Check backend/tunnel and retry.';
-              break;
-            case DioExceptionType.badResponse:
-              message = 'Server returned an invalid login response (${e.response?.statusCode ?? 'unknown'}).';
-              break;
-            default:
-              final raw = e.error?.toString();
-              message = raw != null && raw.isNotEmpty
-                  ? 'Login request failed (${e.type}): $raw'
-                  : 'Login request failed (${e.type}). Please try again.';
-          }
-        }
-      } else if (e is FormatException) {
-        message = 'Server returned invalid (non-JSON) login data.';
-      } else {
-        message = 'Connection error. Please verify backend and network.';
-      }
-
-      state = state.copyWith(isLoading: false, error: message);
-=======
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
         error:     'Connection error. Is XAMPP running?',
       );
->>>>>>> origin/master
     }
   }
 
-  // ── Complete login after 2FA ───────────────────────────────────────────────
+  // ΓöÇΓöÇ Complete login after 2FA ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   Future<void> completeLogin({
     required String token,
     required int    userId,
@@ -401,7 +286,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // ── Google Sign-In ─────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Google Sign-In ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   Future<void> loginWithGoogle() async {
     state = state.copyWith(
       isLoading:   true,
@@ -409,7 +294,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       loginStatus: LoginStatus.idle,
     );
     try {
-      // Only disconnect if already signed in — avoids redundant GSI reinit on web
+      // Only disconnect if already signed in ΓÇö avoids redundant GSI reinit on web
       if (await _googleSignIn.isSignedIn()) {
         await _googleSignIn.disconnect();
       }
@@ -439,7 +324,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'email':      account.email,
         'first_name': account.displayName?.split(' ').first ?? '',
         'last_name':  account.displayName?.split(' ').skip(1).join(' ') ?? '',
-      }, auth: false);
+      });
 
       if (res['needs_signup'] == true) {
         final nameParts   = (account.displayName ?? '').trim().split(RegExp(r'\s+'));
@@ -497,7 +382,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // ── Signup ─────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Signup ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   Future<void> signup(SignupData data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -521,81 +406,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'selfie_name':      data.selfieFileName,
         'is_google_signup': data.isGoogleSignup,
         'google_id':        data.googleId,
-      }, auth: false);
+      });
 
       if (res['error'] != null) {
         state = state.copyWith(isLoading: false, error: res['error']);
         return;
       }
 
-      // Account created but user_status = 0 — needs admin approval.
+      // Account created but user_status = 0 ΓÇö needs admin approval.
       state = state.copyWith(
         isLoading:   false,
         loginStatus: LoginStatus.pending,
       );
-<<<<<<< HEAD
-    } catch (e) {
-      String message;
-
-      if (e is DioException) {
-        final payload = e.response?.data;
-        if (payload is Map<String, dynamic>) {
-          final backendError = (payload['error'] ?? payload['message'])?.toString();
-          if (backendError != null && backendError.isNotEmpty) {
-            message = backendError;
-          } else {
-            message = 'Signup failed (${e.response?.statusCode ?? 'unknown'}). Please try again.';
-          }
-        } else {
-          switch (e.type) {
-            case DioExceptionType.connectionError:
-              message = 'Cannot reach server. Please check your internet or backend tunnel.';
-              break;
-            case DioExceptionType.connectionTimeout:
-            case DioExceptionType.sendTimeout:
-            case DioExceptionType.receiveTimeout:
-              message = 'Request timed out. Please try again.';
-              break;
-            case DioExceptionType.badResponse:
-              message = 'Server returned an unexpected response. Please try again.';
-              break;
-            default:
-              message = 'Signup request failed. Please try again.';
-          }
-        }
-      } else if (e is FormatException) {
-        message = 'Server returned an invalid response. Please try again in a moment.';
-      } else {
-        message = 'Signup failed. Please try again.';
-      }
-
-      state = state.copyWith(isLoading: false, error: message);
-=======
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
         error:     'Signup failed. Check your connection.',
       );
->>>>>>> origin/master
     }
   }
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Logout ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   Future<void> logout() async {
     await _api.clearToken();
-<<<<<<< HEAD
-    final google = _googleSignInInstance;
-    if (google != null) {
-      await google.signOut();
-=======
     if (await _googleSignIn.isSignedIn()) {
       await _googleSignIn.signOut();
->>>>>>> origin/master
     }
     state = const AuthState(isRehydrating: false);
   }
 
-  // ── Update avatar ──────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Update avatar ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   /// Returns null on success, an error string on failure.
   Future<String?> updateAvatar(String base64) async {
     try {
@@ -619,7 +459,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   void clearGooglePrefill() => state = state.copyWith(needsGoogleSignup: false);
   void clearError()          => state = state.copyWith(error: null);
   void clearPendingStatus()  => state = state.copyWith(loginStatus: LoginStatus.idle);

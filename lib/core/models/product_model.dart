@@ -28,6 +28,8 @@ class ProductModel {
   final String? govIdFilename;
   final String? selfieBase64;
   final String? selfieFilename;
+  final String? stage;
+  final String? tags;
 
   ProductModel({
     required this.id,
@@ -55,6 +57,8 @@ class ProductModel {
     this.govIdFilename,
     this.selfieBase64,
     this.selfieFilename,
+    this.stage,
+    this.tags,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) => ProductModel(
@@ -85,6 +89,8 @@ class ProductModel {
         govIdFilename:  json['gov_id_filename']  as String?,
         selfieBase64:   json['selfie_base64']    as String?,
         selfieFilename: json['selfie_filename']  as String?,
+        stage:          json['stage']            as String?,
+        tags:           json['tags']             as String?,
       );
 
   String get coverImage        => images.isNotEmpty ? images.first : '';

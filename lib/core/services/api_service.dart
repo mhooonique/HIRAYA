@@ -5,28 +5,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-<<<<<<< HEAD
-class ApiService {
-  static const _defaultLocalBaseUrl = 'http://localhost/hiraya_api/api/v1/';
 
-  static String _normalizeBaseUrl(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return trimmed;
-    return trimmed.endsWith('/') ? trimmed : '$trimmed/';
-  }
-
-  static String _resolveBaseUrl() {
-    const configured = String.fromEnvironment('HIRAYA_API_BASE_URL', defaultValue: '');
-    if (configured.isNotEmpty) {
-      return _normalizeBaseUrl(configured);
-    }
-
-    return _defaultLocalBaseUrl;
-  }
-=======
->>>>>>> origin/master
-
-// ── Environment-aware URLs ────────────────────────────────────────────────────
+// ΓöÇΓöÇ Environment-aware URLs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Override at build time with:
 //   flutter run  --dart-define=API_BASE_URL=https://api.hiraya.com/v1/
 //   flutter build web --dart-define=API_BASE_URL=https://api.hiraya.com/v1/
@@ -34,12 +14,12 @@ class ApiService {
 class AppConfig {
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.17/hiraya_api/api/v1/',
+    defaultValue: 'http://localhost:3333/hiraya_api/api/v1/',
   );
 
   static const appBaseUrl = String.fromEnvironment(
     'APP_BASE_URL',
-    defaultValue: 'http://192.168.1.17:3000',
+    defaultValue: 'http://localhost:3000',
   );
 }
 
@@ -48,17 +28,6 @@ class ApiService {
 
   final Dio _dio;
 
-<<<<<<< HEAD
-  ApiService()
-      : _dio = Dio(BaseOptions(
-        baseUrl: _resolveBaseUrl(),
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 60),
-          sendTimeout: const Duration(seconds: 60),
-          headers: {'Content-Type': 'application/json'},
-          validateStatus: (status) => status != null && status < 500,
-        ));
-=======
   ApiService() : _dio = Dio(BaseOptions(
     baseUrl:        AppConfig.apiBaseUrl,
     connectTimeout: const Duration(seconds: 10),
@@ -69,12 +38,12 @@ class ApiService {
     // can handle 4xx errors gracefully via res['error'] checks.
     validateStatus: (status) => status != null && status < 500,
   )) {
-    // ── Auto-clear token on 401 anywhere in the app ─────────────────────────
+    // ΓöÇΓöÇ Auto-clear token on 401 anywhere in the app ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     _dio.interceptors.add(
       InterceptorsWrapper(
         onResponse: (response, handler) {
           if (response.statusCode == 401) {
-            // Token expired or invalid — clear it so the router
+            // Token expired or invalid ΓÇö clear it so the router
             // redirects to login on the next auth check.
             clearToken();
           }
@@ -86,32 +55,8 @@ class ApiService {
       ),
     );
   }
->>>>>>> origin/master
 
-  Future<String?> diagnoseConnection() async {
-    try {
-      final probe = Dio(BaseOptions(
-        baseUrl: _dio.options.baseUrl,
-        connectTimeout: const Duration(seconds: 8),
-        receiveTimeout: const Duration(seconds: 8),
-        sendTimeout: const Duration(seconds: 8),
-        headers: {'Content-Type': 'application/json'},
-        validateStatus: (status) => status != null && status < 600,
-      ));
-
-      await probe.get('', options: Options(responseType: ResponseType.plain));
-      return null;
-    } on DioException catch (e) {
-      final host = e.requestOptions.uri.host;
-      final raw = e.error?.toString();
-      final suffix = (raw != null && raw.isNotEmpty) ? ' | $raw' : '';
-      return 'API probe failed at $host (${e.type})$suffix';
-    } catch (e) {
-      return 'API probe failed: $e';
-    }
-  }
-
-  // ── Token management (shared_preferences → localStorage on web) ─────────────
+  // ΓöÇΓöÇ Token management (shared_preferences ΓåÆ localStorage on web) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
@@ -135,7 +80,7 @@ class ApiService {
     );
   }
 
-  // ── HTTP methods ──────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ HTTP methods ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   Future<Map<String, dynamic>> get(
     String path, {
@@ -180,31 +125,23 @@ class ApiService {
     return _parse(res);
   }
 
-  // ── Response parser ───────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Response parser ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   Map<String, dynamic> _parse(Response res) {
     if (res.data is Map<String, dynamic>) {
       return res.data as Map<String, dynamic>;
     }
-<<<<<<< HEAD
-    if (res.data is String) {
-      try {
-        return jsonDecode(res.data as String) as Map<String, dynamic>;
-      } on FormatException {
-        throw const FormatException('Non-JSON response received from API');
-=======
     if (res.data is String && (res.data as String).isNotEmpty) {
       try {
         return jsonDecode(res.data as String) as Map<String, dynamic>;
       } catch (_) {
         return {'error': 'Invalid server response'};
->>>>>>> origin/master
       }
     }
     return {};
   }
 }
 
-// ── Provider ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Provider ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService());

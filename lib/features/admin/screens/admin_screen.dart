@@ -1,11 +1,11 @@
-// lib/features/admin/screens/admin_screen.dart
+﻿// lib/features/admin/screens/admin_screen.dart
 
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/user_model.dart';
@@ -25,8 +25,6 @@ class AdminScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminScreenState extends ConsumerState<AdminScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -37,110 +35,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
   Widget build(BuildContext context) {
     final state    = ref.watch(adminProvider);
     final notifier = ref.read(adminProvider.notifier);
-    final isCompact = MediaQuery.of(context).size.width < 1080;
 
     return Scaffold(
-<<<<<<< HEAD
-      key: _scaffoldKey,
-      backgroundColor: AppColors.deepVoid,
-      drawer: isCompact
-          ? Drawer(
-              backgroundColor: Colors.transparent,
-              child: SafeArea(
-                child: _AdminSidebar(
-                  activeTab: state.activeTab,
-                  onTabChange: (tab) {
-                    notifier.setTab(tab);
-                    Navigator.of(context).pop();
-                  },
-                  pendingCount: state.stats.pendingProducts,
-                ),
-              ),
-            )
-          : null,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.deepVoid,
-                    AppColors.midnight,
-                    AppColors.richNavy.withValues(alpha: 0.95),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -120,
-            top: -80,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.crimson.withValues(alpha: 0.14),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            )
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scaleXY(begin: 0.96, end: 1.04, duration: 2600.ms),
-          ),
-          Positioned(
-            left: -100,
-            bottom: -120,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.golden.withValues(alpha: 0.12),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            )
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scaleXY(begin: 1.02, end: 0.95, duration: 2400.ms),
-          ),
-          SafeArea(
-            child: Row(
-              children: [
-                if (!isCompact)
-                  _AdminSidebar(
-                    activeTab: state.activeTab,
-                    onTabChange: notifier.setTab,
-                    pendingCount: state.stats.pendingProducts,
-                  ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      _AdminTopBar(
-                        compact: isCompact,
-                        onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                      ),
-                      Expanded(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 320),
-                          child: KeyedSubtree(
-                            key: ValueKey(state.activeTab),
-                            child: _buildTab(state, notifier),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-=======
       backgroundColor: const Color(0xFF0F1923),
       body: Row(children: [
         _AdminSidebar(
@@ -157,7 +53,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 child: KeyedSubtree(
                   key:   ValueKey(state.activeTab),
                   child: _buildTab(state, notifier),
->>>>>>> origin/master
                 ),
               ),
             ),
@@ -194,7 +89,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
   }
 }
 
-// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ SIDEBAR ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _AdminSidebar extends ConsumerWidget {
   final String activeTab;
   final void Function(String) onTabChange;
@@ -210,38 +105,6 @@ class _AdminSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: 240,
-<<<<<<< HEAD
-      margin: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.30),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [AppColors.golden, AppColors.warmEmber],
-                ).createShader(bounds),
-                child: const Text(
-                  'Digital Platform',
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.crimson.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppColors.crimson.withValues(alpha: 0.35)),
-                ),
-                child: const Text('ADMIN PANEL', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w800, color: AppColors.crimson, letterSpacing: 1.5)),
-              ),
-=======
       color: const Color(0xFF0A1118),
       child: Column(children: [
         Container(
@@ -252,7 +115,6 @@ class _AdminSidebar extends ConsumerWidget {
             const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('HIRAYA', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2)),
               Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, color: AppColors.golden, letterSpacing: 1)),
->>>>>>> origin/master
             ]),
           ]),
         ),
@@ -381,51 +243,25 @@ class _AdminThemeToggle extends ConsumerWidget {
   }
 }
 
-// ─── TOP BAR ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ TOP BAR ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _AdminTopBar extends ConsumerWidget {
-  final bool compact;
-  final VoidCallback? onMenuTap;
-
-  const _AdminTopBar({this.compact = false, this.onMenuTap});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final email = ref.watch(authProvider).user?.email ?? 'admin';
     return Container(
-      height: 72,
-      margin: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.24),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: const BoxDecoration(color: Color(0xFF0A1118), border: Border(bottom: BorderSide(color: Colors.white10))),
       child: Row(children: [
-        if (compact) ...[
-          IconButton(
-            onPressed: onMenuTap,
-            icon: const Icon(Icons.menu_rounded, color: Colors.white),
-          ),
-          const SizedBox(width: 6),
-        ],
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.crimson.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.30)),
-          ),
-          child: const Text('ADMIN', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.crimson, letterSpacing: 1.5)),
-        ),
-        const SizedBox(width: 12),
-        const Text('Control Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+        const Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.golden.withValues(alpha: 0.25))),
-          child: const Row(children: [
-            Icon(Icons.admin_panel_settings_rounded, color: AppColors.golden, size: 14),
-            SizedBox(width: 6),
-            Text('Super Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden, fontWeight: FontWeight.w600)),
+          decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.teal.withValues(alpha: 0.3))),
+          child: Row(children: [
+            const Icon(Icons.shield_rounded, color: AppColors.teal, size: 14),
+            const SizedBox(width: 6),
+            Text(email, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.teal, fontWeight: FontWeight.w600)),
           ]),
         ),
         const SizedBox(width: 8),
@@ -435,58 +271,19 @@ class _AdminTopBar extends ConsumerWidget {
   }
 }
 
-// ─── DASHBOARD TAB ────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ DASHBOARD TAB ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _DashboardTab extends StatelessWidget {
   final AdminState state;
   const _DashboardTab({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final cardWidth = width > 1450
-        ? (width - 420) / 4
-        : width > 980
-            ? (width - 360) / 2
-            : double.infinity;
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
-<<<<<<< HEAD
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Dashboard', style: TextStyle(fontFamily: 'Poppins', fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)).animate().fadeIn(duration: 400.ms),
-          const SizedBox(height: 6),
-          Text('System overview — ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
-          const SizedBox(height: 28),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.people_rounded,          label: 'Total Users',      value: '${state.stats.totalUsers}',      color: AppColors.sky,     index: 0)),
-              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.lightbulb_rounded,       label: 'Live Innovations', value: '${state.stats.totalProducts}',   color: AppColors.teal,    index: 1)),
-              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.pending_actions_rounded, label: 'Pending Review',   value: '${state.stats.pendingProducts}', color: AppColors.golden,  index: 2, urgent: state.stats.pendingProducts > 0)),
-              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.handshake_rounded,       label: 'Total Interests',  value: '${state.stats.totalInterests}',  color: AppColors.crimson, index: 3)),
-            ],
-          ),
-          const SizedBox(height: 28),
-          if (state.pendingProducts.isNotEmpty) ...[
-            Row(children: [
-              const Text('Pending Approvals', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
-                child: Text('${state.pendingProducts.length} waiting', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden)),
-              ),
-            ]),
-            const SizedBox(height: 16),
-            ...state.pendingProducts.take(3).toList().asMap().entries.map((e) => _PendingRow(product: e.value, index: e.key)),
-=======
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Dashboard', style: TextStyle(fontFamily: 'Poppins', fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)).animate().fadeIn(duration: 400.ms),
         const SizedBox(height: 6),
-        Text('System overview — ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+        Text('System overview ΓÇö ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
             style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
         const SizedBox(height: 28),
         GridView.count(
@@ -498,7 +295,6 @@ class _DashboardTab extends StatelessWidget {
             _StatCard(icon: Icons.lightbulb_rounded,       label: 'Live Innovations', value: '${state.stats.totalProducts}',   color: AppColors.teal,    index: 1),
             _StatCard(icon: Icons.pending_actions_rounded, label: 'Pending Review',   value: '${state.stats.pendingProducts}', color: AppColors.golden,  index: 2, urgent: state.stats.pendingProducts > 0),
             _StatCard(icon: Icons.handshake_rounded,       label: 'Total Interests',  value: '${state.stats.totalInterests}',  color: AppColors.crimson, index: 3),
->>>>>>> origin/master
           ],
         ),
         const SizedBox(height: 28),
@@ -624,7 +420,7 @@ class _CategoryBreakdown extends ConsumerWidget {
   }
 }
 
-// ─── PRODUCTS TAB ─────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ PRODUCTS TAB ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _ProductsTab extends StatelessWidget {
   final List<ProductModel> products;
   final Future<String?> Function(int) onApprove, onReject;
@@ -689,7 +485,7 @@ class _ProductReviewCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(product.name, style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-            Text('${product.category} · by ${product.innovatorName}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white38)),
+            Text('${product.category} ┬╖ by ${product.innovatorName}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white38)),
           ])),
           Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.golden.withValues(alpha: 0.3))),
               child: const Text('PENDING', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.golden))),
@@ -724,7 +520,7 @@ class _ProductReviewCard extends StatelessWidget {
   }
 }
 
-// ─── USERS TAB ────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ USERS TAB ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _UsersTab extends StatelessWidget {
   final List<UserModel> users;
   final Future<String?> Function(int) onApprove, onReject, onDelete, onPromote, onDemote;
@@ -916,7 +712,7 @@ class _UsersTab extends StatelessWidget {
   }
 }
 
-// ─── User detail dialog ───────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ User detail dialog ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _UserDetailDialog extends ConsumerStatefulWidget {
   final int userId;
   final UserModel user;
@@ -1002,10 +798,10 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     _DetailRow(icon: Icons.email_rounded,       label: 'Email',   value: user.email),
-                    _DetailRow(icon: Icons.phone_rounded,       label: 'Phone',   value: user.phone.isNotEmpty ? user.phone : '—'),
-                    _DetailRow(icon: Icons.cake_rounded,        label: 'Birthday',value: user.dateOfBirth ?? '—'),
+                    _DetailRow(icon: Icons.phone_rounded,       label: 'Phone',   value: user.phone.isNotEmpty ? user.phone : 'ΓÇö'),
+                    _DetailRow(icon: Icons.cake_rounded,        label: 'Birthday',value: user.dateOfBirth ?? 'ΓÇö'),
                     _DetailRow(icon: Icons.location_on_rounded, label: 'Address',
-                        value: (user.city != null && user.province != null) ? '${user.city}, ${user.province}' : (user.city ?? user.province ?? '—')),
+                        value: (user.city != null && user.province != null) ? '${user.city}, ${user.province}' : (user.city ?? user.province ?? 'ΓÇö')),
                     _DetailRow(icon: Icons.badge_rounded,       label: 'Role',    value: user.role.toUpperCase()),
                     _DetailRow(icon: Icons.verified_rounded,    label: 'KYC',     value: user.kycStatus.toUpperCase()),
                     _DetailRow(icon: Icons.toggle_on_rounded,   label: 'Status',
@@ -1215,7 +1011,7 @@ class _StatusDot extends StatelessWidget {
   ]);
 }
 
-// ─── Product detail dialog ────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Product detail dialog ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 void _showProductDetail(BuildContext context, int productId, VoidCallback onApprove, VoidCallback onReject) {
   showDialog(context: context, builder: (_) => _AdminProductDetailDialog(productId: productId, onApprove: onApprove, onReject: onReject));
 }
@@ -1307,8 +1103,8 @@ class _AdminProductDetailDialogState extends ConsumerState<_AdminProductDetailDi
                             child: const Icon(Icons.lightbulb_rounded, color: AppColors.golden, size: 22)),
                         const SizedBox(width: 14),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(_data!['name'] ?? '—', style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-                          Text('${_data!['category'] ?? '—'} · by ${_data!['innovator_name'] ?? '—'}',
+                          Text(_data!['name'] ?? 'ΓÇö', style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                          Text('${_data!['category'] ?? 'ΓÇö'} ┬╖ by ${_data!['innovator_name'] ?? 'ΓÇö'}',
                               style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
                         ])),
                         IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white38)),
@@ -1327,8 +1123,8 @@ class _AdminProductDetailDialogState extends ConsumerState<_AdminProductDetailDi
                                     style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.teal))),
                             const SizedBox(width: 12),
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(_data!['innovator_name'] ?? '—', style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 13)),
-                              Text('@${_data!['innovator_username'] ?? '—'}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38)),
+                              Text(_data!['innovator_name'] ?? 'ΓÇö', style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 13)),
+                              Text('@${_data!['innovator_username'] ?? 'ΓÇö'}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38)),
                               if ((_data!['innovator_email'] ?? '').toString().isNotEmpty)
                                 Text(_data!['innovator_email'].toString(), style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.sky)),
                             ])),
@@ -1346,7 +1142,7 @@ class _AdminProductDetailDialogState extends ConsumerState<_AdminProductDetailDi
                         const SizedBox(height: 20),
                         const Text('Description', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
                         const SizedBox(height: 8),
-                        Text((_data!['description'] ?? '').toString().isNotEmpty ? _data!['description'].toString() : '—',
+                        Text((_data!['description'] ?? '').toString().isNotEmpty ? _data!['description'].toString() : 'ΓÇö',
                             style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.white, height: 1.6)),
                         const SizedBox(height: 20),
                         if ((_data!['external_link'] ?? '').toString().isNotEmpty) ...[
@@ -1422,7 +1218,7 @@ class _AdminProductDetailDialogState extends ConsumerState<_AdminProductDetailDi
                           ),
                           const SizedBox(height: 20),
                         ],
-                        // ── Stats ── FIXED: Wrap instead of Row to avoid sizing crash
+                        // ΓöÇΓöÇ Stats ΓöÇΓöÇ FIXED: Wrap instead of Row to avoid sizing crash
                         Wrap(
                           spacing: 24,
                           runSpacing: 8,

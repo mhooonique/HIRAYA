@@ -1,4 +1,4 @@
-// lib/main.dart
+﻿// lib/main.dart
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +12,10 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/messaging/providers/messaging_provider.dart';
 
 void main() async {
-  // ── Use path URLs (no hash) so /reset-password?token=xxx works in emails ──
+  // ΓöÇΓöÇ Use path URLs (no hash) so /reset-password?token=xxx works in emails ΓöÇΓöÇ
   usePathUrlStrategy();
 
-  // ── Catch and print full stack traces for all Flutter errors ──────────────
+  // ΓöÇΓöÇ Catch and print full stack traces for all Flutter errors ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     debugPrint('=== FLUTTER ERROR ===');
@@ -47,19 +47,11 @@ class HirayaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-<<<<<<< HEAD
-      title:                    'Digital Platform',
-      theme:                    AppTheme.lightTheme,
-      darkTheme:                AppTheme.darkTheme,
-      themeMode:                ref.watch(themeProvider),
-      routerConfig:             router,
-=======
       title:                      'HIRAYA',
       theme:                      AppTheme.lightTheme,
       darkTheme:                  AppTheme.darkTheme,
       themeMode:                  ref.watch(themeProvider),
       routerConfig:               router,
->>>>>>> origin/master
       debugShowCheckedModeBanner: false,
       builder: (context, child) =>
           _GlobalCallListener(child: child ?? const SizedBox()),
@@ -67,7 +59,7 @@ class HirayaApp extends ConsumerWidget {
   }
 }
 
-// ─── Global call listener — wraps the entire app ──────────────────────────────
+// ΓöÇΓöÇΓöÇ Global call listener ΓÇö wraps the entire app ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 class _GlobalCallListener extends ConsumerStatefulWidget {
   final Widget child;
   const _GlobalCallListener({required this.child});
@@ -82,14 +74,14 @@ class _GlobalCallListenerState extends ConsumerState<_GlobalCallListener> {
 
   @override
   Widget build(BuildContext context) {
-    // ── Auth listener: start / stop conversation polling on login / logout ──
+    // ΓöÇΓöÇ Auth listener: start / stop conversation polling on login / logout ΓöÇΓöÇ
     ref.listen<AuthState>(authProvider, (prev, next) {
       // Guard: skip if the user identity did not actually change
       if (prev?.user?.id == next.user?.id) return;
 
       if (next.user != null && next.user!.id != _lastUserId) {
         _lastUserId = next.user!.id;
-        // Admins don't use messaging — skip polling
+        // Admins don't use messaging ΓÇö skip polling
         if (next.user!.role != 'admin') {
           ref
               .read(messagingProvider.notifier)
@@ -103,7 +95,7 @@ class _GlobalCallListenerState extends ConsumerState<_GlobalCallListener> {
       }
     });
 
-    // ── Incoming call listener ──────────────────────────────────────────────
+    // ΓöÇΓöÇ Incoming call listener ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     ref.listen<IncomingCall?>(
       messagingProvider.select((s) => s.incomingCall),
       (prev, next) {
