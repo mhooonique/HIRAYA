@@ -9,7 +9,13 @@ import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../messaging/providers/messaging_provider.dart';
+<<<<<<< HEAD
 import '../../marketplace/providers/marketplace_provider.dart';
+=======
+import '../widgets/share_qr_section.dart';
+import '../../reviews/widgets/reviews_widget.dart';
+
+>>>>>>> origin/master
 
 final _productDetailProvider =
     FutureProvider.family<ProductModel?, int>((ref, id) async {
@@ -44,7 +50,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   bool _liked = false;
   bool _bookmarked = false;
   bool _interestSent = false;
+<<<<<<< HEAD
   bool _qrExpanded = false;
+=======
+  bool _likeLoading = false;
+
+  final PageController _pageCtrl = PageController();
+  int _currentPage = 0;
+>>>>>>> origin/master
 
   @override
   void dispose() {
@@ -69,10 +82,31 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     final asyncProduct = ref.watch(_productDetailProvider(widget.productId));
     final auth = ref.watch(authProvider);
     final role = auth.user?.role ?? '';
     final isLoggedIn = auth.isLoggedIn;
+=======
+    final productAsync = ref.watch(_productDetailProvider(widget.productId));
+    final product = productAsync.value;
+
+    final isDark        = ref.watch(themeProvider) == ThemeMode.dark;
+    final scaffoldBg    = isDark ? const Color(0xFF0D1117) : AppColors.offWhite;
+    final cardBg        = isDark ? const Color(0xFF1A2233) : Colors.white;
+    final borderCol     = isDark ? const Color(0xFF2A3448) : AppColors.lightGray;
+    final primaryText   = isDark ? Colors.white : AppColors.navy;
+    final secondaryText = isDark ? Colors.white54 : Colors.black54;
+    final subtleText    = isDark ? Colors.white38 : Colors.black45;
+
+    final authState   = ref.watch(authProvider);
+    final isLoggedIn  = authState.isLoggedIn;
+    final role        = authState.user?.role ?? '';
+    final isAdmin     = role == 'admin';
+    final isInnovator = role == 'innovator';
+    final isClient    = isLoggedIn && role == 'client';
+    final isRestricted = isAdmin || isInnovator;
+>>>>>>> origin/master
 
     final product = asyncProduct.value;
     if (product == null) {
@@ -129,6 +163,96 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ),
             ),
             actions: [
+<<<<<<< HEAD
+=======
+              if (isAdmin)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => context.go('/admin'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.black38,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white30)),
+                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 14),
+                          SizedBox(width: 6),
+                          Text('Admin Dashboard', style: TextStyle(fontFamily: 'Poppins',
+                              fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              if (isInnovator)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => context.go('/innovator/dashboard'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.black38,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white30)),
+                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.dashboard_rounded, color: Colors.white, size: 14),
+                          SizedBox(width: 6),
+                          Text('My Dashboard', style: TextStyle(fontFamily: 'Poppins',
+                              fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              if (!isRestricted && product.images.length > 1)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: Colors.black45,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.photo_library_rounded, color: Colors.white, size: 13),
+                        const SizedBox(width: 4),
+                        Text('${product.images.length}',
+                            style: const TextStyle(fontFamily: 'Poppins',
+                                fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                      ]),
+                    ),
+                  ),
+                ),
+              if (isClient)
+                IconButton(
+                  icon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      _bookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      key: ValueKey(_bookmarked), color: Colors.white,
+                    ),
+                  ),
+                  onPressed: () async {
+                    final next = !_bookmarked;
+                    setState(() => _bookmarked = next);
+                    final ok = await ref
+                        .read(marketplaceProvider.notifier)
+                        .toggleBookmark(product.id, add: next);
+                    if (!ok && context.mounted) {
+                      setState(() => _bookmarked = !next);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: const Text('Could not update bookmark.',
+                            style: TextStyle(fontFamily: 'Poppins')),
+                        backgroundColor: AppColors.crimson,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ));
+                    }
+                  },
+                ),
+>>>>>>> origin/master
               IconButton(
                 onPressed: () => setState(() => _bookmarked = !_bookmarked),
                 icon: Icon(
@@ -153,6 +277,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+<<<<<<< HEAD
                   _ProductDetailSplitLayout(
                     product: product,
                     color: color,
@@ -166,6 +291,341 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     onToggleQr: () => setState(() => _qrExpanded = !_qrExpanded),
                     isLoggedIn: isLoggedIn,
                   ).animate(delay: 120.ms).fadeIn().slideY(begin: 0.08, end: 0),
+=======
+
+                  if (product.status != 'approved')
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: product.status == 'pending'
+                            ? AppColors.golden.withValues(alpha: 0.1)
+                            : AppColors.crimson.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: product.status == 'pending'
+                              ? AppColors.golden.withValues(alpha: 0.4)
+                              : AppColors.crimson.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(children: [
+                        Icon(
+                          product.status == 'pending'
+                              ? Icons.pending_rounded : Icons.cancel_rounded,
+                          color: product.status == 'pending'
+                              ? AppColors.golden : AppColors.crimson,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          product.status == 'pending'
+                              ? 'This post is pending admin review'
+                              : 'This post was rejected by admin',
+                          style: TextStyle(fontFamily: 'Poppins', fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: product.status == 'pending'
+                                  ? AppColors.golden : AppColors.crimson),
+                        ),
+                      ]),
+                    ).animate().fadeIn(),
+
+                  // Innovator card
+                  GestureDetector(
+                    onTap: () => context.push('/profile/${product.innovatorId}'),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardBg, borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderCol),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 8, offset: const Offset(0, 2))],
+                      ),
+                      child: Row(children: [
+                        UserAvatar(
+                          name: product.innovatorName,
+                          avatarBase64: product.innovatorAvatarBase64,
+                          radius: 24,
+                          backgroundColor: color.withValues(alpha: 0.15),
+                          foregroundColor: color,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(product.innovatorName, style: TextStyle(fontFamily: 'Poppins',
+                                fontSize: 15, fontWeight: FontWeight.w700, color: primaryText)),
+                            Text('@${product.innovatorUsername}', style: TextStyle(
+                                fontFamily: 'Poppins', fontSize: 13, color: subtleText)),
+                          ],
+                        )),
+                        if (isRestricted)
+                          OutlinedButton.icon(
+                            onPressed: () => context.push('/profile/${product.innovatorId}'),
+                            icon: const Icon(Icons.person_search_rounded, size: 16),
+                            label: const Text('View Profile', style: TextStyle(
+                                fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.sky,
+                              side: const BorderSide(color: AppColors.sky),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          )
+                        else
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              if (!isLoggedIn) {
+                                context.push('/login');
+                                return;
+                              }
+                              final authUser = ref.read(authProvider).user;
+                              if (authUser == null) return;
+
+                              await ref
+                                  .read(messagingProvider.notifier)
+                                  .startOrGetConversation(
+                                    productId: product.id,
+                                    productName: product.name,
+                                    productCategory: product.category,
+                                    innovatorId: product.innovatorId.toString(),
+                                    innovatorName: product.innovatorName,
+                                    clientId: authUser.id.toString(),
+                                    clientName: authUser.fullName,
+                                  );
+
+                              if (context.mounted) context.push('/messaging');
+                            },
+                            icon: const Icon(Icons.message_rounded, size: 16),
+                            label: const Text('Message', style: TextStyle(
+                                fontFamily: 'Poppins', fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: color,
+                              side: BorderSide(color: color),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                      ]),
+                    ),
+                  ).animate().fadeIn(duration: 400.ms),
+
+                  // Guest sign-in banner
+                  if (!isLoggedIn) ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => context.go('/login'),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.sky.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.sky.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.info_outline_rounded, color: AppColors.sky, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text.rich(TextSpan(
+                              style: const TextStyle(fontFamily: 'Poppins',
+                                  fontSize: 12, color: AppColors.sky),
+                              children: const [
+                                TextSpan(text: 'Join as a CLIENT '),
+                                TextSpan(text: 'to like, message, bookmark, and express interest.',
+                                    style: TextStyle(fontWeight: FontWeight.w600)),
+                              ],
+                            )),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              color: AppColors.sky, size: 14),
+                        ]),
+                      ),
+                    ).animate().fadeIn(),
+                  ],
+
+                  // ── Big Gallery ───────────────────────────────────────────
+                  if (product.images.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildLabel('Gallery', Icons.photo_library_rounded, primaryText),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SizedBox(
+                        height: 600,
+                        child: PageView.builder(
+                          controller: _pageCtrl,
+                          onPageChanged: (i) => setState(() => _currentPage = i),
+                          itemCount: product.images.length,
+                          itemBuilder: (_, i) {
+                            try {
+                              return GestureDetector(
+                                onTap: () => _openImageViewer(context, product.images, i),
+                                child: Image.memory(
+                                  base64Decode(product.images[i]),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                ),
+                              );
+                            } catch (_) {
+                              return Container(
+                                color: color.withValues(alpha: 0.1),
+                                child: Icon(Icons.image_rounded, color: color, size: 48),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(product.images.length,
+                        (i) => AnimatedContainer(
+                          duration: 200.ms,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: _currentPage == i ? 20 : 6, height: 6,
+                          decoration: BoxDecoration(
+                            color: _currentPage == i ? color : color.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        )),
+                    ),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Text('Tap image to view fullscreen',
+                          style: TextStyle(fontFamily: 'Poppins', fontSize: 11,
+                              color: isDark ? Colors.white38 : Colors.black38)),
+                    ),
+                  ],
+
+                  // Video
+                  if (product.videoBase64 != null && product.videoBase64!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildLabel('Video', Icons.videocam_rounded, primaryText),
+                    const SizedBox(height: 12),
+                    _VideoCard(videoBase64: product.videoBase64!,
+                        filename: product.videoFilename ?? 'video.mp4'),
+                  ],
+
+                  const SizedBox(height: 24),
+                  _buildLabel('About this Innovation', Icons.lightbulb_rounded, primaryText),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(color: cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderCol)),
+                    child: Text(product.description, style: TextStyle(fontFamily: 'Poppins',
+                        fontSize: 14, color: secondaryText, height: 1.7)),
+                  ).animate(delay: 100.ms).fadeIn(),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('Details', Icons.info_outline_rounded, primaryText),
+                  const SizedBox(height: 12),
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2, crossAxisSpacing: 12,
+                    mainAxisSpacing: 12, childAspectRatio: 2.5,
+                    children: [
+                      _DetailChip(icon: Icons.category_rounded, label: 'Category',
+                          value: product.category, color: color),
+                      _DetailChip(icon: Icons.verified_user_rounded, label: 'KYC Status',
+                          value: product.kycStatus.toUpperCase(),
+                          color: product.isVerifiedInnovator ? AppColors.teal : AppColors.golden),
+                      _DetailChip(icon: Icons.calendar_today_rounded, label: 'Listed',
+                          value: '${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
+                          color: AppColors.sky),
+                      _DetailChip(icon: Icons.bar_chart_rounded, label: 'Status',
+                          value: product.status.toUpperCase(),
+                          color: product.status == 'approved' ? AppColors.teal
+                              : product.status == 'pending' ? AppColors.golden
+                              : AppColors.crimson),
+                    ],
+                  ).animate(delay: 200.ms).fadeIn(),
+
+                  if (product.externalLink != null && product.externalLink!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildLabel('External Link', Icons.link_rounded, primaryText),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => launchUrl(Uri.parse(product.externalLink!),
+                          mode: LaunchMode.externalApplication),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: cardBg,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: borderCol),
+                        ),
+                        child: Row(children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                                color: AppColors.sky.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.link_rounded, color: AppColors.sky, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Learn More', style: TextStyle(fontFamily: 'Poppins',
+                                  fontSize: 14, fontWeight: FontWeight.w700, color: primaryText)),
+                              Text(product.externalLink!, style: const TextStyle(
+                                  fontFamily: 'Poppins', fontSize: 12, color: AppColors.sky),
+                                  overflow: TextOverflow.ellipsis),
+                            ],
+                          )),
+                          const Icon(Icons.open_in_new_rounded, color: Colors.black38, size: 16),
+                        ]),
+                      ),
+                    ).animate(delay: 200.ms).fadeIn(),
+                  ],
+
+                  const SizedBox(height: 32),
+                  ReviewsSection(productId: product.id),
+                  const SizedBox(height: 32),
+                  ShareQrSection(product: product),
+
+                  if (isAdmin) ...[
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/admin'),
+                        icon: const Icon(Icons.admin_panel_settings_rounded,
+                            size: 16, color: AppColors.teal),
+                        label: const Text('Back to Admin Dashboard',
+                            style: TextStyle(fontFamily: 'Poppins', fontSize: 13,
+                                fontWeight: FontWeight.w600, color: AppColors.teal)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.teal),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  if (isInnovator) ...[
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/innovator/dashboard'),
+                        icon: const Icon(Icons.dashboard_rounded,
+                            size: 16, color: AppColors.teal),
+                        label: const Text('Back to Innovator Dashboard',
+                            style: TextStyle(fontFamily: 'Poppins', fontSize: 13,
+                                fontWeight: FontWeight.w600, color: AppColors.teal)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.teal),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+>>>>>>> origin/master
 
                   const SizedBox(height: 40),
                 ],
@@ -174,13 +634,47 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           ),
         ],
       ),
+<<<<<<< HEAD
       bottomNavigationBar: isLoggedIn
           ? Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+=======
+
+      // Bottom bar — clients only
+      bottomNavigationBar: !isClient ? null : Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: BoxDecoration(
+          color: cardBg,
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 16, offset: const Offset(0, -4))],
+        ),
+        child: Row(children: [
+          // Like
+          GestureDetector(
+            onTap: () async {
+              if (_likeLoading) return;
+              setState(() { _likeLoading = true; _liked = !_liked; });
+              final ok = await ref.read(marketplaceProvider.notifier).likeProduct(product.id);
+              if (!ok && context.mounted) {
+                setState(() => _liked = !_liked);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: const Text('Could not update like.',
+                      style: TextStyle(fontFamily: 'Poppins')),
+                  backgroundColor: AppColors.crimson, behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ));
+              }
+              setState(() => _likeLoading = false);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+>>>>>>> origin/master
               decoration: BoxDecoration(
                 color: AppColors.midnight,
                 border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.07))),
               ),
+<<<<<<< HEAD
               child: Row(
                 children: [
                   GestureDetector(
@@ -300,6 +794,47 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           ),
                   ),
                 ],
+=======
+              child: Row(children: [
+                Icon(_liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: _liked ? AppColors.crimson : Colors.black38, size: 20),
+                const SizedBox(width: 6),
+                Text('${product.likes + (_liked ? 1 : 0)}',
+                    style: TextStyle(fontFamily: 'Poppins', fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _liked ? AppColors.crimson : Colors.black38)),
+              ]),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Express Interest
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _interestSent ? null : () async {
+                final ok = await ref
+                    .read(marketplaceProvider.notifier)
+                    .expressInterest(product.id);
+                if (!context.mounted) return;
+                // treat both success AND "already expressed" as success
+                setState(() => _interestSent = true);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(
+                    ok
+                        ? 'Interest expressed! The innovator will be notified.'
+                        : 'You have already expressed interest in this product.',
+                    style: const TextStyle(fontFamily: 'Poppins'),
+                  ),
+                  backgroundColor: AppColors.teal,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _interestSent ? AppColors.lightGray : color,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: _interestSent ? 0 : 4,
+>>>>>>> origin/master
               ),
             )
           : null,

@@ -3,94 +3,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
-
-// ── Models ────────────────────────────────────────────────────────────────────
+import '../../marketplace/data/dummy_products.dart';
 
 class SearchFilters {
   final String query;
   final String? category;
-  final String? stage;
-  final double? minRating;
-  final double? minPrice;
-  final double? maxPrice;
   final String sortBy;
-  final List<String> tags;
-  final bool showOnlyVerified;
-  final bool showOnlyAvailable;
 
   const SearchFilters({
-    this.query = '',
+    this.query    = '',
     this.category,
-    this.stage,
-    this.minRating,
-    this.minPrice,
-    this.maxPrice,
-    this.sortBy = 'trending',
-    this.tags = const [],
-    this.showOnlyVerified = false,
-    this.showOnlyAvailable = false,
+    this.sortBy   = 'trending',
   });
 
   SearchFilters copyWith({
     String? query,
     String? category,
-    String? stage,
-    double? minRating,
-    double? minPrice,
-    double? maxPrice,
     String? sortBy,
-    List<String>? tags,
-    bool? showOnlyVerified,
-    bool? showOnlyAvailable,
     bool clearCategory = false,
-    bool clearStage = false,
-    bool clearMinRating = false,
   }) {
     return SearchFilters(
-      query: query ?? this.query,
+      query:    query    ?? this.query,
       category: clearCategory ? null : (category ?? this.category),
-      stage: clearStage ? null : (stage ?? this.stage),
-      minRating: clearMinRating ? null : (minRating ?? this.minRating),
-      minPrice: minPrice ?? this.minPrice,
-      maxPrice: maxPrice ?? this.maxPrice,
-      sortBy: sortBy ?? this.sortBy,
-      tags: tags ?? this.tags,
-      showOnlyVerified: showOnlyVerified ?? this.showOnlyVerified,
-      showOnlyAvailable: showOnlyAvailable ?? this.showOnlyAvailable,
+      sortBy:   sortBy   ?? this.sortBy,
     );
   }
 
-  bool get hasActiveFilters =>
-      category != null ||
-      stage != null ||
-      minRating != null ||
-      tags.isNotEmpty ||
-      showOnlyVerified ||
-      showOnlyAvailable ||
-      sortBy != 'trending';
+  bool get hasActiveFilters => category != null || sortBy != 'trending';
 
   int get activeFilterCount {
     int count = 0;
-    if (category != null) count++;
-    if (stage != null) count++;
-    if (minRating != null) count++;
-    if (tags.isNotEmpty) count += tags.length;
-    if (showOnlyVerified) count++;
-    if (showOnlyAvailable) count++;
+    if (category != null)     count++;
     if (sortBy != 'trending') count++;
     return count;
   }
 
   Map<String, String> toQueryParams() {
     return {
-      if (query.isNotEmpty) 'q': query,
+      if (query.isNotEmpty) 'q':        query,
       if (category != null) 'category': category!,
-      if (stage != null) 'stage': stage!,
-      if (minRating != null) 'min_rating': minRating.toString(),
-      'sort': sortBy,
-      if (tags.isNotEmpty) 'tags': tags.join(','),
-      if (showOnlyVerified) 'verified': '1',
-      if (showOnlyAvailable) 'available': '1',
+      'sort':                            sortBy,
     };
   }
 }
@@ -107,8 +59,8 @@ class TrendingTopic {
   });
 
   factory TrendingTopic.fromJson(Map<String, dynamic> j) => TrendingTopic(
-        keyword: j['keyword'] ?? '',
-        searchCount: j['search_count'] ?? 0,
+        keyword:       j['keyword']         ?? '',
+        searchCount:   j['search_count']    ?? 0,
         changePercent: (j['change_percent'] ?? 0.0).toDouble(),
       );
 }
@@ -127,51 +79,49 @@ class SearchState {
   final String? error;
 
   const SearchState({
-    this.isLoading = false,
-    this.results = const [],
+    this.isLoading        = false,
+    this.results          = const [],
     this.trendingProducts = const [],
-    this.trendingTopics = const [],
-    this.searchHistory = const [],
-    this.suggestions = const [],
-    this.filters = const SearchFilters(),
-    this.totalResults = 0,
-    this.currentPage = 1,
-    this.hasMore = false,
+    this.trendingTopics   = const [],
+    this.searchHistory    = const [],
+    this.suggestions      = const [],
+    this.filters          = const SearchFilters(),
+    this.totalResults     = 0,
+    this.currentPage      = 1,
+    this.hasMore          = false,
     this.error,
   });
 
   SearchState copyWith({
-    bool? isLoading,
-    List<ProductModel>? results,
-    List<ProductModel>? trendingProducts,
+    bool?                isLoading,
+    List<ProductModel>?  results,
+    List<ProductModel>?  trendingProducts,
     List<TrendingTopic>? trendingTopics,
-    List<String>? searchHistory,
-    List<String>? suggestions,
-    SearchFilters? filters,
-    int? totalResults,
-    int? currentPage,
-    bool? hasMore,
-    String? error,
+    List<String>?        searchHistory,
+    List<String>?        suggestions,
+    SearchFilters?       filters,
+    int?                 totalResults,
+    int?                 currentPage,
+    bool?                hasMore,
+    String?              error,
   }) {
     return SearchState(
-      isLoading: isLoading ?? this.isLoading,
-      results: results ?? this.results,
+      isLoading:        isLoading        ?? this.isLoading,
+      results:          results          ?? this.results,
       trendingProducts: trendingProducts ?? this.trendingProducts,
-      trendingTopics: trendingTopics ?? this.trendingTopics,
-      searchHistory: searchHistory ?? this.searchHistory,
-      suggestions: suggestions ?? this.suggestions,
-      filters: filters ?? this.filters,
-      totalResults: totalResults ?? this.totalResults,
-      currentPage: currentPage ?? this.currentPage,
-      hasMore: hasMore ?? this.hasMore,
-      error: error,
+      trendingTopics:   trendingTopics   ?? this.trendingTopics,
+      searchHistory:    searchHistory    ?? this.searchHistory,
+      suggestions:      suggestions      ?? this.suggestions,
+      filters:          filters          ?? this.filters,
+      totalResults:     totalResults     ?? this.totalResults,
+      currentPage:      currentPage      ?? this.currentPage,
+      hasMore:          hasMore          ?? this.hasMore,
+      error:            error,
     );
   }
 
   bool get isIdle => !isLoading && filters.query.isEmpty && results.isEmpty;
 }
-
-// ── Notifier ──────────────────────────────────────────────────────────────────
 
 class SearchNotifier extends StateNotifier<SearchState> {
   final ApiService _api;
@@ -184,30 +134,37 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
   Future<void> _loadInitialData() async {
     state = state.copyWith(isLoading: true);
-    final prefs = await SharedPreferences.getInstance();
+    final prefs   = await SharedPreferences.getInstance();
     final history = prefs.getStringList(_historyKey) ?? [];
-
     try {
-      final res = await _api.get('search/trending');
+      // ✅ No leading slash
+      final res      = await _api.get('search/trending');
       final trending = (res['trending_products'] as List? ?? [])
-          .map((e) => ProductModel.fromJson(e))
+          .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
           .toList();
-      final topics = (res['trending_topics'] as List? ?? [])
-          .map((e) => TrendingTopic.fromJson(e))
+      final topics   = (res['trending_topics'] as List? ?? [])
+          .map((e) => TrendingTopic.fromJson(e as Map<String, dynamic>))
           .toList();
+
+      // ✅ Merge real trending with dummy products for a richer idle view
+      final mergedTrending = [
+        ...trending,
+        ...dummyProducts.take(6 - trending.length > 0 ? 6 - trending.length : 0),
+      ];
 
       state = state.copyWith(
-        isLoading: false,
-        trendingProducts: trending,
-        trendingTopics: topics,
-        searchHistory: history,
+        isLoading:        false,
+        trendingProducts: mergedTrending,
+        trendingTopics:   topics.isNotEmpty ? topics : _dummyTopics(),
+        searchHistory:    history,
       );
     } catch (_) {
+      // Fallback to dummy content when offline
       state = state.copyWith(
-        isLoading: false,
-        searchHistory: history,
-        trendingProducts: _dummyTrending(),
-        trendingTopics: _dummyTopics(),
+        isLoading:        false,
+        searchHistory:    history,
+        trendingProducts: dummyProducts.take(6).toList(),
+        trendingTopics:   _dummyTopics(),
       );
     }
   }
@@ -217,39 +174,52 @@ class SearchNotifier extends StateNotifier<SearchState> {
       state = state.copyWith(results: [], totalResults: 0);
       return;
     }
-
     final page = loadMore ? state.currentPage + 1 : 1;
     if (!loadMore) state = state.copyWith(isLoading: true, error: null);
-
     try {
-      final params = {
-        ...state.filters.toQueryParams(),
-        'page': page.toString(),
-      };
-      final res = await _api.get('search', queryParams: params);
+      final params = {...state.filters.toQueryParams(), 'page': page.toString()};
+      // ✅ No leading slash
+      final res        = await _api.get('search', queryParams: params);
       final newResults = (res['products'] as List? ?? [])
-          .map((e) => ProductModel.fromJson(e))
+          .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
           .toList();
 
       if (state.filters.query.isNotEmpty && !loadMore) {
         await _addToHistory(state.filters.query);
       }
 
+      // ✅ If API returns no results, search dummy products locally too
+      final allResults = newResults.isEmpty
+          ? _searchDummies(state.filters.query)
+          : newResults;
+
       state = state.copyWith(
-        isLoading: false,
-        results: loadMore ? [...state.results, ...newResults] : newResults,
-        totalResults: res['total'] ?? newResults.length,
-        currentPage: page,
-        hasMore: res['has_more'] ?? false,
+        isLoading:    false,
+        results:      loadMore ? [...state.results, ...allResults] : allResults,
+        totalResults: res['total'] ?? allResults.length,
+        currentPage:  page,
+        hasMore:      res['has_more'] ?? false,
       );
-    } catch (e) {
+    } catch (_) {
+      // On error, fall back to searching dummy products locally
+      final dummyResults = _searchDummies(state.filters.query);
       state = state.copyWith(
-        isLoading: false,
-        error: 'Search failed. Please try again.',
-        results: loadMore ? state.results : _dummyResults(state.filters.query),
-        totalResults: loadMore ? state.totalResults : 6,
+        isLoading:    false,
+        results:      loadMore ? state.results : dummyResults,
+        totalResults: loadMore ? state.totalResults : dummyResults.length,
       );
     }
+  }
+
+  /// Search dummy products locally by name, description, category
+  List<ProductModel> _searchDummies(String q) {
+    if (q.isEmpty) return [];
+    final lower = q.toLowerCase();
+    return dummyProducts.where((p) =>
+        p.name.toLowerCase().contains(lower) ||
+        p.description.toLowerCase().contains(lower) ||
+        p.category.toLowerCase().contains(lower) ||
+        p.innovatorName.toLowerCase().contains(lower)).toList();
   }
 
   Future<void> getSuggestions(String query) async {
@@ -258,20 +228,27 @@ class SearchNotifier extends StateNotifier<SearchState> {
       return;
     }
     try {
-      final res = await _api.get(
-        'search/suggestions',
-        queryParams: {'q': query},
-      );
+      // ✅ No leading slash
+      final res         = await _api.get('search/suggestions',
+          queryParams: {'q': query});
       final suggestions = List<String>.from(res['suggestions'] ?? []);
-      state = state.copyWith(suggestions: suggestions);
+      // Supplement with dummy product names if API returns few results
+      if (suggestions.length < 3) {
+        final dummySuggestions = dummyProducts
+            .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
+            .map((p) => p.name)
+            .take(3)
+            .toList();
+        final merged = {...suggestions, ...dummySuggestions}.toList();
+        state = state.copyWith(suggestions: merged);
+      } else {
+        state = state.copyWith(suggestions: suggestions);
+      }
     } catch (_) {
-      final dummy = [
-        'Solar energy Philippines',
-        'Smart irrigation system',
-        'Coconut fiber composite',
-        'Telemedicine platform',
-      ]
-          .where((s) => s.toLowerCase().contains(query.toLowerCase()))
+      final dummy = dummyProducts
+          .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
+          .map((p) => p.name)
+          .take(5)
           .toList();
       state = state.copyWith(suggestions: dummy);
     }
@@ -282,21 +259,14 @@ class SearchNotifier extends StateNotifier<SearchState> {
     if (filters.query.isNotEmpty || filters.hasActiveFilters) search();
   }
 
-  void setQuery(String q) => updateFilters(state.filters.copyWith(query: q));
-
-  void setSortBy(String sort) =>
-      updateFilters(state.filters.copyWith(sortBy: sort));
+  void setQuery(String q)     => updateFilters(state.filters.copyWith(query: q));
+  void setSortBy(String sort) => updateFilters(state.filters.copyWith(sortBy: sort));
 
   void clearFilters() {
     state = state.copyWith(
-      filters: SearchFilters(query: state.filters.query),
-      results: [],
-    );
+        filters: SearchFilters(query: state.filters.query), results: []);
     if (state.filters.query.isNotEmpty) search();
   }
-
-  void searchFromHistory(String term) =>
-      updateFilters(state.filters.copyWith(query: term));
 
   void searchTrending(String keyword) =>
       updateFilters(SearchFilters(query: keyword));
@@ -308,14 +278,14 @@ class SearchNotifier extends StateNotifier<SearchState> {
   }
 
   Future<void> removeHistoryItem(String term) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs   = await SharedPreferences.getInstance();
     final history = List<String>.from(state.searchHistory)..remove(term);
     await prefs.setStringList(_historyKey, history);
     state = state.copyWith(searchHistory: history);
   }
 
   Future<void> _addToHistory(String term) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs   = await SharedPreferences.getInstance();
     final history = List<String>.from(state.searchHistory)
       ..remove(term)
       ..insert(0, term);
@@ -324,6 +294,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(searchHistory: history);
   }
 
+<<<<<<< HEAD
   // ── Dummy data — matches exact ProductModel fields ────────────────────────
 
   List<ProductModel> _dummyTrending() => [
@@ -423,34 +394,18 @@ class SearchNotifier extends StateNotifier<SearchState> {
           kycStatus: 'unverified',
           createdAt: DateTime.now().subtract(const Duration(days: 25)),
         ),
+=======
+  List<TrendingTopic> _dummyTopics() => const [
+        TrendingTopic(keyword: 'Solar energy',       searchCount: 1240, changePercent: 34.2),
+        TrendingTopic(keyword: 'Smart farming',      searchCount: 980,  changePercent: 21.5),
+        TrendingTopic(keyword: 'Telemedicine',       searchCount: 870,  changePercent: 18.9),
+        TrendingTopic(keyword: 'IoT sensors',        searchCount: 740,  changePercent: 12.1),
+        TrendingTopic(keyword: 'Coconut products',   searchCount: 620,  changePercent: 8.4),
+        TrendingTopic(keyword: 'Water purification', searchCount: 590,  changePercent: -3.2),
+        TrendingTopic(keyword: 'Drone delivery',     searchCount: 480,  changePercent: 45.7),
+        TrendingTopic(keyword: 'Bamboo materials',   searchCount: 430,  changePercent: 5.1),
+>>>>>>> origin/master
       ];
-
-  List<TrendingTopic> _dummyTopics() => [
-        const TrendingTopic(
-            keyword: 'Solar energy', searchCount: 1240, changePercent: 34.2),
-        const TrendingTopic(
-            keyword: 'Smart farming', searchCount: 980, changePercent: 21.5),
-        const TrendingTopic(
-            keyword: 'Telemedicine', searchCount: 870, changePercent: 18.9),
-        const TrendingTopic(
-            keyword: 'IoT sensors', searchCount: 740, changePercent: 12.1),
-        const TrendingTopic(
-            keyword: 'Coconut products', searchCount: 620, changePercent: 8.4),
-        const TrendingTopic(
-            keyword: 'Water purification',
-            searchCount: 590,
-            changePercent: -3.2),
-        const TrendingTopic(
-            keyword: 'Drone delivery', searchCount: 480, changePercent: 45.7),
-        const TrendingTopic(
-            keyword: 'Bamboo materials', searchCount: 430, changePercent: 5.1),
-      ];
-
-  List<ProductModel> _dummyResults(String q) => _dummyTrending()
-      .where((p) =>
-          p.name.toLowerCase().contains(q.toLowerCase()) ||
-          p.category.toLowerCase().contains(q.toLowerCase()))
-      .toList();
 }
 
 final searchProvider =

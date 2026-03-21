@@ -6,8 +6,8 @@ import '../../../core/models/product_model.dart';
 import '../data/dummy_products.dart';
 
 class MarketplaceState {
-  final List<ProductModel> products;       // real only
-  final List<ProductModel> allProducts;    // real + dummy merged
+  final List<ProductModel> products;    // real only
+  final List<ProductModel> allProducts; // real + dummy merged
   final List<ProductModel> trending;
   final bool isLoading;
   final String? error;
@@ -16,10 +16,10 @@ class MarketplaceState {
   final String sortBy;
 
   MarketplaceState({
-    this.products        = const [],
-    this.allProducts     = const [],
-    this.trending        = const [],
-    this.isLoading       = false,
+    this.products         = const [],
+    this.allProducts      = const [],
+    this.trending         = const [],
+    this.isLoading        = false,
     this.error,
     this.selectedCategory = 'All',
     this.searchQuery      = '',
@@ -37,21 +37,23 @@ class MarketplaceState {
     String?             sortBy,
   }) =>
       MarketplaceState(
-        products:          products          ?? this.products,
-        allProducts:       allProducts       ?? this.allProducts,
-        trending:          trending          ?? this.trending,
-        isLoading:         isLoading         ?? this.isLoading,
-        error:             error,
-        selectedCategory:  selectedCategory  ?? this.selectedCategory,
-        searchQuery:       searchQuery       ?? this.searchQuery,
-        sortBy:            sortBy            ?? this.sortBy,
+        products:         products         ?? this.products,
+        allProducts:      allProducts      ?? this.allProducts,
+        trending:         trending         ?? this.trending,
+        isLoading:        isLoading        ?? this.isLoading,
+        error:            error,
+        selectedCategory: selectedCategory ?? this.selectedCategory,
+        searchQuery:      searchQuery      ?? this.searchQuery,
+        sortBy:           sortBy           ?? this.sortBy,
       );
 
   List<ProductModel> get filtered {
     var list = List<ProductModel>.from(allProducts);
+
     if (selectedCategory != 'All') {
       list = list.where((p) => p.category == selectedCategory).toList();
     }
+
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
       list = list.where((p) =>
@@ -59,6 +61,7 @@ class MarketplaceState {
           p.description.toLowerCase().contains(q) ||
           p.innovatorName.toLowerCase().contains(q)).toList();
     }
+
     switch (sortBy) {
       case 'most_liked':
         list.sort((a, b) => b.likes.compareTo(a.likes));
@@ -70,7 +73,7 @@ class MarketplaceState {
         list.sort((a, b) => b.interestCount.compareTo(a.interestCount));
         break;
       default:
-        // Interleave dummy and real for a natural feel
+        // Real posts newest first, dummy fills gaps
         final real  = list.where((p) => !isDummyProduct(p.id)).toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         final dummy = list.where((p) =>  isDummyProduct(p.id)).toList();
@@ -79,7 +82,7 @@ class MarketplaceState {
     return list;
   }
 
-  /// Interleave real and dummy posts so dummy fills gaps
+  /// Interleave: show 2 real posts then 1 dummy to fill gaps naturally
   static List<ProductModel> _interleave(
       List<ProductModel> real, List<ProductModel> dummy) {
     final result = <ProductModel>[];
@@ -103,10 +106,11 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
   Future<void> loadProducts() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final res = await _api.get('/products', auth: false);
+      // ✅ No leading slash — matches AppConfig.apiBaseUrl base
+      final res = await _api.get('products', auth: false);
       if (res['success'] == true) {
         final realList = (res['data'] as List)
-            .map((j) => ProductModel.fromJson(j))
+            .map((j) => ProductModel.fromJson(j as Map<String, dynamic>))
             .toList();
         final merged = [...realList, ...dummyProducts];
         state = state.copyWith(
@@ -115,7 +119,6 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
           isLoading:   false,
         );
       } else {
-        // If API fails, still show dummy posts
         state = state.copyWith(
           products:    [],
           allProducts: dummyProducts,
@@ -124,7 +127,6 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
         );
       }
     } catch (_) {
-      // If offline, still show dummy posts
       state = state.copyWith(
         products:    [],
         allProducts: dummyProducts,
@@ -139,7 +141,7 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
   void setSort(String s)       => state = state.copyWith(sortBy: s);
 
   Future<bool> likeProduct(int productId) async {
-    if (isDummyProduct(productId)) return false; // no-op for dummy
+    if (isDummyProduct(productId)) return false;
     final snapshot = state.products;
     final updated = snapshot.map((p) {
       if (p.id == productId) {
@@ -157,23 +159,24 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
       }
       return p;
     }).toList();
-    state = state.copyWith(products: updated,
-        allProducts: [...updated, ...dummyProducts]);
+    state = state.copyWith(
+        products: updated, allProducts: [...updated, ...dummyProducts]);
     try {
-      await _api.post('/products/$productId/like', {}, auth: true);
+      // ✅ No leading slash
+      await _api.post('products/$productId/like', {}, auth: true);
       return true;
     } catch (_) {
-      state = state.copyWith(products: snapshot,
-          allProducts: [...snapshot, ...dummyProducts]);
+      state = state.copyWith(
+          products: snapshot, allProducts: [...snapshot, ...dummyProducts]);
       return false;
     }
   }
 
   Future<bool> expressInterest(int productId) async {
-    if (isDummyProduct(productId)) return false; // no-op for dummy
+    if (isDummyProduct(productId)) return false;
     try {
-      final res = await _api.post(
-          '/products/$productId/interest', {}, auth: true);
+      // ✅ No leading slash
+      final res = await _api.post('products/$productId/interest', {}, auth: true);
       return res['success'] == true;
     } catch (_) {
       return false;
@@ -181,12 +184,13 @@ class MarketplaceNotifier extends StateNotifier<MarketplaceState> {
   }
 
   Future<bool> toggleBookmark(int productId, {required bool add}) async {
-    if (isDummyProduct(productId)) return false; // no-op for dummy
+    if (isDummyProduct(productId)) return false;
     try {
       if (add) {
-        await _api.post('/products/$productId/bookmark', {}, auth: true);
+        // ✅ No leading slash
+        await _api.post('products/$productId/bookmark', {}, auth: true);
       } else {
-        await _api.delete('/products/$productId/bookmark', auth: true);
+        await _api.delete('products/$productId/bookmark', auth: true);
       }
       return true;
     } catch (_) {
