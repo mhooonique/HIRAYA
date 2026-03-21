@@ -25,6 +25,8 @@ class AdminScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminScreenState extends ConsumerState<AdminScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -35,27 +37,107 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
   Widget build(BuildContext context) {
     final state    = ref.watch(adminProvider);
     final notifier = ref.read(adminProvider.notifier);
+    final isCompact = MediaQuery.of(context).size.width < 1080;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
-      body: Row(
+      key: _scaffoldKey,
+      backgroundColor: AppColors.deepVoid,
+      drawer: isCompact
+          ? Drawer(
+              backgroundColor: Colors.transparent,
+              child: SafeArea(
+                child: _AdminSidebar(
+                  activeTab: state.activeTab,
+                  onTabChange: (tab) {
+                    notifier.setTab(tab);
+                    Navigator.of(context).pop();
+                  },
+                  pendingCount: state.stats.pendingProducts,
+                ),
+              ),
+            )
+          : null,
+      body: Stack(
         children: [
-          _AdminSidebar(
-            activeTab:    state.activeTab,
-            onTabChange:  notifier.setTab,
-            pendingCount: state.stats.pendingProducts,
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.deepVoid,
+                    AppColors.midnight,
+                    AppColors.richNavy.withValues(alpha: 0.95),
+                  ],
+                ),
+              ),
+            ),
           ),
-          Expanded(
-            child: Column(
+          Positioned(
+            right: -120,
+            top: -80,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.crimson.withValues(alpha: 0.14),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scaleXY(begin: 0.96, end: 1.04, duration: 2600.ms),
+          ),
+          Positioned(
+            left: -100,
+            bottom: -120,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.golden.withValues(alpha: 0.12),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scaleXY(begin: 1.02, end: 0.95, duration: 2400.ms),
+          ),
+          SafeArea(
+            child: Row(
               children: [
-                _AdminTopBar(),
+                if (!isCompact)
+                  _AdminSidebar(
+                    activeTab: state.activeTab,
+                    onTabChange: notifier.setTab,
+                    pendingCount: state.stats.pendingProducts,
+                  ),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: KeyedSubtree(
-                      key:   ValueKey(state.activeTab),
-                      child: _buildTab(state, notifier),
-                    ),
+                  child: Column(
+                    children: [
+                      _AdminTopBar(
+                        compact: isCompact,
+                        onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                      ),
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 320),
+                          child: KeyedSubtree(
+                            key: ValueKey(state.activeTab),
+                            child: _buildTab(state, notifier),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -109,7 +191,12 @@ class _AdminSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: 240,
-      color: const Color(0xFF0A1118),
+      margin: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.30),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
       child: Column(
         children: [
           Container(
@@ -282,13 +369,30 @@ class _AdminThemeToggle extends ConsumerWidget {
 
 // ─── TOP BAR ──────────────────────────────────────────────────────────────────
 class _AdminTopBar extends ConsumerWidget {
+  final bool compact;
+  final VoidCallback? onMenuTap;
+
+  const _AdminTopBar({this.compact = false, this.onMenuTap});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(color: Color(0xFF0A1118), border: Border(bottom: BorderSide(color: Colors.white10))),
+      height: 72,
+      margin: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
       child: Row(children: [
+        if (compact) ...[
+          IconButton(
+            onPressed: onMenuTap,
+            icon: const Icon(Icons.menu_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 6),
+        ],
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -324,6 +428,13 @@ class _DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final cardWidth = width > 1450
+        ? (width - 420) / 4
+        : width > 980
+            ? (width - 360) / 2
+            : double.infinity;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -333,15 +444,14 @@ class _DashboardTab extends StatelessWidget {
           const SizedBox(height: 6),
           Text('System overview — ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
           const SizedBox(height: 28),
-          GridView.count(
-            shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: MediaQuery.of(context).size.width > 1100 ? 4 : 2,
-            crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 1.6,
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
             children: [
-              _StatCard(icon: Icons.people_rounded,          label: 'Total Users',      value: '${state.stats.totalUsers}',      color: AppColors.sky,     index: 0),
-              _StatCard(icon: Icons.lightbulb_rounded,       label: 'Live Innovations', value: '${state.stats.totalProducts}',   color: AppColors.teal,    index: 1),
-              _StatCard(icon: Icons.pending_actions_rounded, label: 'Pending Review',   value: '${state.stats.pendingProducts}', color: AppColors.golden,  index: 2, urgent: state.stats.pendingProducts > 0),
-              _StatCard(icon: Icons.handshake_rounded,       label: 'Total Interests',  value: '${state.stats.totalInterests}',  color: AppColors.crimson, index: 3),
+              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.people_rounded,          label: 'Total Users',      value: '${state.stats.totalUsers}',      color: AppColors.sky,     index: 0)),
+              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.lightbulb_rounded,       label: 'Live Innovations', value: '${state.stats.totalProducts}',   color: AppColors.teal,    index: 1)),
+              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.pending_actions_rounded, label: 'Pending Review',   value: '${state.stats.pendingProducts}', color: AppColors.golden,  index: 2, urgent: state.stats.pendingProducts > 0)),
+              SizedBox(width: cardWidth, child: _StatCard(icon: Icons.handshake_rounded,       label: 'Total Interests',  value: '${state.stats.totalInterests}',  color: AppColors.crimson, index: 3)),
             ],
           ),
           const SizedBox(height: 28),

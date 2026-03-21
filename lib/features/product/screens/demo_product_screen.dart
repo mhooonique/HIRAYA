@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
@@ -15,7 +16,7 @@ class DemoProductScreen extends ConsumerStatefulWidget {
 }
 
 class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
-  final PageController _pageCtrl = PageController();
+  final PageController _pageCtrl = PageController(viewportFraction: 0.88);
   int _currentPage = 0;
   int _activeDeck = 0;
   bool _qrExpanded = false;
@@ -267,6 +268,44 @@ class _DemoProductScreenState extends ConsumerState<DemoProductScreen> {
                     height: 1.2,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 120,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, AppColors.golden.withValues(alpha: 0.2)],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .fadeIn(duration: 900.ms)
+                    .scaleX(begin: 0.9, end: 1.05, duration: 1600.ms),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _DemoHeroBadge(
+                      label: 'KYC',
+                      value: product.kycStatus.toUpperCase(),
+                      color: product.isVerifiedInnovator
+                          ? AppColors.teal
+                          : AppColors.golden,
+                    ),
+                    _DemoHeroBadge(
+                      label: 'Status',
+                      value: product.status.toUpperCase(),
+                      color: AppColors.sky,
+                    ),
+                    _DemoHeroBadge(
+                      label: 'Listed',
+                      value: '${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
+                      color: color,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -414,18 +453,77 @@ class _DemoHeroActionChip extends StatelessWidget {
   }
 }
 
+class _DemoHeroBadge extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _DemoHeroBadge({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 9,
+              letterSpacing: 0.6,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProductQrCard extends StatelessWidget {
   const _ProductQrCard({
-    required this.seed,
+    required this.qrData,
     required this.color,
     required this.expanded,
     required this.onToggle,
+    required this.productRoute,
   });
 
-  final String seed;
+  final String qrData;
   final Color color;
   final bool expanded;
   final VoidCallback onToggle;
+  final String productRoute;
+
+  Future<void> _openLink() async {
+    if (qrData.isEmpty) return;
+    final uri = Uri.tryParse(qrData);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -448,16 +546,59 @@ class _ProductQrCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              width: expanded ? 112 : 88,
-              height: expanded ? 112 : 88,
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: _PseudoQrMatrix(seed: seed),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: expanded ? 126 : 98,
+                  height: expanded ? 126 : 98,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        color.withValues(alpha: 0.25),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scaleXY(begin: 0.9, end: 1.05, duration: 1400.ms)
+                    .fadeIn(duration: 600.ms),
+                GestureDetector(
+                  onTap: _openLink,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 260),
+                    width: expanded ? 112 : 88,
+                    height: expanded ? 112 : 88,
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.25),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: QrImageView(
+                      data: qrData,
+                      version: QrVersions.auto,
+                      gapless: false,
+                      eyeStyle: QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: AppColors.navy.withValues(alpha: 0.95),
+                      ),
+                      dataModuleStyle: QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: AppColors.navy.withValues(alpha: 0.92),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -476,13 +617,45 @@ class _ProductQrCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     expanded
-                        ? 'Tap again to collapse. Share this code to open this demo innovation quickly.'
-                        : 'Tap to enlarge QR preview for quick sharing and scanning.',
+                        ? 'Tap again to collapse. Scanning this QR opens this product page directly.'
+                        : 'Tap to enlarge. Scan to jump straight to this product section.',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.68),
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.link_rounded, size: 14, color: color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Product route: $productRoute',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _openLink,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          foregroundColor: color,
+                        ),
+                        child: const Text(
+                          'Open',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -867,6 +1040,10 @@ class _DemoCtaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final videoUrl = product.videoBase64?.trim();
+    final hasVideoUrl =
+        videoUrl != null && videoUrl.isNotEmpty && videoUrl.startsWith('http');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -882,6 +1059,76 @@ class _DemoCtaCard extends StatelessWidget {
       ),
       child: Column(
         children: [
+          if (hasVideoUrl) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.20),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.14),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.play_circle_outline_rounded,
+                        size: 16,
+                        color: color,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Demo Video URL',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    videoUrl,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11,
+                      height: 1.35,
+                      color: Colors.white.withValues(alpha: 0.82),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => launchUrl(
+                        Uri.parse(videoUrl),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      icon: const Icon(
+                        Icons.ondemand_video_rounded,
+                        size: 16,
+                        color: AppColors.sky,
+                      ),
+                      label: const Text(
+                        'Watch Demo Video',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: AppColors.sky,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           const Text(
             'Interested in this innovation?',
             style: TextStyle(
@@ -1145,21 +1392,46 @@ class _DeckPanel extends StatelessWidget {
                             builder: (context, child) {
                               double value = 1.0;
                               if (pageCtrl.hasClients && pageCtrl.page != null) {
-                                value = (1 - ((pageCtrl.page! - i).abs() * 0.12))
-                                    .clamp(0.88, 1.0);
+                                value = (1 - ((pageCtrl.page! - i).abs() * 0.18))
+                                    .clamp(0.82, 1.0);
                               }
-                              return Transform.scale(
-                                scale: value,
-                                child: Opacity(
-                                  opacity: (0.7 + value * 0.3).clamp(0.0, 1.0),
-                                  child: child,
+                              return Transform.translate(
+                                offset: Offset(0, (1 - value) * 12),
+                                child: Transform.scale(
+                                  scale: value,
+                                  child: Opacity(
+                                    opacity: (0.55 + value * 0.45)
+                                        .clamp(0.0, 1.0),
+                                    child: child,
+                                  ),
                                 ),
                               );
                             },
-                            child: Image.network(
-                              product.images[i],
-                              fit: BoxFit.cover,
-                              width: double.infinity,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.35),
+                                      blurRadius: 18,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Image.network(
+                                    product.images[i],
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -1194,37 +1466,82 @@ class _DeckPanel extends StatelessWidget {
           color: color,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth < 560 ? 1 : 2;
-              return GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: crossAxisCount == 1 ? 3.1 : 2.5,
+              final isCompact = constraints.maxWidth < 560;
+              final tileWidth = isCompact
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
-                  _DeckDetailChip(Icons.category_rounded, 'Category', product.category, color),
-                  _DeckDetailChip(Icons.verified_user_rounded, 'KYC', product.kycStatus.toUpperCase(),
-                      product.isVerifiedInnovator ? AppColors.teal : AppColors.golden),
-                  _DeckDetailChip(Icons.calendar_today_rounded, 'Listed',
-                      '${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
-                      AppColors.sky),
-                  _DeckDetailChip(Icons.bar_chart_rounded, 'Status', product.status.toUpperCase(), AppColors.teal),
+                  SizedBox(
+                    width: tileWidth,
+                    child: _DemoDetailTile(
+                      icon: Icons.category_rounded,
+                      title: 'Category Stream',
+                      value: product.category,
+                      color: color,
+                      subtitle: 'Primary innovation field',
+                    ),
+                  ),
+                  SizedBox(
+                    width: tileWidth,
+                    child: _DemoDetailTile(
+                      icon: Icons.verified_user_rounded,
+                      title: 'KYC Verified',
+                      value: product.kycStatus.toUpperCase(),
+                      color: product.isVerifiedInnovator
+                          ? AppColors.teal
+                          : AppColors.golden,
+                      subtitle: product.isVerifiedInnovator
+                          ? 'Identity attested'
+                          : 'Awaiting verification',
+                    ),
+                  ),
+                  SizedBox(
+                    width: tileWidth,
+                    child: _DemoDetailTile(
+                      icon: Icons.calendar_today_rounded,
+                      title: 'Launch Date',
+                      value:
+                          '${product.createdAt.day}/${product.createdAt.month}/${product.createdAt.year}',
+                      color: AppColors.sky,
+                      subtitle: 'First listed on platform',
+                    ),
+                  ),
+                  SizedBox(
+                    width: tileWidth,
+                    child: _DemoDetailTile(
+                      icon: Icons.bar_chart_rounded,
+                      title: 'Status Signal',
+                      value: product.status.toUpperCase(),
+                      color: AppColors.teal,
+                      subtitle: 'Live market momentum',
+                    ),
+                  ),
                 ],
               );
             },
           ),
         );
       case 3:
+        final productRoute = '/product/${product.id}';
+        final isHttpHost =
+            Uri.base.scheme == 'http' || Uri.base.scheme == 'https';
+        final qrTargetUrl = isHttpHost
+            ? '${Uri.base.origin}/#${productRoute}'
+            : 'https://hiraya.app$productRoute';
+
         return _DeckCard(
           title: 'Scan Product QR',
           icon: Icons.qr_code_2_rounded,
           color: color,
           child: _ProductQrCard(
-            seed: '${product.id}-${product.name}-${product.category}',
+            qrData: qrTargetUrl,
             color: color,
             expanded: qrExpanded,
             onToggle: onToggleQr,
+            productRoute: productRoute,
           ),
         );
       default:
@@ -1318,56 +1635,97 @@ class _DeckCard extends StatelessWidget {
   }
 }
 
-class _DeckDetailChip extends StatelessWidget {
+class _DemoDetailTile extends StatelessWidget {
   final IconData icon;
-  final String label;
+  final String title;
   final String value;
+  final String subtitle;
   final Color color;
 
-  const _DeckDetailChip(this.icon, this.label, this.value, this.color);
+  const _DemoDetailTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.20)),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.14),
+            AppColors.darkSurface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 8),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withValues(alpha: 0.4)),
+            ),
+            child: Icon(icon, size: 16, color: color),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  label,
+                  title,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 10,
-                    color: Colors.white.withValues(alpha: 0.38),
+                    fontSize: 11,
+                    letterSpacing: 0.4,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.55),
                   ),
                 ),
+                const SizedBox(height: 6),
                 Text(
                   value,
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: color,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
                 ),
               ],
             ),
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 320.ms).slideY(begin: 0.06, end: 0);
   }
 }
 
@@ -1401,36 +1759,6 @@ class _DeckEmptyState extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _PseudoQrMatrix extends StatelessWidget {
-  const _PseudoQrMatrix({required this.seed});
-  final String seed;
-
-  @override
-  Widget build(BuildContext context) {
-    final hash = seed.codeUnits.fold<int>(0, (a, b) => (a * 31 + b) & 0x7fffffff);
-    const size = 21;
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: size * size,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: size,
-      ),
-      itemBuilder: (_, i) {
-        final x = i % size;
-        final y = i ~/ size;
-        final finder = (x < 7 && y < 7) ||
-            (x > size - 8 && y < 7) ||
-            (x < 7 && y > size - 8);
-        final on = finder || (((hash + x * 17 + y * 31) % 7) < 3);
-        return Container(
-          margin: const EdgeInsets.all(0.15),
-          color: on ? Colors.black : Colors.white,
-        );
-      },
     );
   }
 }

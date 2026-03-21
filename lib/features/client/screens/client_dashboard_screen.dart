@@ -79,31 +79,75 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
     final interests = ref.watch(_interestsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.midnight,
-      body: Column(
+      backgroundColor: AppColors.deepVoid,
+      body: Stack(
         children: [
-          _ClientTopBar(user: user, tabController: _tabController, tabs: _tabs),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.deepVoid,
+                    AppColors.midnight,
+                    AppColors.richNavy.withValues(alpha: 0.95),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -120,
+            top: -100,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.sky.withValues(alpha: 0.14),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scaleXY(begin: 0.96, end: 1.04, duration: 2400.ms),
+          ),
+          SafeArea(
+            child: Column(
               children: [
-                const _DiscoverTab(),
-                _WishlistTab(
-                  items: wishlist,
-                  onRemove: (p) {
-                    ref.read(clientProvider.notifier).toggleWishlist(p);
-                    _showSnack('Removed from wishlist', AppColors.crimson);
-                  },
+                _ClientTopBar(
+                  user: user,
+                  tabController: _tabController,
+                  tabs: _tabs,
                 ),
-                _BookmarksTab(
-                  items: bookmarks,
-                  onRemove: (p) {
-                    ref.read(clientProvider.notifier).toggleBookmark(p);
-                    _showSnack('Bookmark removed', AppColors.crimson);
-                  },
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      const _DiscoverTab(),
+                      _WishlistTab(
+                        items: wishlist,
+                        onRemove: (p) {
+                          ref.read(clientProvider.notifier).toggleWishlist(p);
+                          _showSnack('Removed from wishlist', AppColors.crimson);
+                        },
+                      ),
+                      _BookmarksTab(
+                        items: bookmarks,
+                        onRemove: (p) {
+                          ref.read(clientProvider.notifier).toggleBookmark(p);
+                          _showSnack('Bookmark removed', AppColors.crimson);
+                        },
+                      ),
+                      _InterestsTab(items: interests),
+                      _ClientProfile(user: user),
+                    ],
+                  ),
                 ),
-                _InterestsTab(items: interests),
-                _ClientProfile(user: user),
               ],
             ),
           ),
@@ -139,16 +183,20 @@ class _ClientTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.of(context).size.width < 880;
+    final userLabel = (user?.firstName ?? 'Client').toString();
+    final initial = userLabel.isNotEmpty ? userLabel.substring(0, 1).toUpperCase() : 'C';
+
     return Container(
+      margin: const EdgeInsets.fromLTRB(14, 14, 14, 10),
       decoration: BoxDecoration(
-        color: AppColors.midnight,
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-        ),
+        color: Colors.black.withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Column(children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(20, 14, 14, 8),
           child: Row(children: [
             ShaderMask(
               shaderCallback: (bounds) => const LinearGradient(
@@ -181,7 +229,7 @@ class _ClientTopBar extends StatelessWidget {
             const Spacer(),
             IconButton(
               icon: Icon(Icons.chat_bubble_rounded, color: Colors.white.withValues(alpha: 0.70)),
-              onPressed: () => context.go('/messages'),
+              onPressed: () => context.go('/messaging'),
               tooltip: 'Messages',
             ),
             IconButton(
@@ -211,7 +259,7 @@ class _ClientTopBar extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    (user?.firstName ?? 'C').substring(0, 1).toUpperCase(),
+                    initial,
                     style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
@@ -222,6 +270,7 @@ class _ClientTopBar extends StatelessWidget {
         ),
         TabBar(
           controller: tabController,
+          isScrollable: isCompact,
           tabs: tabs,
           labelColor: AppColors.golden,
           unselectedLabelColor: Colors.white.withValues(alpha: 0.40),
@@ -1028,48 +1077,52 @@ class _TabHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-    color: AppColors.midnight,
-    child: Row(children: [
-      Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: iconColor, size: 20),
-      ),
-      const SizedBox(width: 14),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-          const SizedBox(width: 8),
+        margin: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Row(children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(6)),
-            child: Text('$count', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: iconColor)),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            Row(children: [
-              Text(title, style: const TextStyle(fontFamily: 'Poppins',
-                  fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy)),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6)),
-                child: Text('$count', style: TextStyle(fontFamily: 'Poppins',
-                    fontSize: 12, fontWeight: FontWeight.w700, color: iconColor)),
-              ),
-            ]),
-            Text(subtitle, style: const TextStyle(fontFamily: 'Poppins',
-                fontSize: 12, color: Colors.black38)),
-          ])),
+                Row(children: [
+                  Text(title, style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w700, color: iconColor),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.45)),
+                ),
+              ],
+            ),
+          ),
         ]),
-        Text(subtitle, style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white.withValues(alpha: 0.40))),
-      ])),
-    ]),
-  );
+      );
 }
 
 class _MiniStat extends StatelessWidget {

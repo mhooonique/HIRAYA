@@ -29,11 +29,13 @@ class InnovatorDashboardScreen extends ConsumerStatefulWidget {
 class _InnovatorDashboardState
     extends ConsumerState<InnovatorDashboardScreen> {
   int _selectedTab = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     final istate = ref.watch(innovatorProvider);
     final user = ref.watch(authProvider).user;
+    final isCompact = MediaQuery.of(context).size.width < 1080;
 
     ref.listen(innovatorProvider, (prev, next) {
       if (next.successMessage != null) {
@@ -61,25 +63,105 @@ class _InnovatorDashboardState
     });
 
     return Scaffold(
-      backgroundColor: AppColors.midnight,
-      body: Row(
+      key: _scaffoldKey,
+      backgroundColor: AppColors.deepVoid,
+      drawer: isCompact
+          ? Drawer(
+              backgroundColor: Colors.transparent,
+              child: SafeArea(
+                child: _InnovatorSidebar(
+                  selectedTab: _selectedTab,
+                  onTabChange: (i) {
+                    setState(() => _selectedTab = i);
+                    Navigator.of(context).pop();
+                  },
+                  user: user,
+                ),
+              ),
+            )
+          : null,
+      body: Stack(
         children: [
-          _InnovatorSidebar(
-            selectedTab: _selectedTab,
-            onTabChange: (i) => setState(() => _selectedTab = i),
-            user: user,
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.deepVoid,
+                    AppColors.midnight,
+                    AppColors.richNavy.withValues(alpha: 0.95),
+                  ],
+                ),
+              ),
+            ),
           ),
-          Expanded(
-            child: Column(
+          Positioned(
+            right: -120,
+            top: -90,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.teal.withValues(alpha: 0.14),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scaleXY(begin: 0.95, end: 1.04, duration: 2500.ms),
+          ),
+          Positioned(
+            left: -120,
+            bottom: -120,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.golden.withValues(alpha: 0.12),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scaleXY(begin: 1.03, end: 0.96, duration: 2300.ms),
+          ),
+          SafeArea(
+            child: Row(
               children: [
-                _InnovatorTopBar(user: user),
+                if (!isCompact)
+                  _InnovatorSidebar(
+                    selectedTab: _selectedTab,
+                    onTabChange: (i) => setState(() => _selectedTab = i),
+                    user: user,
+                  ),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    child: KeyedSubtree(
-                      key: ValueKey(_selectedTab),
-                      child: _buildTab(istate),
-                    ),
+                  child: Column(
+                    children: [
+                      _InnovatorTopBar(
+                        user: user,
+                        compact: isCompact,
+                        onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                      ),
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 280),
+                          child: KeyedSubtree(
+                            key: ValueKey(_selectedTab),
+                            child: _buildTab(istate),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -136,11 +218,17 @@ class _InnovatorSidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final firstName = (user?.firstName?.toString() ?? '').trim();
+    final safeFirstName = firstName.isNotEmpty ? firstName : 'Innovator';
+    final avatarInitial = safeFirstName.substring(0, 1).toUpperCase();
+
     return Container(
       width: 240,
+      margin: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.midnight,
-        border: Border(right: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        color: Colors.black.withValues(alpha: 0.30),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Column(
         children: [
@@ -182,7 +270,7 @@ class _InnovatorSidebar extends ConsumerWidget {
                     ),
                     child: Center(
                       child: Text(
-                        user.firstName.substring(0, 1).toUpperCase(),
+                        avatarInitial,
                         style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                     ),
@@ -192,7 +280,7 @@ class _InnovatorSidebar extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(user.firstName,
+                        Text(safeFirstName,
                             style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
                             overflow: TextOverflow.ellipsis),
                         const Text('Innovator',
@@ -340,18 +428,30 @@ class _SideTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _InnovatorTopBar extends StatelessWidget {
   final dynamic user;
-  const _InnovatorTopBar({this.user});
+  final bool compact;
+  final VoidCallback? onMenuTap;
+
+  const _InnovatorTopBar({this.user, this.compact = false, this.onMenuTap});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      height: 68,
+      margin: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: AppColors.midnight,
-        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        color: Colors.black.withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Row(children: [
+        if (compact) ...[
+          IconButton(
+            onPressed: onMenuTap,
+            icon: const Icon(Icons.menu_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 6),
+        ],
         Text('Welcome back, ${user?.firstName ?? 'Innovator'}!',
             style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
         const Spacer(),
@@ -372,6 +472,13 @@ class _DashboardOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = state.stats;
+    final width = MediaQuery.of(context).size.width;
+    final tileWidth = width > 1450
+        ? (width - 420) / 4
+        : width > 980
+            ? (width - 360) / 2
+            : double.infinity;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -381,25 +488,19 @@ class _DashboardOverview extends StatelessWidget {
           const SizedBox(height: 4),
           Text('Your innovation activity at a glance', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white.withValues(alpha: 0.45))),
           const SizedBox(height: 24),
-          Row(children: [
-            _IStatCard(label: 'Total Submissions', value: '${s['total']}', icon: Icons.inventory_2_rounded, color: AppColors.navy, index: 0),
-            const SizedBox(width: 16),
-            _IStatCard(label: 'Approved & Live', value: '${s['approved']}', icon: Icons.check_circle_rounded, color: AppColors.teal, index: 1),
-            const SizedBox(width: 16),
-            _IStatCard(label: 'Pending Review', value: '${s['pending']}', icon: Icons.pending_rounded, color: AppColors.golden, index: 2),
-            const SizedBox(width: 16),
-            _IStatCard(label: 'Rejected', value: '${s['rejected']}', icon: Icons.cancel_rounded, color: AppColors.crimson, index: 3),
-          ]),
-          const SizedBox(height: 16),
-          Row(children: [
-            _IStatCard(label: 'Total Likes', value: '${s['totalLikes']}', icon: Icons.favorite_rounded, color: AppColors.crimson, index: 4),
-            const SizedBox(width: 16),
-            _IStatCard(label: 'Total Views', value: '${s['totalViews']}', icon: Icons.remove_red_eye_rounded, color: AppColors.sky, index: 5),
-            const SizedBox(width: 16),
-            _IStatCard(label: 'Interests Received', value: '${s['totalInterests']}', icon: Icons.handshake_rounded, color: AppColors.teal, index: 6),
-            const SizedBox(width: 16),
-            const Expanded(child: SizedBox()),
-          ]),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              SizedBox(width: tileWidth, child: _IStatCard(label: 'Total Submissions', value: '${s['total']}', icon: Icons.inventory_2_rounded, color: AppColors.navy, index: 0)),
+              SizedBox(width: tileWidth, child: _IStatCard(label: 'Approved & Live', value: '${s['approved']}', icon: Icons.check_circle_rounded, color: AppColors.teal, index: 1)),
+              SizedBox(width: tileWidth, child: _IStatCard(label: 'Pending Review', value: '${s['pending']}', icon: Icons.pending_rounded, color: AppColors.golden, index: 2)),
+              SizedBox(width: tileWidth, child: _IStatCard(label: 'Rejected', value: '${s['rejected']}', icon: Icons.cancel_rounded, color: AppColors.crimson, index: 3)),
+              SizedBox(width: tileWidth, child: _IStatCard(label: 'Total Likes', value: '${s['totalLikes']}', icon: Icons.favorite_rounded, color: AppColors.crimson, index: 4)),
+              SizedBox(width: tileWidth, child: _IStatCard(label: 'Total Views', value: '${s['totalViews']}', icon: Icons.remove_red_eye_rounded, color: AppColors.sky, index: 5)),
+              SizedBox(width: tileWidth, child: _IStatCard(label: 'Interests Received', value: '${s['totalInterests']}', icon: Icons.handshake_rounded, color: AppColors.teal, index: 6)),
+            ],
+          ),
           const SizedBox(height: 28),
           Row(children: [
             const Text('My Innovations', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),

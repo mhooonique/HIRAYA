@@ -1817,37 +1817,7 @@ class _HeroInsightPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 280,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          _HeroInsightTile(
-            icon: Icons.verified_rounded,
-            title: 'Verified Innovators',
-            body: 'Peer-reviewed research with trusted provenance.',
-            color: AppColors.teal,
-          ),
-          SizedBox(height: 12),
-          _HeroInsightTile(
-            icon: Icons.bolt_rounded,
-            title: 'Future-Ready Solutions',
-            body: 'Emerging tech ready for pilots and adoption.',
-            color: AppColors.golden,
-          ),
-          SizedBox(height: 12),
-          _HeroInsightTile(
-            icon: Icons.qr_code_2_rounded,
-            title: 'Share Instantly',
-            body: 'Send product links or QR codes in one tap.',
-            color: AppColors.sky,
-          ),
-        ],
-      )
-          .animate()
-          .fadeIn(duration: 600.ms, delay: 250.ms)
-          .slideX(begin: 0.12, end: 0, curve: Curves.easeOutCubic),
-    );
+    return const SizedBox.shrink();
   }
 }
 
@@ -2005,57 +1975,7 @@ class _MarketplaceBentoStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasFilters = selectedCategory != 'All' || activeQuery.isNotEmpty;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth > 900;
-        final children = [
-          _BentoTile(
-            icon: Icons.auto_awesome_rounded,
-            title: 'Curated Innovations',
-            body: hasFilters
-                ? '$productsCount results tuned to your filters'
-                : '$productsCount innovations ready for discovery',
-            color: AppColors.golden,
-          ),
-          _BentoTile(
-            icon: Icons.verified_rounded,
-            title: 'Verified Pipeline',
-            body: 'Trusted innovators with real-world readiness',
-            color: AppColors.teal,
-          ),
-          _BentoTile(
-            icon: Icons.qr_code_2_rounded,
-            title: 'Share in Seconds',
-            body: 'Send QR and links directly from each card',
-            color: AppColors.sky,
-          ),
-        ];
-
-        return isWide
-            ? Row(
-                children: [
-                  Expanded(child: children[0]),
-                  const SizedBox(width: 12),
-                  Expanded(child: children[1]),
-                  const SizedBox(width: 12),
-                  Expanded(child: children[2]),
-                ],
-              )
-            : Column(
-                children: [
-                  children[0],
-                  const SizedBox(height: 10),
-                  children[1],
-                  const SizedBox(height: 10),
-                  children[2],
-                ],
-              );
-      },
-    )
-        .animate()
-        .fadeIn(duration: 420.ms, delay: 120.ms)
-        .slideY(begin: 0.16, end: 0, curve: Curves.easeOutCubic);
+    return const SizedBox.shrink();
   }
 }
 

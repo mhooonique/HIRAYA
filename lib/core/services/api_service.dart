@@ -6,7 +6,22 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
-  static const _baseUrl = 'https://fqzjx5pz-80.asse.devtunnels.ms/hiraya_api/api/v1/';
+  static const _defaultLocalBaseUrl = 'http://localhost/hiraya_api/api/v1/';
+
+  static String _normalizeBaseUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return trimmed;
+    return trimmed.endsWith('/') ? trimmed : '$trimmed/';
+  }
+
+  static String _resolveBaseUrl() {
+    const configured = String.fromEnvironment('HIRAYA_API_BASE_URL', defaultValue: '');
+    if (configured.isNotEmpty) {
+      return _normalizeBaseUrl(configured);
+    }
+
+    return _defaultLocalBaseUrl;
+  }
 
   static const _tokenKey = 'hiraya_jwt';
 
@@ -14,13 +29,36 @@ class ApiService {
 
   ApiService()
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+        baseUrl: _resolveBaseUrl(),
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 60),
           sendTimeout: const Duration(seconds: 60),
           headers: {'Content-Type': 'application/json'},
           validateStatus: (status) => status != null && status < 500,
         ));
+
+  Future<String?> diagnoseConnection() async {
+    try {
+      final probe = Dio(BaseOptions(
+        baseUrl: _dio.options.baseUrl,
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 8),
+        sendTimeout: const Duration(seconds: 8),
+        headers: {'Content-Type': 'application/json'},
+        validateStatus: (status) => status != null && status < 600,
+      ));
+
+      await probe.get('', options: Options(responseType: ResponseType.plain));
+      return null;
+    } on DioException catch (e) {
+      final host = e.requestOptions.uri.host;
+      final raw = e.error?.toString();
+      final suffix = (raw != null && raw.isNotEmpty) ? ' | $raw' : '';
+      return 'API probe failed at $host (${e.type})$suffix';
+    } catch (e) {
+      return 'API probe failed: $e';
+    }
+  }
 
   // ── Token management (shared_preferences → localStorage on web) ─────────────
 

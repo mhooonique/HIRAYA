@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../messaging/providers/messaging_provider.dart';
 import '../../marketplace/providers/marketplace_provider.dart';
 
 final _productDetailProvider =
@@ -164,7 +165,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     qrExpanded: _qrExpanded,
                     onToggleQr: () => setState(() => _qrExpanded = !_qrExpanded),
                     isLoggedIn: isLoggedIn,
-                    onMessage: () => context.go(isLoggedIn ? '/messaging' : '/login'),
                   ).animate(delay: 120.ms).fadeIn().slideY(begin: 0.08, end: 0),
 
                   const SizedBox(height: 40),
@@ -822,7 +822,6 @@ class _ProductDetailSplitLayout extends StatelessWidget {
   final bool qrExpanded;
   final VoidCallback onToggleQr;
   final bool isLoggedIn;
-  final VoidCallback onMessage;
 
   const _ProductDetailSplitLayout({
     required this.product,
@@ -836,7 +835,6 @@ class _ProductDetailSplitLayout extends StatelessWidget {
     required this.qrExpanded,
     required this.onToggleQr,
     required this.isLoggedIn,
-    required this.onMessage,
   });
 
   @override
@@ -871,10 +869,10 @@ class _ProductDetailSplitLayout extends StatelessWidget {
                   .slideY(begin: 0.08, end: 0),
             const SizedBox(height: 16),
             _InnovatorCard(
+              product: product,
               name: product.innovatorName,
               username: product.innovatorUsername,
               color: color,
-              onMessage: onMessage,
               isLoggedIn: isLoggedIn,
             )
                 .animate()
@@ -896,10 +894,10 @@ class _ProductDetailSplitLayout extends StatelessWidget {
                 const SizedBox(height: 16),
               ],
               _InnovatorCard(
+                product: product,
                 name: product.innovatorName,
                 username: product.innovatorUsername,
                 color: color,
-                onMessage: onMessage,
                 isLoggedIn: isLoggedIn,
               ),
               const SizedBox(height: 24),
@@ -965,23 +963,23 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
-class _InnovatorCard extends StatelessWidget {
+class _InnovatorCard extends ConsumerWidget {
+  final ProductModel product;
   final String name;
   final String username;
   final Color color;
-  final VoidCallback onMessage;
   final bool isLoggedIn;
 
   const _InnovatorCard({
+    required this.product,
     required this.name,
     required this.username,
     required this.color,
-    required this.onMessage,
     required this.isLoggedIn,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1037,12 +1035,37 @@ class _InnovatorCard extends StatelessWidget {
             ),
           ),
           OutlinedButton.icon(
-            onPressed: onMessage,
+            onPressed: () async {
+              if (!isLoggedIn) {
+                context.push('/login');
+                return;
+              }
+              final user = ref.read(authProvider).user!;
+              await ref
+                  .read(messagingProvider.notifier)
+                  .startOrGetConversation(
+                    productId: product.id,
+                    productName: product.name,
+                    productCategory: product.category,
+                    innovatorId: product.innovatorId.toString(),
+                    innovatorName: product.innovatorName,
+                    clientId: user.id.toString(),
+                    clientName: user.fullName,
+                  );
+              if (context.mounted) context.push('/messaging');
+            },
             icon: const Icon(Icons.message_rounded, size: 16),
-            label: Text(isLoggedIn ? 'Message' : 'Sign In'),
+            label: const Text(
+              'Message',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.teal,
-              side: const BorderSide(color: AppColors.teal),
+              foregroundColor: color,
+              side: BorderSide(color: color),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
