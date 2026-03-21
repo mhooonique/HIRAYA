@@ -28,9 +28,18 @@ class _MessagingScreenState extends ConsumerState<MessagingScreen> {
     Future.microtask(() {
       final user = ref.read(authProvider).user;
       if (user != null) {
-        ref.read(messagingProvider.notifier).loadConversations(user.id);
+        ref.read(messagingProvider.notifier).loadConversations(
+          user.id,
+          enableCallPolling: true,
+        );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    ref.read(messagingProvider.notifier).stopCallPolling();
+    super.dispose();
   }
 
   @override
@@ -372,8 +381,7 @@ class _ConversationListState extends ConsumerState<_ConversationList> {
 class _GlobalSearchResults extends ConsumerWidget {
   final List<MessageSearchResult> results;
   final String uid;
-  const _GlobalSearchResults(
-      {required this.results, required this.uid});
+  const _GlobalSearchResults({required this.results, required this.uid});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1329,10 +1337,10 @@ class _MessageBubble extends ConsumerWidget {
   });
 
   IconData _statusIcon(MessageStatus s) => switch (s) {
-        MessageStatus.sending  => Icons.access_time_rounded,
-        MessageStatus.sent     => Icons.done_rounded,
+        MessageStatus.sending   => Icons.access_time_rounded,
+        MessageStatus.sent      => Icons.done_rounded,
         MessageStatus.delivered => Icons.done_all_rounded,
-        MessageStatus.read     => Icons.done_all_rounded,
+        MessageStatus.read      => Icons.done_all_rounded,
       };
 
   Color _statusColor(MessageStatus s) =>
@@ -1505,17 +1513,14 @@ class _MessageBubble extends ConsumerWidget {
 class _AttachmentPreview extends StatelessWidget {
   final ChatAttachment attachment;
   final bool isMine;
-  const _AttachmentPreview(
-      {required this.attachment, required this.isMine});
+  const _AttachmentPreview({required this.attachment, required this.isMine});
 
   @override
   Widget build(BuildContext context) {
-    if (attachment.type == MessageType.image &&
-        attachment.bytes != null) {
+    if (attachment.type == MessageType.image && attachment.bytes != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.memory(attachment.bytes!,
-            width: 200, fit: BoxFit.cover),
+        child: Image.memory(attachment.bytes!, width: 200, fit: BoxFit.cover),
       );
     }
     final textColor = isMine ? Colors.white : AppColors.navy;
@@ -1535,8 +1540,7 @@ class _AttachmentPreview extends StatelessWidget {
           color: bgColor, borderRadius: BorderRadius.circular(8)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           decoration: BoxDecoration(
               color: extColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4)),
@@ -1562,9 +1566,7 @@ class _AttachmentPreview extends StatelessWidget {
               maxLines: 1),
           Text(attachment.displaySize,
               style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 10,
-                  color: subColor)),
+                  fontFamily: 'Poppins', fontSize: 10, color: subColor)),
         ])),
         const SizedBox(width: 8),
         Icon(Icons.download_rounded,
@@ -1678,9 +1680,7 @@ class _EmptyState extends StatelessWidget {
   final String title;
   final String subtitle;
   const _EmptyState(
-      {required this.icon,
-      required this.title,
-      required this.subtitle});
+      {required this.icon, required this.title, required this.subtitle});
   @override
   Widget build(BuildContext context) => Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

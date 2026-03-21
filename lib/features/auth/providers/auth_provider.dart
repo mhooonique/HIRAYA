@@ -6,6 +6,15 @@ import '../../../core/models/user_model.dart';
 import '../../../core/services/api_service.dart';
 import 'otp_provider.dart';
 
+// ── GoogleSignIn singleton — one instance for the entire app ──────────────────
+// Keeping this at file level prevents multiple initialize() calls on the web
+// (which triggers the GSI_LOGGER warning when the provider is recreated).
+final _googleSignIn = GoogleSignIn(
+  // Use the web OAuth client (type 3) from google-services.json
+  clientId: '31131385571-binnkumf3vkg98q12u222qkh4kni6sn3.apps.googleusercontent.com',
+  scopes:   ['email', 'profile', 'openid'],
+);
+
 // ── SignupData ─────────────────────────────────────────────────────────────────
 class SignupData {
   String role;
@@ -58,6 +67,10 @@ class SignupData {
 // ── AuthState ─────────────────────────────────────────────────────────────────
 enum LoginStatus { idle, pending, rejected }
 
+// Sentinel used by copyWith so that passing no error argument preserves the
+// existing error value instead of silently nulling it out.
+const _keep = Object();
+
 class AuthState {
   final bool        isLoading;
   final bool        isRehydrating;
@@ -105,8 +118,9 @@ class AuthState {
     bool?        isLoading,
     bool?        isRehydrating,
     UserModel?   user,
-    String?      token,
-    String?      error,
+    // Use the sentinel so callers can explicitly pass null to clear the error,
+    // while omitting the parameter preserves the current value.
+    Object?      error = _keep,
     LoginStatus? loginStatus,
     bool?        requires2fa,
     int?         pendingUserId,
@@ -118,24 +132,27 @@ class AuthState {
     String?      googlePrefillFirstName,
     String?      googlePrefillLastName,
     String?      googlePrefillGoogleId,
-  }) => AuthState(
-    isLoading:              isLoading              ?? this.isLoading,
-    isRehydrating:          isRehydrating          ?? this.isRehydrating,
-    user:                   user                   ?? this.user,
-    token:                  token                  ?? this.token,
-    error:                  error,
-    loginStatus:            loginStatus            ?? this.loginStatus,
-    requires2fa:            requires2fa            ?? this.requires2fa,
-    pendingUserId:          pendingUserId          ?? this.pendingUserId,
-    pendingToken:           pendingToken           ?? this.pendingToken,
-    otpType:                otpType                ?? this.otpType,
-    pendingPhone:           pendingPhone           ?? this.pendingPhone,
-    needsGoogleSignup:      needsGoogleSignup      ?? this.needsGoogleSignup,
-    googlePrefillEmail:     googlePrefillEmail     ?? this.googlePrefillEmail,
-    googlePrefillFirstName: googlePrefillFirstName ?? this.googlePrefillFirstName,
-    googlePrefillLastName:  googlePrefillLastName  ?? this.googlePrefillLastName,
-    googlePrefillGoogleId:  googlePrefillGoogleId  ?? this.googlePrefillGoogleId,
-  );
+    String?      token,
+  }) =>
+      AuthState(
+        isLoading:              isLoading              ?? this.isLoading,
+        isRehydrating:          isRehydrating          ?? this.isRehydrating,
+        user:                   user                   ?? this.user,
+        token:                  token                  ?? this.token,
+        // Only update error when caller explicitly passes a value
+        error:                  error == _keep ? this.error : error as String?,
+        loginStatus:            loginStatus            ?? this.loginStatus,
+        requires2fa:            requires2fa            ?? this.requires2fa,
+        pendingUserId:          pendingUserId          ?? this.pendingUserId,
+        pendingToken:           pendingToken           ?? this.pendingToken,
+        otpType:                otpType                ?? this.otpType,
+        pendingPhone:           pendingPhone           ?? this.pendingPhone,
+        needsGoogleSignup:      needsGoogleSignup      ?? this.needsGoogleSignup,
+        googlePrefillEmail:     googlePrefillEmail     ?? this.googlePrefillEmail,
+        googlePrefillFirstName: googlePrefillFirstName ?? this.googlePrefillFirstName,
+        googlePrefillLastName:  googlePrefillLastName  ?? this.googlePrefillLastName,
+        googlePrefillGoogleId:  googlePrefillGoogleId  ?? this.googlePrefillGoogleId,
+      );
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -146,33 +163,43 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiService _api;
 
-  final _googleSignIn = GoogleSignIn(
-    clientId: '31131385571-rhrhdr9hk5t2jsrah4gho23k8rj4ctlf.apps.googleusercontent.com',
-    scopes:   ['email', 'profile', 'openid'],
-  );
-
   AuthNotifier(this._api) : super(const AuthState()) {
     _rehydrate();
   }
 
+  // ── Rehydrate session on cold start ────────────────────────────────────────
   Future<void> _rehydrate() async {
     try {
       final token = await _api.getStoredToken();
-      if (token == null) { state = state.copyWith(isRehydrating: false); return; }
-      final res = await _api.get('users/me', auth: true);
-      final userData = res['user'] as Map<String, dynamic>?;
-      if (userData != null && userData['id'] != null) {
-        state = state.copyWith(isRehydrating: false, user: UserModel.fromJson(userData), token: token);
+      if (token == null) {
+        state = state.copyWith(isRehydrating: false);
         return;
       }
-    } catch (_) { await _api.clearToken(); }
+      final res      = await _api.get('users/me', auth: true);
+      final userData = res['user'] as Map<String, dynamic>?;
+      if (userData != null && userData['id'] != null) {
+        state = state.copyWith(
+          isRehydrating: false,
+          user:          UserModel.fromJson(userData),
+          token:         token,
+        );
+        return;
+      }
+    } catch (e) {
+      // Only clear the stored token on actual auth failures (401 / unauthorized).
+      // A transient network error should not log the user out.
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('401') || msg.contains('unauthorized')) {
+        await _api.clearToken();
+      }
+    }
     state = state.copyWith(isRehydrating: false);
   }
 
   // ── Helper: fetch full profile after login ──────────────────────────────────
   Future<UserModel> _fetchFullUser(Map<String, dynamic> fallback) async {
     try {
-      final res = await _api.get('users/me', auth: true);
+      final res      = await _api.get('users/me', auth: true);
       final userData = res['user'] as Map<String, dynamic>?;
       if (userData != null && userData['id'] != null) {
         return UserModel.fromJson(userData);
@@ -181,18 +208,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return UserModel.fromJson(fallback);
   }
 
+  // ── Email / password login ─────────────────────────────────────────────────
   Future<void> login(String email, String password) async {
-    state = state.copyWith(isLoading: true, error: null, loginStatus: LoginStatus.idle);
+    state = state.copyWith(
+      isLoading:   true,
+      error:       null,
+      loginStatus: LoginStatus.idle,
+    );
     try {
       final deviceId = await getDeviceId();
       final res = await _api.post('auth/login', {
-        'email': email, 'password': password, 'device_id': deviceId,
+        'email':     email,
+        'password':  password,
+        'device_id': deviceId,
       });
 
       if (res['error'] != null) {
         final s = res['status'] as String?;
         state = state.copyWith(
-          isLoading: false, error: res['error'],
+          isLoading:   false,
+          error:       res['error'],
           loginStatus: s == 'pending'  ? LoginStatus.pending
                      : s == 'rejected' ? LoginStatus.rejected
                      : LoginStatus.idle,
@@ -202,48 +237,67 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (res['requires_2fa'] == true) {
         state = state.copyWith(
-          isLoading: false, requires2fa: true,
-          pendingUserId: res['user_id'] as int,
-          pendingToken:  res['token']   as String,
-          otpType:       res['otp_type'] as String? ?? 'email',
+          isLoading:     false,
+          requires2fa:   true,
+          pendingUserId: res['user_id']     as int,
+          pendingToken:  res['token']       as String,
+          otpType:       res['otp_type']    as String? ?? 'email',
           pendingPhone:  res['masked_phone'] as String?,
         );
         return;
       }
 
       await _api.saveToken(res['token'] as String);
-      // Fetch full profile so avatar & social links are included
       final user = await _fetchFullUser(res['user'] as Map<String, dynamic>);
       state = state.copyWith(
         isLoading: false,
-        user:  user,
-        token: res['token'] as String,
+        user:      user,
+        token:     res['token'] as String,
       );
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Connection error. Is XAMPP running?');
+      state = state.copyWith(
+        isLoading: false,
+        error:     'Connection error. Is XAMPP running?',
+      );
     }
   }
 
-  Future<void> completeLogin({required String token, required int userId}) async {
+  // ── Complete login after 2FA ───────────────────────────────────────────────
+  Future<void> completeLogin({
+    required String token,
+    required int    userId,
+  }) async {
     state = state.copyWith(isLoading: true);
     try {
       await _api.saveToken(token);
-      final res = await _api.get('users/me', auth: true);
+      final res      = await _api.get('users/me', auth: true);
       final userData = (res['user'] as Map<String, dynamic>?) ?? res;
       state = state.copyWith(
-        isLoading: false, requires2fa: false,
-        user: UserModel.fromJson(userData), token: token,
+        isLoading:   false,
+        requires2fa: false,
+        user:        UserModel.fromJson(userData),
+        token:       token,
       );
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Failed to load profile');
+      state = state.copyWith(
+        isLoading: false,
+        error:     'Failed to load profile',
+      );
     }
   }
 
+  // ── Google Sign-In ─────────────────────────────────────────────────────────
   Future<void> loginWithGoogle() async {
-    state = state.copyWith(isLoading: true, error: null, loginStatus: LoginStatus.idle);
+    state = state.copyWith(
+      isLoading:   true,
+      error:       null,
+      loginStatus: LoginStatus.idle,
+    );
     try {
-      // Force account picker every time
-      await _googleSignIn.signOut();
+      // Only disconnect if already signed in — avoids redundant GSI reinit on web
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.disconnect();
+      }
       final account = await _googleSignIn.signIn();
       if (account == null) {
         state = state.copyWith(isLoading: false);
@@ -255,7 +309,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final accessToken = auth.accessToken;
 
       if (idToken == null && accessToken == null) {
-        state = state.copyWith(isLoading: false, error: 'Could not get Google token. Try again.');
+        state = state.copyWith(
+          isLoading: false,
+          error:     'Could not get Google token. Try again.',
+        );
         return;
       }
 
@@ -270,7 +327,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       });
 
       if (res['needs_signup'] == true) {
-        final nameParts = (account.displayName ?? '').trim().split(RegExp(r'\s+'));
+        final nameParts   = (account.displayName ?? '').trim().split(RegExp(r'\s+'));
         final fallbackFirst = nameParts.isNotEmpty ? nameParts.first : '';
         final fallbackLast  = nameParts.length > 1 ? nameParts.skip(1).join(' ') : '';
         final apiFirst = (res['first_name'] as String?)?.trim() ?? '';
@@ -289,7 +346,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (res['error'] != null) {
         final s = res['status'] as String?;
         state = state.copyWith(
-          isLoading: false, error: res['error'],
+          isLoading:   false,
+          error:       res['error'],
           loginStatus: s == 'pending'  ? LoginStatus.pending
                      : s == 'rejected' ? LoginStatus.rejected
                      : LoginStatus.idle,
@@ -299,28 +357,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (res['requires_2fa'] == true) {
         state = state.copyWith(
-          isLoading: false, requires2fa: true,
-          pendingUserId: res['user_id'] as int,
-          pendingToken:  res['token']   as String,
-          otpType:       res['otp_type'] as String? ?? 'email',
+          isLoading:     false,
+          requires2fa:   true,
+          pendingUserId: res['user_id']      as int,
+          pendingToken:  res['token']        as String,
+          otpType:       res['otp_type']     as String? ?? 'email',
           pendingPhone:  res['masked_phone'] as String?,
         );
         return;
       }
 
       await _api.saveToken(res['token'] as String);
-      // Fetch full profile so avatar & social links are included
       final user = await _fetchFullUser(res['user'] as Map<String, dynamic>);
       state = state.copyWith(
         isLoading: false,
-        user:  user,
-        token: res['token'] as String,
+        user:      user,
+        token:     res['token'] as String,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Google Sign-In failed. Try again.');
+      state = state.copyWith(
+        isLoading: false,
+        error:     'Google Sign-In failed. Try again.',
+      );
     }
   }
 
+  // ── Signup ─────────────────────────────────────────────────────────────────
   Future<void> signup(SignupData data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -357,20 +419,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
         loginStatus: LoginStatus.pending,
       );
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Signup failed. Check your connection.');
+      state = state.copyWith(
+        isLoading: false,
+        error:     'Signup failed. Check your connection.',
+      );
     }
   }
 
+  // ── Logout ─────────────────────────────────────────────────────────────────
   Future<void> logout() async {
     await _api.clearToken();
-    await _googleSignIn.signOut();
+    if (await _googleSignIn.isSignedIn()) {
+      await _googleSignIn.signOut();
+    }
     state = const AuthState(isRehydrating: false);
   }
 
-  /// Upload a new profile picture. Returns null on success, error string on failure.
+  // ── Update avatar ──────────────────────────────────────────────────────────
+  /// Returns null on success, an error string on failure.
   Future<String?> updateAvatar(String base64) async {
     try {
-      final res = await _api.put('users/me/avatar', {'avatar_base64': base64}, auth: true);
+      final res = await _api.put(
+        'users/me/avatar',
+        {'avatar_base64': base64},
+        auth: true,
+      );
       if (res['success'] != true) {
         return res['message'] as String? ?? 'Failed to update avatar.';
       }
@@ -386,7 +459,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  void clearGooglePrefill()  => state = state.copyWith(needsGoogleSignup: false);
-  void clearError()           => state = state.copyWith(error: null);
-  void clearPendingStatus()   => state = state.copyWith(loginStatus: LoginStatus.idle);
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  void clearGooglePrefill() => state = state.copyWith(needsGoogleSignup: false);
+  void clearError()          => state = state.copyWith(error: null);
+  void clearPendingStatus()  => state = state.copyWith(loginStatus: LoginStatus.idle);
 }

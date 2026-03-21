@@ -14,9 +14,6 @@ import '../../marketplace/widgets/category_filter_bar.dart';
 import '../../marketplace/widgets/product_card.dart';
 import '../providers/client_provider.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  MOCK DATA MODELS
-// ─────────────────────────────────────────────────────────────────────────────
 class _InterestItem {
   final int productId;
   final String productName;
@@ -37,9 +34,6 @@ class _InterestItem {
 
 final _interestsProvider = StateProvider<List<_InterestItem>>((ref) => const []);
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  MAIN SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
 class ClientDashboardScreen extends ConsumerStatefulWidget {
   const ClientDashboardScreen({super.key});
 
@@ -63,6 +57,12 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    Future.microtask(() {
+      ref.read(marketplaceProvider.notifier).loadProducts();
+      ref.read(clientProvider.notifier).loadLikes();
+      ref.read(clientProvider.notifier).loadWishlist();
+      ref.read(clientProvider.notifier).loadBookmarks();
+    });
   }
 
   @override
@@ -90,11 +90,23 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
               // ── Tab 1: Discover ──────────────────────────────────────────
               const _DiscoverTab(),
 
-              // ── Tab 2: Wishlist ──────────────────────────────────────────
+              // ── Tab 2: Wishlist (wishlist + liked products) ───────────────
               _WishlistTab(
-                items: wishlist,
+                items: [
+                  ...wishlist,
+                  ...ref.watch(marketplaceProvider).products
+                      .where((p) =>
+                          cState.likedIds.contains(p.id) &&
+                          !cState.wishlistIds.contains(p.id))
+                      .toList(),
+                ],
                 onRemove: (p) {
-                  ref.read(clientProvider.notifier).toggleWishlist(p);
+                  if (cState.wishlistIds.contains(p.id)) {
+                    ref.read(clientProvider.notifier).toggleWishlist(p);
+                  }
+                  if (cState.likedIds.contains(p.id)) {
+                    ref.read(clientProvider.notifier).toggleLike(p.id);
+                  }
                   _showSnack('Removed from wishlist', AppColors.crimson);
                 },
               ),
@@ -242,7 +254,6 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
     final products = state.filtered;
 
     return Column(children: [
-      // Search bar
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
         child: GestureDetector(
@@ -268,13 +279,11 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
         ),
       ),
 
-      // Category filter
       CategoryFilterBar(
           selected: state.selectedCategory,
           onSelect: notifier.setCategory),
       const SizedBox(height: 8),
 
-      // Count + sort
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(children: [
@@ -320,7 +329,6 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
       ),
       const SizedBox(height: 12),
 
-      // Grid
       Expanded(
         child: state.isLoading
             ? const Center(
@@ -380,14 +388,14 @@ class _WishlistTab extends StatelessWidget {
       _TabHeader(
           icon: Icons.favorite_rounded, iconColor: AppColors.crimson,
           title: 'Wishlist',
-          subtitle: 'Products you\'re keeping an eye on',
+          subtitle: 'Like or save a product from Discover to add it here.',
           count: items.length),
       Expanded(
         child: items.isEmpty
             ? const _EmptyState(
                 icon: Icons.favorite_outline_rounded,
                 title: 'Your wishlist is empty',
-                subtitle: 'Heart a product from Discover to save it here.')
+                subtitle: 'Like or save a product from Discover to add it here.')
             : ListView.builder(
                 padding: const EdgeInsets.all(20),
                 itemCount: items.length,

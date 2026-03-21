@@ -38,7 +38,7 @@ class ChatAttachment {
       try { bytes = base64Decode(b64); } catch (_) { bytes = null; }
     }
     return ChatAttachment(
-      name:   json['attachment_name']    as String? ?? '',
+      name:   json['attachment_name']     as String? ?? '',
       sizeKb: (json['attachment_size_kb'] as num?)?.toInt() ?? 0,
       type:   type,
       bytes:  bytes,
@@ -72,13 +72,10 @@ class ChatMessage {
     switch (json['status'] as String?) {
       case 'delivered': status = MessageStatus.delivered; break;
       case 'read':      status = MessageStatus.read;      break;
-      case 'sent':
       default:          status = MessageStatus.sent;      break;
     }
     ChatAttachment? attachment;
-    if (json['attachment_name'] != null) {
-      attachment = ChatAttachment.fromJson(json);
-    }
+    if (json['attachment_name'] != null) attachment = ChatAttachment.fromJson(json);
     return ChatMessage(
       id:         (json['id'] as num).toInt().toString(),
       senderId:   (json['sender_id'] as num).toInt().toString(),
@@ -138,8 +135,7 @@ class Conversation {
   });
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
-    final messagesJson = json['messages'] as List<dynamic>? ?? [];
-    final messages = messagesJson
+    final msgs = (json['messages'] as List<dynamic>? ?? [])
         .map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
         .toList();
     return Conversation(
@@ -151,7 +147,7 @@ class Conversation {
       originProductId:       (json['origin_product_id'] as num?)?.toInt() ?? 0,
       originProductName:     json['origin_product_name']     as String? ?? '',
       originProductCategory: json['origin_product_category'] as String? ?? '',
-      messages:              messages,
+      messages:              msgs,
       lastActivity: DateTime.parse(
           (json['last_activity'] ?? json['created_at']) as String),
       isReported:           false,
@@ -191,11 +187,11 @@ class Conversation {
     clientId: clientId, clientName: clientName,
     originProductId: originProductId, originProductName: originProductName,
     originProductCategory: originProductCategory,
-    messages:              messages              ?? this.messages,
-    lastActivity:          lastActivity          ?? this.lastActivity,
-    isReported:            isReported            ?? this.isReported,
-    isBlockedByInnovator:  isBlockedByInnovator  ?? this.isBlockedByInnovator,
-    isBlockedByClient:     isBlockedByClient     ?? this.isBlockedByClient,
+    messages:             messages             ?? this.messages,
+    lastActivity:         lastActivity         ?? this.lastActivity,
+    isReported:           isReported           ?? this.isReported,
+    isBlockedByInnovator: isBlockedByInnovator ?? this.isBlockedByInnovator,
+    isBlockedByClient:    isBlockedByClient    ?? this.isBlockedByClient,
   );
 }
 
@@ -229,6 +225,9 @@ class IncomingCall {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────────────────────
 class MessagingState {
   final List<Conversation> conversations;
   final String? activeConversationId;
@@ -242,13 +241,13 @@ class MessagingState {
   final IncomingCall? incomingCall;
 
   const MessagingState({
-    this.conversations = const [],
+    this.conversations        = const [],
     this.activeConversationId,
-    this.isSending = false,
-    this.isOtherTyping = false,
-    this.globalSearchQuery = '',
-    this.blockedUserIds = const [],
-    this.isCallActive = false,
+    this.isSending            = false,
+    this.isOtherTyping        = false,
+    this.globalSearchQuery    = '',
+    this.blockedUserIds       = const [],
+    this.isCallActive         = false,
     this.activeCallRoomId,
     this.activeCallType,
     this.incomingCall,
@@ -295,30 +294,41 @@ class MessagingState {
     isCallActive:         isCallActive         ?? this.isCallActive,
     activeCallRoomId:     activeCallRoomId     ?? this.activeCallRoomId,
     activeCallType:       activeCallType       ?? this.activeCallType,
-    incomingCall: clearIncomingCall ? null     : (incomingCall ?? this.incomingCall),
+    incomingCall: clearIncomingCall ? null : (incomingCall ?? this.incomingCall),
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  NOTIFIER
+// ─────────────────────────────────────────────────────────────────────────────
 class MessagingNotifier extends StateNotifier<MessagingState> {
   final ApiService _api;
   int? _currentUserId;
   Timer? _pollTimer;
   Timer? _callPollTimer;
+  bool _isLoading = false; // ← prevents duplicate loadConversations calls
 
   MessagingNotifier(this._api) : super(const MessagingState());
 
   // ── Load conversations ─────────────────────────────────────────────────────
-  Future<void> loadConversations(int userId) async {
+  Future<void> loadConversations(int userId,
+      {bool enableCallPolling = false}) async {
+    if (_isLoading) return; // ← guard against duplicate calls
+    _isLoading = true;
     _currentUserId = userId;
     try {
-      final res = await _api.get('messages/conversations', auth: true);
+      final res  = await _api.get('messages/conversations', auth: true);
       final data = res['data'] as List<dynamic>? ?? [];
-      final conversations = data
-          .map((c) => Conversation.fromJson(c as Map<String, dynamic>))
-          .toList();
-      state = state.copyWith(conversations: conversations);
-    } catch (_) {}
-    _startCallPolling();
+      state = state.copyWith(
+        conversations: data
+            .map((c) => Conversation.fromJson(c as Map<String, dynamic>))
+            .toList(),
+      );
+    } catch (_) {} finally {
+      _isLoading = false; // ← always release
+    }
+
+    if (enableCallPolling) _startCallPolling();
   }
 
   // ── Open / Close ───────────────────────────────────────────────────────────
@@ -329,7 +339,7 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
 
   Future<void> _loadConversationDetail(String id) async {
     try {
-      final res = await _api.get('messages/conversations/$id', auth: true);
+      final res  = await _api.get('messages/conversations/$id', auth: true);
       final data = res['data'] as Map<String, dynamic>?;
       if (data == null) return;
       final conv = Conversation.fromJson(data);
@@ -343,7 +353,7 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       try {
-        final res = await _api.get('messages/conversations/$convId', auth: true);
+        final res  = await _api.get('messages/conversations/$convId', auth: true);
         final data = res['data'] as Map<String, dynamic>?;
         if (data == null) return;
         _upsertConversation(Conversation.fromJson(data));
@@ -355,7 +365,9 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
     final exists = state.conversations.any((c) => c.id == conv.id);
     List<Conversation> updated;
     if (exists) {
-      updated = state.conversations.map((c) => c.id == conv.id ? conv : c).toList();
+      updated = state.conversations
+          .map((c) => c.id == conv.id ? conv : c)
+          .toList();
     } else {
       updated = [conv, ...state.conversations];
     }
@@ -369,10 +381,11 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
     state = state.copyWith(clearActive: true);
   }
 
+  // ── Call polling ───────────────────────────────────────────────────────────
   void _startCallPolling() {
     _callPollTimer?.cancel();
     _callPollTimer = Timer.periodic(
-        const Duration(seconds: 8), (_) => _pollIncomingCalls());
+        const Duration(seconds: 30), (_) => _pollIncomingCalls());
   }
 
   Future<void> _pollIncomingCalls() async {
@@ -391,6 +404,11 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
         state = state.copyWith(incomingCall: incoming);
       }
     } catch (_) {}
+  }
+
+  void stopCallPolling() {
+    _callPollTimer?.cancel();
+    _callPollTimer = null;
   }
 
   // ── Send ───────────────────────────────────────────────────────────────────
@@ -414,12 +432,10 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
           body['attachment_base64'] = base64Encode(attachment.bytes!);
         }
       }
-      final res = await _api.post(
+      final res  = await _api.post(
           'messages/conversations/$conversationId/send', body, auth: true);
       final data = res['data'] as Map<String, dynamic>?;
-      if (data != null) {
-        _insertMessage(conversationId, ChatMessage.fromJson(data));
-      }
+      if (data != null) _insertMessage(conversationId, ChatMessage.fromJson(data));
     } catch (_) {} finally {
       state = state.copyWith(isSending: false);
     }
@@ -428,7 +444,8 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
   void _insertMessage(String convId, ChatMessage msg) {
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
-      return c.copyWith(messages: [...c.messages, msg], lastActivity: DateTime.now());
+      return c.copyWith(
+          messages: [...c.messages, msg], lastActivity: DateTime.now());
     }).toList()
       ..sort((a, b) => b.lastActivity.compareTo(a.lastActivity));
     state = state.copyWith(conversations: updated);
@@ -439,17 +456,21 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
   void clearSearch()              => state = state.copyWith(globalSearchQuery: '');
 
   // ── Report ─────────────────────────────────────────────────────────────────
-  Future<bool> reportConversation(String convId, {required String reason}) async {
+  Future<bool> reportConversation(String convId,
+      {required String reason}) async {
     try {
       final res = await _api.post(
-          'messages/conversations/$convId/report', {'reason': reason}, auth: true);
+          'messages/conversations/$convId/report', {'reason': reason},
+          auth: true);
       state = state.copyWith(
         conversations: state.conversations
             .map((c) => c.id == convId ? c.copyWith(isReported: true) : c)
             .toList(),
       );
       return res['suspended'] == true;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> reportMessage(String convId, String msgId,
@@ -464,7 +485,7 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
           if (c.id != convId) return c;
           return c.copyWith(
             isReported: true,
-            messages:   c.messages
+            messages: c.messages
                 .map((m) => m.id == msgId ? m.copyWith(isReported: true) : m)
                 .toList(),
           );
@@ -477,7 +498,8 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
   Future<void> blockUser(String currentUserId, String convId) async {
     try {
       await _api.post('messages/conversations/$convId/block', {}, auth: true);
-      final conv = state.conversations.where((c) => c.id == convId).firstOrNull;
+      final conv =
+          state.conversations.where((c) => c.id == convId).firstOrNull;
       if (conv == null) return;
       final targetId = conv.otherPersonId(currentUserId);
       state = state.copyWith(
@@ -485,8 +507,10 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
         conversations: state.conversations.map((c) {
           if (c.id != convId) return c;
           return c.copyWith(
-            isBlockedByInnovator: currentUserId == c.innovatorId ? true : c.isBlockedByInnovator,
-            isBlockedByClient:    currentUserId == c.clientId    ? true : c.isBlockedByClient,
+            isBlockedByInnovator: currentUserId == c.innovatorId
+                ? true : c.isBlockedByInnovator,
+            isBlockedByClient: currentUserId == c.clientId
+                ? true : c.isBlockedByClient,
           );
         }).toList(),
       );
@@ -496,33 +520,38 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
   Future<void> unblockUser(String currentUserId, String convId) async {
     try {
       await _api.delete('messages/conversations/$convId/block', auth: true);
-      final conv = state.conversations.where((c) => c.id == convId).firstOrNull;
+      final conv =
+          state.conversations.where((c) => c.id == convId).firstOrNull;
       if (conv == null) return;
       final targetId = conv.otherPersonId(currentUserId);
       state = state.copyWith(
-        blockedUserIds: state.blockedUserIds.where((id) => id != targetId).toList(),
+        blockedUserIds:
+            state.blockedUserIds.where((id) => id != targetId).toList(),
         conversations: state.conversations.map((c) {
           if (c.id != convId) return c;
           return c.copyWith(
-            isBlockedByInnovator: currentUserId == c.innovatorId ? false : c.isBlockedByInnovator,
-            isBlockedByClient:    currentUserId == c.clientId    ? false : c.isBlockedByClient,
+            isBlockedByInnovator: currentUserId == c.innovatorId
+                ? false : c.isBlockedByInnovator,
+            isBlockedByClient: currentUserId == c.clientId
+                ? false : c.isBlockedByClient,
           );
         }).toList(),
       );
     } catch (_) {}
   }
 
-  bool isUserBlocked(String userId) => state.blockedUserIds.contains(userId);
+  bool isUserBlocked(String userId) =>
+      state.blockedUserIds.contains(userId);
 
   // ── Mark read ──────────────────────────────────────────────────────────────
+  int totalUnread(String uid) =>
+      state.conversations.fold(0, (sum, c) => sum + c.unreadCount(uid));
+
   Future<void> markRead(String convId, int userId) async {
     try {
       await _api.put('messages/conversations/$convId/read', {}, auth: true);
     } catch (_) {}
   }
-
-  int totalUnread(String uid) =>
-      state.conversations.fold(0, (sum, c) => sum + c.unreadCount(uid));
 
   // ── Start or get conversation ──────────────────────────────────────────────
   Future<String> startOrGetConversation({
@@ -535,7 +564,8 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
     required String clientName,
   }) async {
     final existing = state.conversations
-        .where((c) => c.innovatorId == innovatorId && c.clientId == clientId)
+        .where((c) =>
+            c.innovatorId == innovatorId && c.clientId == clientId)
         .firstOrNull;
     if (existing != null) {
       openConversation(existing.id);
@@ -543,10 +573,10 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
     }
     try {
       final res = await _api.post('messages/conversations', {
-        'innovator_id':          int.parse(innovatorId),
-        'client_id':             int.parse(clientId),
-        'origin_product_id':     productId,
-        'origin_product_name':   productName,
+        'innovator_id':            int.parse(innovatorId),
+        'client_id':               int.parse(clientId),
+        'origin_product_id':       productId,
+        'origin_product_name':     productName,
         'origin_product_category': productCategory,
       }, auth: true);
       final data = res['data'] as Map<String, dynamic>?;
@@ -579,7 +609,8 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
 
   // ── Calls ──────────────────────────────────────────────────────────────────
   Future<void> initiateCall(String convId, {required bool isVideo}) async {
-    final conv = state.conversations.where((c) => c.id == convId).firstOrNull;
+    final conv =
+        state.conversations.where((c) => c.id == convId).firstOrNull;
     if (conv == null || _currentUserId == null) return;
     final calleeId = conv.otherPersonId(_currentUserId.toString());
     try {
@@ -589,23 +620,25 @@ class MessagingNotifier extends StateNotifier<MessagingState> {
         'is_video':        isVideo,
       }, auth: true);
       if (res['success'] == true) {
-        final roomUrl = res['data']['room_url'] as String;
-        html.window.open(roomUrl, '_blank');
+        html.window.open(res['data']['room_url'] as String, '_blank');
         return;
       }
     } catch (_) {}
-    // Fallback to public Jitsi room
     html.window.open('https://meet.jit.si/hiraya-conv-$convId', '_blank');
   }
 
   Future<void> acceptCall(int callId, String roomUrl) async {
-    try { await _api.put('messages/calls/$callId/accept', {}, auth: true); } catch (_) {}
+    try {
+      await _api.put('messages/calls/$callId/accept', {}, auth: true);
+    } catch (_) {}
     state = state.copyWith(clearIncomingCall: true);
     html.window.open(roomUrl, '_blank');
   }
 
   Future<void> declineCall(int callId) async {
-    try { await _api.put('messages/calls/$callId/decline', {}, auth: true); } catch (_) {}
+    try {
+      await _api.put('messages/calls/$callId/decline', {}, auth: true);
+    } catch (_) {}
     state = state.copyWith(clearIncomingCall: true);
   }
 

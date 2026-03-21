@@ -13,6 +13,7 @@ import '../../../core/providers/theme_provider.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../marketplace/providers/marketplace_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../messaging/providers/messaging_provider.dart';
 import '../widgets/share_qr_section.dart';
 import '../../reviews/widgets/reviews_widget.dart';
 
@@ -46,6 +47,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   bool _liked = false;
   bool _bookmarked = false;
   bool _interestSent = false;
+  bool _likeLoading = false;
 
   final PageController _pageCtrl = PageController();
   int _currentPage = 0;
@@ -110,7 +112,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final isAdmin     = role == 'admin';
     final isInnovator = role == 'innovator';
     final isClient    = isLoggedIn && role == 'client';
-    // Restricted = admin/innovator → no like/interest/message/bookmark
     final isRestricted = isAdmin || isInnovator;
 
     if (product == null) {
@@ -166,7 +167,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               onPressed: () => _goBack(context, role),
             ),
             actions: [
-              // Admin dashboard button
               if (isAdmin)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -188,7 +188,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ),
                   ),
                 ),
-              // Innovator dashboard button
               if (isInnovator)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -210,7 +209,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ),
                   ),
                 ),
-              // Image count — clients/guests only
               if (!isRestricted && product.images.length > 1)
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
@@ -229,7 +227,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ),
                   ),
                 ),
-              // Bookmark — clients only
               if (isClient)
                 IconButton(
                   icon: AnimatedSwitcher(
@@ -257,7 +254,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     }
                   },
                 ),
-              // Share — everyone
               IconButton(
                 icon: const Icon(Icons.share_rounded, color: Colors.white),
                 onPressed: () async {
@@ -288,7 +284,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // Status banner
                   if (product.status != 'approved')
                     Container(
                       width: double.infinity,
@@ -354,9 +349,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                                 fontFamily: 'Poppins', fontSize: 13, color: subtleText)),
                           ],
                         )),
-                        // Admin/Innovator → View Profile
-                        // Client → Message
-                        // Guest → Message (redirects to login)
                         if (isRestricted)
                           OutlinedButton.icon(
                             onPressed: () => context.push('/profile/${product.innovatorId}'),
@@ -371,13 +363,37 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           )
                         else
                           OutlinedButton.icon(
-                            onPressed: () => context.push(isLoggedIn ? '/messaging' : '/login'),
+                            onPressed: () async {
+                              if (!isLoggedIn) {
+                                context.push('/login');
+                                return;
+                              }
+                              final authUser = ref.read(authProvider).user;
+                              if (authUser == null) return;
+
+                              await ref
+                                  .read(messagingProvider.notifier)
+                                  .startOrGetConversation(
+                                    productId: product.id,
+                                    productName: product.name,
+                                    productCategory: product.category,
+                                    innovatorId: product.innovatorId.toString(),
+                                    innovatorName: product.innovatorName,
+                                    clientId: authUser.id.toString(),
+                                    clientName: authUser.fullName,
+                                  );
+
+                              if (context.mounted) context.push('/messaging');
+                            },
                             icon: const Icon(Icons.message_rounded, size: 16),
-                            label: const Text('Message', style: TextStyle(fontFamily: 'Poppins',
-                                fontSize: 13, fontWeight: FontWeight.w600)),
+                            label: const Text('Message', style: TextStyle(
+                                fontFamily: 'Poppins', fontSize: 13,
+                                fontWeight: FontWeight.w600)),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: color, side: BorderSide(color: color),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              foregroundColor: color,
+                              side: BorderSide(color: color),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
                             ),
                           ),
                       ]),
@@ -557,12 +573,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   ],
 
                   const SizedBox(height: 32),
-                  // Reviews — clients only (must be logged in)
                   ReviewsSection(productId: product.id),
                   const SizedBox(height: 32),
                   ShareQrSection(product: product),
 
-                  // Admin dashboard button
                   if (isAdmin) ...[
                     const SizedBox(height: 20),
                     SizedBox(
@@ -583,7 +597,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ),
                   ],
 
-                  // Innovator dashboard button
                   if (isInnovator) ...[
                     const SizedBox(height: 20),
                     SizedBox(
@@ -612,7 +625,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         ],
       ),
 
-      // Bottom bar — clients only (full interaction)
+      // Bottom bar — clients only
       bottomNavigationBar: !isClient ? null : Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         decoration: BoxDecoration(
@@ -624,7 +637,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           // Like
           GestureDetector(
             onTap: () async {
-              setState(() => _liked = !_liked);
+              if (_likeLoading) return;
+              setState(() { _likeLoading = true; _liked = !_liked; });
               final ok = await ref.read(marketplaceProvider.notifier).likeProduct(product.id);
               if (!ok && context.mounted) {
                 setState(() => _liked = !_liked);
@@ -635,6 +649,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ));
               }
+              setState(() => _likeLoading = false);
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -665,22 +680,19 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     .read(marketplaceProvider.notifier)
                     .expressInterest(product.id);
                 if (!context.mounted) return;
-                if (ok) {
-                  setState(() => _interestSent = true);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: const Text('Interest expressed! The innovator will be notified.',
-                        style: TextStyle(fontFamily: 'Poppins')),
-                    backgroundColor: AppColors.teal, behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: const Text('Could not send interest. Please try again.',
-                        style: TextStyle(fontFamily: 'Poppins')),
-                    backgroundColor: AppColors.crimson, behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ));
-                }
+                // treat both success AND "already expressed" as success
+                setState(() => _interestSent = true);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(
+                    ok
+                        ? 'Interest expressed! The innovator will be notified.'
+                        : 'You have already expressed interest in this product.',
+                    style: const TextStyle(fontFamily: 'Poppins'),
+                  ),
+                  backgroundColor: AppColors.teal,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _interestSent ? AppColors.lightGray : color,

@@ -38,31 +38,27 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F1923),
-      body: Row(
-        children: [
-          _AdminSidebar(
-            activeTab:    state.activeTab,
-            onTabChange:  notifier.setTab,
-            pendingCount: state.stats.pendingProducts,
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                _AdminTopBar(),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: KeyedSubtree(
-                      key:   ValueKey(state.activeTab),
-                      child: _buildTab(state, notifier),
-                    ),
-                  ),
+      body: Row(children: [
+        _AdminSidebar(
+          activeTab:    state.activeTab,
+          onTabChange:  notifier.setTab,
+          pendingCount: state.stats.pendingProducts,
+        ),
+        Expanded(
+          child: Column(children: [
+            _AdminTopBar(),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: KeyedSubtree(
+                  key:   ValueKey(state.activeTab),
+                  child: _buildTab(state, notifier),
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ]),
+        ),
+      ]),
     );
   }
 
@@ -78,12 +74,12 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
         );
       case 'users':
         return _UsersTab(
-          users:     state.users,
+          users:    state.users,
           onApprove: notifier.approveUser,
           onReject:  notifier.rejectUser,
           onDelete:  notifier.deleteUser,
-          onPromote:  notifier.promoteToAdmin,
-          onDemote:   notifier.demoteFromAdmin,
+          onPromote: notifier.promoteToAdmin,
+          onDemote:  notifier.demoteFromAdmin,
         );
       case 'analytics':
         return const AnalyticsScreen();
@@ -110,66 +106,64 @@ class _AdminSidebar extends ConsumerWidget {
     return Container(
       width: 240,
       color: const Color(0xFF0A1118),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
-            child: Row(children: [
-              Image.asset('assets/images/logo/final-logo.png', height: 36),
-              const SizedBox(width: 10),
-              const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('DIGITAL', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2)),
-                Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, color: AppColors.golden, letterSpacing: 1)),
-              ]),
+      child: Column(children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
+          child: Row(children: [
+            Image.asset('assets/images/logo/final-logo.png', height: 36),
+            const SizedBox(width: 10),
+            const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('HIRAYA', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2)),
+              Text('Admin Panel', style: TextStyle(fontFamily: 'Poppins', fontSize: 10, color: AppColors.golden, letterSpacing: 1)),
             ]),
-          ),
-          const Divider(color: Colors.white10, height: 1),
-          const SizedBox(height: 16),
-          _SidebarItem(icon: Icons.dashboard_rounded,       label: 'Dashboard',       tab: 'dashboard', activeTab: activeTab, onTap: onTabChange),
-          _SidebarItem(icon: Icons.pending_actions_rounded, label: 'Pending Reviews', tab: 'products',  activeTab: activeTab, onTap: onTabChange, badge: pendingCount > 0 ? pendingCount : null),
-          _SidebarItem(icon: Icons.people_rounded,          label: 'Users',           tab: 'users',     activeTab: activeTab, onTap: onTabChange),
-          _SidebarItem(icon: Icons.bar_chart_rounded,       label: 'Analytics',       tab: 'analytics', activeTab: activeTab, onTap: onTabChange),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: GestureDetector(
-              onTap: () => context.push('/marketplace'),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
-                child: const Row(children: [
-                  Icon(Icons.storefront_rounded, color: Colors.white54, size: 18),
-                  SizedBox(width: 10),
-                  Text('View Marketplace', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white54)),
-                ]),
-              ),
+          ]),
+        ),
+        const Divider(color: Colors.white10, height: 1),
+        const SizedBox(height: 16),
+        _SidebarItem(icon: Icons.dashboard_rounded,       label: 'Dashboard',       tab: 'dashboard', activeTab: activeTab, onTap: onTabChange),
+        _SidebarItem(icon: Icons.pending_actions_rounded, label: 'Pending Reviews', tab: 'products',  activeTab: activeTab, onTap: onTabChange, badge: pendingCount > 0 ? pendingCount : null),
+        _SidebarItem(icon: Icons.people_rounded,          label: 'Users',           tab: 'users',     activeTab: activeTab, onTap: onTabChange),
+        _SidebarItem(icon: Icons.bar_chart_rounded,       label: 'Analytics',       tab: 'analytics', activeTab: activeTab, onTap: onTabChange),
+        const Spacer(),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: GestureDetector(
+            onTap: () => context.push('/marketplace'),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+              child: const Row(children: [
+                Icon(Icons.storefront_rounded, color: Colors.white54, size: 18),
+                SizedBox(width: 10),
+                Text('View Marketplace', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white54)),
+              ]),
             ),
           ),
-          _AdminThemeToggle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            child: GestureDetector(
-              onTap: () async {
-                await ref.read(authProvider.notifier).logout();
-                if (context.mounted) context.go('/login');
-              },
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color:        AppColors.crimson.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border:       Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
-                ),
-                child: const Row(children: [
-                  Icon(Icons.logout_rounded, color: AppColors.crimson, size: 18),
-                  SizedBox(width: 10),
-                  Text('Logout', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppColors.crimson, fontWeight: FontWeight.w600)),
-                ]),
+        ),
+        _AdminThemeToggle(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: GestureDetector(
+            onTap: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (context.mounted) context.go('/login');
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
               ),
+              child: const Row(children: [
+                Icon(Icons.logout_rounded, color: AppColors.crimson, size: 18),
+                SizedBox(width: 10),
+                Text('Logout', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppColors.crimson, fontWeight: FontWeight.w600)),
+              ]),
             ),
           ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 }
@@ -189,8 +183,8 @@ class _SidebarItem extends StatelessWidget {
       onTap: () => onTap(tab),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin:   const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-        padding:  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        margin:  const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color:        isActive ? AppColors.teal.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
@@ -212,7 +206,6 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-// ─── SIDEBAR THEME TOGGLE ─────────────────────────────────────────────────────
 class _AdminThemeToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -225,33 +218,16 @@ class _AdminThemeToggle extends ConsumerWidget {
           duration: const Duration(milliseconds: 250),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.golden.withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.06),
+            color: isDark ? AppColors.golden.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isDark
-                  ? AppColors.golden.withValues(alpha: 0.3)
-                  : Colors.white12,
-            ),
+            border: Border.all(color: isDark ? AppColors.golden.withValues(alpha: 0.3) : Colors.white12),
           ),
           child: Row(children: [
-            Icon(
-              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              color: isDark ? AppColors.golden : Colors.white54,
-              size: 18,
-            ),
+            Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                color: isDark ? AppColors.golden : Colors.white54, size: 18),
             const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                isDark ? 'Dark Mode' : 'Light Mode',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13,
-                  color: isDark ? AppColors.golden : Colors.white54,
-                ),
-              ),
-            ),
+            Expanded(child: Text(isDark ? 'Dark Mode' : 'Light Mode',
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: isDark ? AppColors.golden : Colors.white54))),
             Switch(
               value: isDark,
               onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
@@ -304,44 +280,42 @@ class _DashboardTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Dashboard', style: TextStyle(fontFamily: 'Poppins', fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)).animate().fadeIn(duration: 400.ms),
-          const SizedBox(height: 6),
-          Text('System overview — ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
-          const SizedBox(height: 28),
-          GridView.count(
-            shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: MediaQuery.of(context).size.width > 1100 ? 4 : 2,
-            crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 1.6,
-            children: [
-              _StatCard(icon: Icons.people_rounded,          label: 'Total Users',      value: '${state.stats.totalUsers}',      color: AppColors.sky,     index: 0),
-              _StatCard(icon: Icons.lightbulb_rounded,       label: 'Live Innovations', value: '${state.stats.totalProducts}',   color: AppColors.teal,    index: 1),
-              _StatCard(icon: Icons.pending_actions_rounded, label: 'Pending Review',   value: '${state.stats.pendingProducts}', color: AppColors.golden,  index: 2, urgent: state.stats.pendingProducts > 0),
-              _StatCard(icon: Icons.handshake_rounded,       label: 'Total Interests',  value: '${state.stats.totalInterests}',  color: AppColors.crimson, index: 3),
-            ],
-          ),
-          const SizedBox(height: 28),
-          if (state.pendingProducts.isNotEmpty) ...[
-            Row(children: [
-              const Text('Pending Approvals', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
-                child: Text('${state.pendingProducts.length} waiting', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden)),
-              ),
-            ]),
-            const SizedBox(height: 16),
-            ...state.pendingProducts.take(3).toList().asMap().entries.map((e) => _PendingRow(product: e.value, index: e.key)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Dashboard', style: TextStyle(fontFamily: 'Poppins', fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)).animate().fadeIn(duration: 400.ms),
+        const SizedBox(height: 6),
+        Text('System overview — ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+            style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
+        const SizedBox(height: 28),
+        GridView.count(
+          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: MediaQuery.of(context).size.width > 1100 ? 4 : 2,
+          crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 1.6,
+          children: [
+            _StatCard(icon: Icons.people_rounded,          label: 'Total Users',      value: '${state.stats.totalUsers}',      color: AppColors.sky,     index: 0),
+            _StatCard(icon: Icons.lightbulb_rounded,       label: 'Live Innovations', value: '${state.stats.totalProducts}',   color: AppColors.teal,    index: 1),
+            _StatCard(icon: Icons.pending_actions_rounded, label: 'Pending Review',   value: '${state.stats.pendingProducts}', color: AppColors.golden,  index: 2, urgent: state.stats.pendingProducts > 0),
+            _StatCard(icon: Icons.handshake_rounded,       label: 'Total Interests',  value: '${state.stats.totalInterests}',  color: AppColors.crimson, index: 3),
           ],
-          const SizedBox(height: 28),
-          const Text('Category Breakdown', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+        ),
+        const SizedBox(height: 28),
+        if (state.pendingProducts.isNotEmpty) ...[
+          Row(children: [
+            const Text('Pending Approvals', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+              child: Text('${state.pendingProducts.length} waiting', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.golden)),
+            ),
+          ]),
           const SizedBox(height: 16),
-          _CategoryBreakdown(),
+          ...state.pendingProducts.take(3).toList().asMap().entries.map((e) => _PendingRow(product: e.value, index: e.key)),
         ],
-      ),
+        const SizedBox(height: 28),
+        const Text('Category Breakdown', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+        const SizedBox(height: 16),
+        const _CategoryBreakdown(),
+      ]),
     );
   }
 }
@@ -401,13 +375,12 @@ class _CategoryBreakdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cats = ref.watch(analyticsProvider).categoryDistribution;
+    final cats      = ref.watch(analyticsProvider).categoryDistribution;
     final isLoading = ref.watch(analyticsProvider).isLoading;
 
     if (isLoading && cats.isEmpty) {
       return Container(
-        height: 100,
-        padding: const EdgeInsets.all(20),
+        height: 100, padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: const Color(0xFF151F2B), borderRadius: BorderRadius.circular(16)),
         child: const Center(child: CircularProgressIndicator(color: AppColors.teal, strokeWidth: 2)),
       );
@@ -420,7 +393,7 @@ class _CategoryBreakdown extends ConsumerWidget {
       );
     }
 
-    final total = cats.fold<int>(0, (sum, c) => sum + ((c['count'] as num?)?.toInt() ?? 0));
+    final total   = cats.fold<int>(0, (sum, c) => sum + ((c['count'] as num?)?.toInt() ?? 0));
     final palette = [AppColors.teal, AppColors.crimson, AppColors.golden, AppColors.sky, AppColors.navy, const Color(0xFF9B59B6), const Color(0xFF1B4B8A)];
 
     return Container(
@@ -525,20 +498,19 @@ class _ProductReviewCard extends StatelessWidget {
         Row(children: [
           TextButton(
             onPressed: () => _showProductDetail(context, product.id, onApprove, onReject),
-            child: const Text('View Details',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.sky)),
+            child: const Text('View Details', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.sky)),
           ),
           const Spacer(),
           Expanded(child: OutlinedButton.icon(
             onPressed: onReject,
-            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.crimson),
+            icon:  const Icon(Icons.close_rounded, size: 16, color: AppColors.crimson),
             label: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: AppColors.crimson)),
             style: OutlinedButton.styleFrom(side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.4)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
           )),
           const SizedBox(width: 12),
           Expanded(flex: 2, child: ElevatedButton.icon(
             onPressed: onApprove,
-            icon: const Icon(Icons.check_rounded, size: 16, color: Colors.white),
+            icon:  const Icon(Icons.check_rounded, size: 16, color: Colors.white),
             label: const Text('Approve & Publish', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
           )),
@@ -567,88 +539,72 @@ class _UsersTab extends StatelessWidget {
   }
 
   void _confirmPromote(BuildContext context, UserModel user) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF151F2B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(children: [
-          Icon(Icons.admin_panel_settings_rounded, color: AppColors.golden, size: 24),
-          SizedBox(width: 10),
-          Text('Promote to Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('You are about to grant admin privileges to:', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13)),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.golden.withValues(alpha: 0.3))),
-            child: Row(children: [
-              CircleAvatar(radius: 20, backgroundColor: AppColors.golden.withValues(alpha: 0.2),
-                  child: Text(user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
-                      style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.golden))),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(user.fullName, style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 14)),
-                Text(user.email,   style: const TextStyle(fontFamily: 'Poppins', color: Colors.white38, fontSize: 12)),
-              ])),
-            ]),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-            child: const Row(children: [
-              Icon(Icons.info_outline, color: Colors.orange, size: 16),
-              SizedBox(width: 8),
-              Expanded(child: Text('Admin users have full access to manage users, products, and platform settings.', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.orange))),
-            ]),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54))),
-          ElevatedButton.icon(
-            onPressed: () async {
-              Navigator.pop(context);
-              _handleResult(context, await onPromote(user.id));
-            },
-            icon:  const Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white),
-            label: const Text('Yes, Make Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.golden, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-          ),
-        ],
-      ),
-    );
+    showDialog(context: context, builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF151F2B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(children: [
+        Icon(Icons.admin_panel_settings_rounded, color: AppColors.golden, size: 24),
+        SizedBox(width: 10),
+        Text('Promote to Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
+      ]),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('You are about to grant admin privileges to:', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13)),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.golden.withValues(alpha: 0.3))),
+          child: Row(children: [
+            CircleAvatar(radius: 20, backgroundColor: AppColors.golden.withValues(alpha: 0.2),
+                child: Text(user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
+                    style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.golden))),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(user.fullName, style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 14)),
+              Text(user.email,   style: const TextStyle(fontFamily: 'Poppins', color: Colors.white38, fontSize: 12)),
+            ])),
+          ]),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+          child: const Row(children: [
+            Icon(Icons.info_outline, color: Colors.orange, size: 16), SizedBox(width: 8),
+            Expanded(child: Text('Admin users have full access to manage users, products, and platform settings.', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.orange))),
+          ]),
+        ),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54))),
+        ElevatedButton.icon(
+          onPressed: () async { Navigator.pop(context); _handleResult(context, await onPromote(user.id)); },
+          icon:  const Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white),
+          label: const Text('Yes, Make Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.golden, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+        ),
+      ],
+    ));
   }
 
   void _confirmDemote(BuildContext context, UserModel user) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF151F2B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(children: [
-          Icon(Icons.remove_moderator_rounded, color: Colors.white54, size: 24),
-          SizedBox(width: 10),
-          Text('Remove Admin Access', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
-        ]),
-        content: Text(
-          'Remove admin access from ${user.fullName}? They will be restored to their original role.',
-          style: const TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13),
+    showDialog(context: context, builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF151F2B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(children: [
+        Icon(Icons.remove_moderator_rounded, color: Colors.white54, size: 24), SizedBox(width: 10),
+        Text('Remove Admin Access', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
+      ]),
+      content: Text('Remove admin access from ${user.fullName}? They will be restored to their original role.',
+          style: const TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54))),
+        ElevatedButton(
+          onPressed: () async { Navigator.pop(context); _handleResult(context, await onDemote(user.id)); },
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2A3444), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          child: const Text('Remove Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54))),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              _handleResult(context, await onDemote(user.id));
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2A3444), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-            child: const Text('Remove Admin', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+      ],
+    ));
   }
 
   @override
@@ -681,91 +637,78 @@ class _UsersTab extends StatelessWidget {
               child: const Center(child: Text('No users found.', style: TextStyle(fontFamily: 'Poppins', color: Colors.white38))))
         else
           ...users.asMap().entries.map((e) => _UserRow(
-            user:         e.value,
-            index:        e.key,
-            onApprove:    () async => _handleResult(context, await onApprove(e.value.id)),
-            onReject:     () async => _handleResult(context, await onReject(e.value.id)),
-            onDelete:     () => _confirmDelete(context, e.value, onDelete),
-            onView:       () => _showUserDetail(context, e.value),
-            onPromote:    () => _confirmPromote(context, e.value),
-            onDemote:     () => _confirmDemote(context, e.value),
+            user:      e.value, index: e.key,
+            onApprove: () async => _handleResult(context, await onApprove(e.value.id)),
+            onReject:  () async => _handleResult(context, await onReject(e.value.id)),
+            onDelete:  () => _confirmDelete(context, e.value, onDelete),
+            onView:    () => _showUserDetail(context, e.value),
+            onPromote: () => _confirmPromote(context, e.value),
+            onDemote:  () => _confirmDemote(context, e.value),
           )),
       ]),
     );
   }
 
   void _confirmDelete(BuildContext context, UserModel user, Future<String?> Function(int) onDelete) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF151F2B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.crimson, size: 24),
-          SizedBox(width: 10),
-          Text('Delete Account', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('You are about to permanently delete this account:', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13)),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.crimson.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3))),
-            child: Row(children: [
-              CircleAvatar(radius: 20, backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
-                  child: Text(user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
-                      style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.crimson))),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(user.fullName,       style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 14)),
-                Text(user.email,          style: const TextStyle(fontFamily: 'Poppins', color: Colors.white38, fontSize: 12)),
-                Text('@${user.username}', style: const TextStyle(fontFamily: 'Poppins', color: Colors.white24, fontSize: 11)),
-              ])),
-            ]),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-            child: const Row(children: [
-              Icon(Icons.info_outline, color: Colors.orange, size: 16),
-              SizedBox(width: 8),
-              Expanded(child: Text('This action cannot be undone. All data including KYC documents will be permanently removed.', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.orange))),
-            ]),
-          ),
-        ]),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54)),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              Navigator.pop(context);
-              final err = await onDelete(user.id);
-              if (err != null && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(err, style: const TextStyle(fontFamily: 'Poppins')),
-                  backgroundColor: AppColors.crimson,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ));
-              }
-            },
-            icon:  const Icon(Icons.delete_forever_rounded, size: 16, color: Colors.white),
-            label: const Text('Yes, Delete Account', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-          ),
-        ],
-      ),
-    );
+    showDialog(context: context, builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF151F2B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(children: [
+        Icon(Icons.warning_amber_rounded, color: AppColors.crimson, size: 24), SizedBox(width: 10),
+        Text('Delete Account', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white, fontSize: 18)),
+      ]),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('You are about to permanently delete this account:', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54, fontSize: 13)),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.crimson.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3))),
+          child: Row(children: [
+            CircleAvatar(radius: 20, backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
+                child: Text(user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
+                    style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: AppColors.crimson))),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(user.fullName,       style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.white, fontSize: 14)),
+              Text(user.email,          style: const TextStyle(fontFamily: 'Poppins', color: Colors.white38, fontSize: 12)),
+              Text('@${user.username}', style: const TextStyle(fontFamily: 'Poppins', color: Colors.white24, fontSize: 11)),
+            ])),
+          ]),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+          child: const Row(children: [
+            Icon(Icons.info_outline, color: Colors.orange, size: 16), SizedBox(width: 8),
+            Expanded(child: Text('This action cannot be undone. All data including KYC documents will be permanently removed.', style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.orange))),
+          ]),
+        ),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Colors.white54))),
+        ElevatedButton.icon(
+          onPressed: () async {
+            Navigator.pop(context);
+            final err = await onDelete(user.id);
+            if (err != null && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(err, style: const TextStyle(fontFamily: 'Poppins')),
+                backgroundColor: AppColors.crimson, behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ));
+            }
+          },
+          icon:  const Icon(Icons.delete_forever_rounded, size: 16, color: Colors.white),
+          label: const Text('Yes, Delete Account', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+        ),
+      ],
+    ));
   }
 
   void _showUserDetail(BuildContext context, UserModel user) {
-    showDialog(
-      context: context,
-      builder: (_) => _UserDetailDialog(userId: user.id, user: user),
-    );
+    showDialog(context: context, builder: (_) => _UserDetailDialog(userId: user.id, user: user));
   }
 }
 
@@ -782,32 +725,22 @@ class _UserDetailDialog extends ConsumerStatefulWidget {
 class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
   UserModel? _fullUser;
   bool _loading = true;
-
-  // KYC lazy load state
-  String? _govIdBase64;
-  String? _govIdFilename;
-  String? _selfieBase64;
-  String? _selfieFilename;
-  bool _kycLoading = false;
-  bool _kycLoaded  = false;
+  String? _govIdBase64, _govIdFilename, _selfieBase64, _selfieFilename;
+  bool _kycLoading = false, _kycLoaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadFullUser();
-  }
+  void initState() { super.initState(); _loadFullUser(); }
 
   Future<void> _loadFullUser() async {
     try {
-      final api = ref.read(apiServiceProvider);
-      final res = await api.get('admin/users/${widget.userId}', auth: true);
+      final res = await ref.read(apiServiceProvider).get('admin/users/${widget.userId}', auth: true);
       final rawData = res['data'];
       if (res['success'] == true && rawData is Map<String, dynamic>) {
         if (mounted) setState(() {
-          _fullUser        = UserModel.fromJson(rawData);
-          _govIdFilename   = rawData['gov_id_filename']  as String?;
-          _selfieFilename  = rawData['selfie_filename']  as String?;
-          _loading         = false;
+          _fullUser       = UserModel.fromJson(rawData);
+          _govIdFilename  = rawData['gov_id_filename'] as String?;
+          _selfieFilename = rawData['selfie_filename'] as String?;
+          _loading        = false;
         });
       } else {
         if (mounted) setState(() { _fullUser = widget.user; _loading = false; });
@@ -821,8 +754,7 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
     if (_kycLoaded || _kycLoading) return;
     setState(() => _kycLoading = true);
     try {
-      final api = ref.read(apiServiceProvider);
-      final res = await api.get('admin/users/${widget.userId}/kyc', auth: true);
+      final res = await ref.read(apiServiceProvider).get('admin/users/${widget.userId}/kyc', auth: true);
       if (res['success'] == true) {
         final data = res['data'] as Map<String, dynamic>;
         if (mounted) setState(() {
@@ -830,15 +762,10 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
           _govIdFilename  = data['gov_id_filename']  as String?;
           _selfieBase64   = data['selfie_base64']    as String?;
           _selfieFilename = data['selfie_filename']  as String?;
-          _kycLoaded  = true;
-          _kycLoading = false;
+          _kycLoaded = true; _kycLoading = false;
         });
-      } else {
-        if (mounted) setState(() => _kycLoading = false);
-      }
-    } catch (_) {
-      if (mounted) setState(() => _kycLoading = false);
-    }
+      } else { if (mounted) setState(() => _kycLoading = false); }
+    } catch (_) { if (mounted) setState(() => _kycLoading = false); }
   }
 
   @override
@@ -848,8 +775,7 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
       backgroundColor: const Color(0xFF151F2B),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        width: 560,
-        constraints: const BoxConstraints(maxHeight: 700),
+        width: 560, constraints: const BoxConstraints(maxHeight: 700),
         child: _loading
             ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator(color: AppColors.teal)))
             : Column(children: [
@@ -873,53 +799,32 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     _DetailRow(icon: Icons.email_rounded,       label: 'Email',   value: user.email),
                     _DetailRow(icon: Icons.phone_rounded,       label: 'Phone',   value: user.phone.isNotEmpty ? user.phone : '—'),
-                    _DetailRow(icon: Icons.cake_rounded,        label: 'Date of Birth', value: user.dateOfBirth ?? '—'),
+                    _DetailRow(icon: Icons.cake_rounded,        label: 'Birthday',value: user.dateOfBirth ?? '—'),
                     _DetailRow(icon: Icons.location_on_rounded, label: 'Address',
-                        value: (user.city != null && user.province != null)
-                            ? '${user.city}, ${user.province}'
-                            : (user.city ?? user.province ?? '—')),
+                        value: (user.city != null && user.province != null) ? '${user.city}, ${user.province}' : (user.city ?? user.province ?? '—')),
                     _DetailRow(icon: Icons.badge_rounded,       label: 'Role',    value: user.role.toUpperCase()),
                     _DetailRow(icon: Icons.verified_rounded,    label: 'KYC',     value: user.kycStatus.toUpperCase()),
                     _DetailRow(icon: Icons.toggle_on_rounded,   label: 'Status',
                         value: user.userStatus == 1 ? 'ACTIVE' : user.userStatus == 2 ? 'REJECTED' : 'PENDING APPROVAL'),
                     const SizedBox(height: 20),
-                    const Text('KYC Documents',
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                    const Text('KYC Documents', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
                     const SizedBox(height: 12),
                     if (_govIdFilename == null && _selfieFilename == null)
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
                         child: const Row(children: [
-                          Icon(Icons.info_outline_rounded, color: Colors.white38, size: 18),
-                          SizedBox(width: 10),
-                          Text('No KYC documents submitted yet.',
-                              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
+                          Icon(Icons.info_outline_rounded, color: Colors.white38, size: 18), SizedBox(width: 10),
+                          Text('No KYC documents submitted yet.', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
                         ]),
                       )
                     else
                       Column(children: [
                         if (_govIdFilename != null)
-                          _KycImageCard(
-                            label:      'Government-Issued ID',
-                            filename:   _govIdFilename!,
-                            base64Data: _govIdBase64,
-                            onExpand:   _loadKyc,
-                            isLoading:  _kycLoading,
-                          ),
-                        if (_govIdFilename != null && _selfieFilename != null)
-                          const SizedBox(height: 12),
+                          _KycImageCard(label: 'Government-Issued ID', filename: _govIdFilename!, base64Data: _govIdBase64, onExpand: _loadKyc, isLoading: _kycLoading),
+                        if (_govIdFilename != null && _selfieFilename != null) const SizedBox(height: 12),
                         if (_selfieFilename != null)
-                          _KycImageCard(
-                            label:      'Selfie with ID',
-                            filename:   _selfieFilename!,
-                            base64Data: _selfieBase64,
-                            onExpand:   _loadKyc,
-                            isLoading:  _kycLoading,
-                          ),
+                          _KycImageCard(label: 'Selfie with ID', filename: _selfieFilename!, base64Data: _selfieBase64, onExpand: _loadKyc, isLoading: _kycLoading),
                       ]),
                   ]),
                 )),
@@ -929,21 +834,12 @@ class _UserDetailDialogState extends ConsumerState<_UserDetailDialog> {
   }
 }
 
-// ─── KYC Image Card ───────────────────────────────────────────────────────────
 class _KycImageCard extends StatefulWidget {
-  final String  label;
-  final String  filename;
+  final String label, filename;
   final String? base64Data;
   final Future<void> Function() onExpand;
   final bool isLoading;
-
-  const _KycImageCard({
-    required this.label,
-    required this.filename,
-    required this.base64Data,
-    required this.onExpand,
-    required this.isLoading,
-  });
+  const _KycImageCard({required this.label, required this.filename, required this.base64Data, required this.onExpand, required this.isLoading});
 
   @override
   State<_KycImageCard> createState() => _KycImageCardState();
@@ -956,82 +852,58 @@ class _KycImageCardState extends State<_KycImageCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
       child: Column(children: [
         GestureDetector(
-          onTap: () async {
-            if (!_expanded) await widget.onExpand();
-            setState(() => _expanded = !_expanded);
-          },
+          onTap: () async { if (!_expanded) await widget.onExpand(); setState(() => _expanded = !_expanded); },
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
-              Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      color: AppColors.teal.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Icon(_isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded,
-                      color: AppColors.teal, size: 18)),
+              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+                  child: Icon(_isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded, color: AppColors.teal, size: 18)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(widget.label,
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 13,
-                        fontWeight: FontWeight.w600, color: Colors.white)),
-                Text(widget.filename,
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 11,
-                        color: Colors.white38),
-                    overflow: TextOverflow.ellipsis),
+                Text(widget.label,    style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                Text(widget.filename, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38), overflow: TextOverflow.ellipsis),
               ])),
               if (widget.isLoading && _expanded)
-                const SizedBox(width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal))
+                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal))
               else
-                Icon(_expanded
-                    ? Icons.keyboard_arrow_up_rounded
-                    : Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white38),
+                Icon(_expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, color: Colors.white38),
             ]),
           ),
         ),
         if (_expanded && !_isPdf)
           widget.base64Data != null
               ? ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12)),
-                  child: Image.memory(
-                    base64Decode(widget.base64Data!),
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Container(
-                        height: 120,
-                        color: Colors.white.withValues(alpha: 0.04),
-                        child: const Center(
-                            child: Text('Could not load image',
-                                style: TextStyle(color: Colors.white38)))),
-                  ),
+                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+                  child: Builder(builder: (ctx) {
+                    try {
+                      return Image.memory(
+                        base64Decode(widget.base64Data!),
+                        fit: BoxFit.contain,
+                        cacheWidth: 800,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 120, color: Colors.white.withValues(alpha: 0.04),
+                          child: const Center(child: Text('Could not load image', style: TextStyle(color: Colors.white38))),
+                        ),
+                      );
+                    } catch (_) {
+                      return Container(
+                        height: 120, color: Colors.white.withValues(alpha: 0.04),
+                        child: const Center(child: Text('Could not load image', style: TextStyle(color: Colors.white38))),
+                      );
+                    }
+                  }),
                 )
-              : const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(color: AppColors.teal, strokeWidth: 2),
-                ),
+              : const Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: AppColors.teal, strokeWidth: 2)),
         if (_expanded && _isPdf)
           Container(
-            height: 80,
-            margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            decoration: BoxDecoration(
-                color: AppColors.crimson.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8)),
-            child: const Center(
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.picture_as_pdf_rounded, color: AppColors.crimson, size: 28),
-              SizedBox(width: 10),
-              Text('PDF document submitted',
-                  style: TextStyle(
-                      fontFamily: 'Poppins', color: AppColors.crimson, fontSize: 13)),
+            height: 80, margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            decoration: BoxDecoration(color: AppColors.crimson.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+            child: const Center(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.picture_as_pdf_rounded, color: AppColors.crimson, size: 28), SizedBox(width: 10),
+              Text('PDF document submitted', style: TextStyle(fontFamily: 'Poppins', color: AppColors.crimson, fontSize: 13)),
             ])),
           ),
       ]),
@@ -1039,24 +911,20 @@ class _KycImageCardState extends State<_KycImageCard> {
   }
 }
 
-// ─── Shared helpers ───────────────────────────────────────────────────────────
 class _DetailRow extends StatelessWidget {
   final IconData icon; final String label, value;
   const _DetailRow({required this.icon, required this.label, required this.value});
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(children: [
-        Icon(icon, color: Colors.white38, size: 16),
-        const SizedBox(width: 10),
-        Text('$label:', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white38)),
-        const SizedBox(width: 8),
-        Expanded(child: Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white))),
-      ]),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(children: [
+      Icon(icon, color: Colors.white38, size: 16), const SizedBox(width: 10),
+      Text('$label:', style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.white38)),
+      const SizedBox(width: 8),
+      Expanded(child: Text(value, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white))),
+    ]),
+  );
 }
 
 class _TableHeader extends StatelessWidget {
@@ -1064,9 +932,8 @@ class _TableHeader extends StatelessWidget {
   const _TableHeader(this.text);
 
   @override
-  Widget build(BuildContext context) {
-    return Text(text, style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white38, letterSpacing: 0.5));
-  }
+  Widget build(BuildContext context) => Text(text,
+      style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white38, letterSpacing: 0.5));
 }
 
 class _UserRow extends StatelessWidget {
@@ -1103,51 +970,30 @@ class _UserRow extends StatelessWidget {
           label: user.userStatus == 1 ? 'Active' : user.userStatus == 2 ? 'Rejected' : 'Pending',
           color: user.userStatus == 1 ? AppColors.teal : user.userStatus == 2 ? AppColors.crimson : AppColors.golden,
         )),
-        SizedBox(
-          width: 260,
-          child: Row(children: [
-            SizedBox(width: 36, child: IconButton(
-              onPressed: onView, padding: EdgeInsets.zero,
-              icon: const Icon(Icons.badge_outlined, color: AppColors.sky, size: 18),
-              tooltip: 'View personal info',
-            )),
-            SizedBox(width: 36, child: IconButton(
-              onPressed: () => context.push('/profile/${user.id}'),
-              padding: EdgeInsets.zero,
-              icon: const Icon(Icons.person_search_rounded, color: Colors.white38, size: 18),
-              tooltip: 'View public profile',
-            )),
-            if (user.userStatus == 0) ...[
-              const SizedBox(width: 2),
-              SizedBox(width: 58, child: ElevatedButton(onPressed: onApprove,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Approve', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)))),
-              const SizedBox(width: 2),
-              SizedBox(width: 48, child: OutlinedButton(onPressed: onReject,
-                  style: OutlinedButton.styleFrom(side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.5)), padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.crimson)))),
-            ] else ...[
-              if (user.role != 'admin')
-                SizedBox(width: 72, child: TextButton(
-                  onPressed: onPromote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
-                  child: const Text('Make Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: AppColors.golden)),
-                ))
-              else
-                SizedBox(width: 72, child: TextButton(
-                  onPressed: onDemote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
-                  child: const Text('Demote', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: Colors.white38)),
-                )),
-              const SizedBox(width: 2),
-            ],
-            const Spacer(),
-            SizedBox(width: 32, child: IconButton(
-              onPressed: onDelete, padding: EdgeInsets.zero,
-              icon: const Icon(Icons.delete_outline_rounded, color: Colors.white24, size: 18),
-              hoverColor: AppColors.crimson.withValues(alpha: 0.1),
-              tooltip: 'Delete account',
-            )),
-          ]),
-        ),
+        SizedBox(width: 260, child: Row(children: [
+          SizedBox(width: 36, child: IconButton(onPressed: onView, padding: EdgeInsets.zero, icon: const Icon(Icons.badge_outlined, color: AppColors.sky, size: 18), tooltip: 'View personal info')),
+          SizedBox(width: 36, child: IconButton(onPressed: () => context.push('/profile/${user.id}'), padding: EdgeInsets.zero, icon: const Icon(Icons.person_search_rounded, color: Colors.white38, size: 18), tooltip: 'View public profile')),
+          if (user.userStatus == 0) ...[
+            const SizedBox(width: 2),
+            SizedBox(width: 58, child: ElevatedButton(onPressed: onApprove,
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                child: const Text('Approve', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)))),
+            const SizedBox(width: 2),
+            SizedBox(width: 48, child: OutlinedButton(onPressed: onReject,
+                style: OutlinedButton.styleFrom(side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.5)), padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                child: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.crimson)))),
+          ] else ...[
+            if (user.role != 'admin')
+              SizedBox(width: 72, child: TextButton(onPressed: onPromote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  child: const Text('Make Admin', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: AppColors.golden))))
+            else
+              SizedBox(width: 72, child: TextButton(onPressed: onDemote, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  child: const Text('Demote', style: TextStyle(fontFamily: 'Poppins', fontSize: 9, color: Colors.white38)))),
+            const SizedBox(width: 2),
+          ],
+          const Spacer(),
+          SizedBox(width: 32, child: IconButton(onPressed: onDelete, padding: EdgeInsets.zero, icon: const Icon(Icons.delete_outline_rounded, color: Colors.white24, size: 18), hoverColor: AppColors.crimson.withValues(alpha: 0.1), tooltip: 'Delete account')),
+        ])),
       ]),
     ).animate(delay: Duration(milliseconds: 40 * index)).fadeIn(duration: 300.ms);
   }
@@ -1158,70 +1004,64 @@ class _StatusDot extends StatelessWidget {
   const _StatusDot({required this.label, required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
-      const SizedBox(width: 5),
-      Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: color)),
-    ]);
-  }
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+    Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
+    const SizedBox(width: 5),
+    Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: color)),
+  ]);
 }
 
 // ─── Product detail dialog ────────────────────────────────────────────────────
-void _showProductDetail(
-  BuildContext context,
-  int productId,
-  VoidCallback onApprove,
-  VoidCallback onReject,
-) {
-  showDialog(
-    context: context,
-    builder: (_) => _AdminProductDetailDialog(
-      productId: productId,
-      onApprove: onApprove,
-      onReject:  onReject,
-    ),
-  );
+void _showProductDetail(BuildContext context, int productId, VoidCallback onApprove, VoidCallback onReject) {
+  showDialog(context: context, builder: (_) => _AdminProductDetailDialog(productId: productId, onApprove: onApprove, onReject: onReject));
 }
 
 class _AdminProductDetailDialog extends ConsumerStatefulWidget {
-  final int          productId;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-  const _AdminProductDetailDialog({
-    required this.productId,
-    required this.onApprove,
-    required this.onReject,
-  });
+  final int productId;
+  final VoidCallback onApprove, onReject;
+  const _AdminProductDetailDialog({required this.productId, required this.onApprove, required this.onReject});
 
   @override
-  ConsumerState<_AdminProductDetailDialog> createState() =>
-      _AdminProductDetailDialogState();
+  ConsumerState<_AdminProductDetailDialog> createState() => _AdminProductDetailDialogState();
 }
 
-class _AdminProductDetailDialogState
-    extends ConsumerState<_AdminProductDetailDialog> {
+class _AdminProductDetailDialogState extends ConsumerState<_AdminProductDetailDialog> {
   Map<String, dynamic>? _data;
   bool _loading = true;
+  String? _errorMsg;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
     try {
       final api = ref.read(apiServiceProvider);
       final res = await api.get('admin/products/${widget.productId}', auth: true);
-      if (mounted) {
-        setState(() {
-          _data    = res['success'] == true ? res['data'] as Map<String, dynamic> : res;
-          _loading = false;
-        });
+
+      if (!mounted) return;
+
+      if (res['success'] == true && res['data'] != null) {
+        final data = Map<String, dynamic>.from(res['data'] as Map);
+
+        if (data['images'] is String) {
+          try {
+            final decoded = jsonDecode(data['images'] as String);
+            data['images'] = decoded is List ? decoded : <dynamic>[];
+          } catch (_) {
+            data['images'] = <dynamic>[];
+          }
+        } else if (data['images'] == null) {
+          data['images'] = <dynamic>[];
+        }
+
+        setState(() { _data = data; _loading = false; _errorMsg = null; });
+      } else {
+        final msg = res['message'] as String? ?? 'Product not found.';
+        setState(() { _data = null; _loading = false; _errorMsg = msg; });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      print('PRODUCT DETAIL ERROR: $e');
+      if (mounted) setState(() { _data = null; _loading = false; _errorMsg = 'Failed to load product details.'; });
     }
   }
 
@@ -1234,41 +1074,40 @@ class _AdminProductDetailDialogState
         width: 640,
         constraints: const BoxConstraints(maxHeight: 760),
         child: _loading
-            ? const SizedBox(
-                height: 200,
-                child: Center(child: CircularProgressIndicator(color: AppColors.teal)),
-              )
-            : _data == null
-                ? const SizedBox(
+            ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator(color: AppColors.teal)))
+            : (_data == null)
+                ? SizedBox(
                     height: 200,
-                    child: Center(
-                      child: Text('Failed to load product details.',
-                          style: TextStyle(fontFamily: 'Poppins', color: Colors.white38)),
-                    ),
+                    child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      const Icon(Icons.error_outline_rounded, color: Colors.white38, size: 48),
+                      const SizedBox(height: 12),
+                      Text(_errorMsg ?? 'Failed to load product details.',
+                          style: const TextStyle(fontFamily: 'Poppins', color: Colors.white38)),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () { setState(() { _loading = true; _errorMsg = null; }); _load(); },
+                        child: const Text('Retry', style: TextStyle(fontFamily: 'Poppins', color: AppColors.teal)),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close', style: TextStyle(fontFamily: 'Poppins', color: Colors.white38)),
+                      ),
+                    ])),
                   )
                 : Column(children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(28, 28, 20, 0),
                       child: Row(children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.golden.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.lightbulb_rounded, color: AppColors.golden, size: 22),
-                        ),
+                        Container(padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: AppColors.golden.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.lightbulb_rounded, color: AppColors.golden, size: 22)),
                         const SizedBox(width: 14),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(_data!['name'] ?? '—',
-                              style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                          Text(_data!['name'] ?? '—', style: const TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
                           Text('${_data!['category'] ?? '—'} · by ${_data!['innovator_name'] ?? '—'}',
                               style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white38)),
                         ])),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close_rounded, color: Colors.white38),
-                        ),
+                        IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: Colors.white38)),
                       ]),
                     ),
                     const Divider(color: Colors.white10, height: 28),
@@ -1288,27 +1127,26 @@ class _AdminProductDetailDialogState
                               Text('@${_data!['innovator_username'] ?? '—'}', style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38)),
                               if ((_data!['innovator_email'] ?? '').toString().isNotEmpty)
                                 Text(_data!['innovator_email'].toString(), style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: AppColors.sky)),
-                              if ((_data!['innovator_phone'] ?? '').toString().isNotEmpty)
-                                Text(_data!['innovator_phone'].toString(), style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.white38)),
                             ])),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: _data!['kyc_status'] == 'verified' ? AppColors.teal.withValues(alpha: 0.15) : Colors.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                              decoration: BoxDecoration(
+                                  color: _data!['kyc_status'] == 'verified' ? AppColors.teal.withValues(alpha: 0.15) : Colors.orange.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6)),
                               child: Text((_data!['kyc_status'] ?? 'unverified').toString().toUpperCase(),
-                                  style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700, color: _data!['kyc_status'] == 'verified' ? AppColors.teal : Colors.orange)),
+                                  style: TextStyle(fontFamily: 'Poppins', fontSize: 9, fontWeight: FontWeight.w700,
+                                      color: _data!['kyc_status'] == 'verified' ? AppColors.teal : Colors.orange)),
                             ),
                           ]),
                         ),
                         const SizedBox(height: 20),
-                        const Text('Description',
-                            style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
+                        const Text('Description', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
                         const SizedBox(height: 8),
                         Text((_data!['description'] ?? '').toString().isNotEmpty ? _data!['description'].toString() : '—',
                             style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.white, height: 1.6)),
                         const SizedBox(height: 20),
                         if ((_data!['external_link'] ?? '').toString().isNotEmpty) ...[
-                          const Text('External Link',
-                              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
+                          const Text('External Link', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: () => launchUrl(Uri.parse(_data!['external_link'].toString())),
@@ -1325,12 +1163,15 @@ class _AdminProductDetailDialogState
                             height: 160,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
+                              shrinkWrap: true,
+                              physics: const ClampingScrollPhysics(),
                               itemCount: (_data!['images'] as List).length,
                               itemBuilder: (ctx, i) {
-                                final b64 = (_data!['images'] as List)[i] as String? ?? '';
+                                final raw = (_data!['images'] as List)[i];
+                                final b64 = raw is String ? raw : '';
+                                final isUrl = b64.startsWith('http');
                                 return Container(
-                                  width: 200,
-                                  margin: const EdgeInsets.only(right: 12),
+                                  width: 200, margin: const EdgeInsets.only(right: 12),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.04),
                                     borderRadius: BorderRadius.circular(10),
@@ -1339,7 +1180,22 @@ class _AdminProductDetailDialogState
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
                                     child: b64.isNotEmpty
-                                        ? Image.memory(base64Decode(b64), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_rounded, color: Colors.white24)))
+                                        ? isUrl
+                                            ? Image.network(b64, fit: BoxFit.cover,
+                                                width: 200, height: 160,
+                                                errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_rounded, color: Colors.white24)))
+                                            : Builder(builder: (ctx) {
+                                                try {
+                                                  final bytes = base64Decode(b64);
+                                                  return Image.memory(bytes,
+                                                      fit: BoxFit.cover,
+                                                      width: 200, height: 160,
+                                                      cacheWidth: 400,
+                                                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_rounded, color: Colors.white24)));
+                                                } catch (_) {
+                                                  return const Center(child: Icon(Icons.broken_image_rounded, color: Colors.white24));
+                                                }
+                                              })
                                         : const Center(child: Icon(Icons.image_not_supported_rounded, color: Colors.white24)),
                                   ),
                                 );
@@ -1349,29 +1205,29 @@ class _AdminProductDetailDialogState
                           const SizedBox(height: 20),
                         ],
                         if ((_data!['video_base64'] ?? '').toString().isNotEmpty) ...[
-                          const Text('Video',
-                              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
+                          const Text('Video', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white54)),
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
                             child: Row(children: [
-                              const Icon(Icons.videocam_rounded, color: AppColors.sky, size: 20),
-                              const SizedBox(width: 10),
+                              const Icon(Icons.videocam_rounded, color: AppColors.sky, size: 20), const SizedBox(width: 10),
                               Expanded(child: Text(_data!['video_filename']?.toString() ?? 'video file', style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.white70))),
                               const Icon(Icons.check_circle_rounded, color: AppColors.teal, size: 16),
                             ]),
                           ),
                           const SizedBox(height: 20),
                         ],
-                        Row(children: [
-                          _DetailRow(icon: Icons.favorite_rounded,       label: 'Likes',     value: '${_data!['likes'] ?? 0}'),
-                          const SizedBox(width: 24),
-                          _DetailRow(icon: Icons.remove_red_eye_rounded, label: 'Views',     value: '${_data!['views'] ?? 0}'),
-                          const SizedBox(width: 24),
-                          _DetailRow(icon: Icons.handshake_rounded,      label: 'Interests', value: '${_data!['interest_count'] ?? 0}'),
-                        ]),
-                        const SizedBox(height: 8),
+                        // ── Stats ── FIXED: Wrap instead of Row to avoid sizing crash
+                        Wrap(
+                          spacing: 24,
+                          runSpacing: 8,
+                          children: [
+                            _DetailRow(icon: Icons.favorite_rounded,       label: 'Likes',     value: '${_data!['likes'] ?? 0}'),
+                            _DetailRow(icon: Icons.remove_red_eye_rounded, label: 'Views',     value: '${_data!['views'] ?? 0}'),
+                            _DetailRow(icon: Icons.handshake_rounded,      label: 'Interests', value: '${_data!['interest_count'] ?? 0}'),
+                          ],
+                        ),
                       ]),
                     )),
                     Padding(
@@ -1381,22 +1237,14 @@ class _AdminProductDetailDialogState
                           onPressed: () { Navigator.pop(context); widget.onReject(); },
                           icon:  const Icon(Icons.close_rounded, size: 16, color: AppColors.crimson),
                           label: const Text('Reject', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: AppColors.crimson)),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.4)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                          style: OutlinedButton.styleFrom(side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.4)), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                         )),
                         const SizedBox(width: 12),
                         Expanded(flex: 2, child: ElevatedButton.icon(
                           onPressed: () { Navigator.pop(context); widget.onApprove(); },
                           icon:  const Icon(Icons.check_rounded, size: 16, color: Colors.white),
                           label: const Text('Approve & Publish', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, color: Colors.white)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.teal,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                         )),
                       ]),
                     ),

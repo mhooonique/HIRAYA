@@ -5,22 +5,56 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-class ApiService {
-  static const _baseUrl = 'https://fqzjx5pz-80.asse.devtunnels.ms/hiraya_api/api/v1/';
 
+// ── Environment-aware URLs ────────────────────────────────────────────────────
+// Override at build time with:
+//   flutter run  --dart-define=API_BASE_URL=https://api.hiraya.com/v1/
+//   flutter build web --dart-define=API_BASE_URL=https://api.hiraya.com/v1/
+// Falls back to local network IP for same-WiFi testing automatically.
+class AppConfig {
+  static const apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.1.17/hiraya_api/api/v1/',
+  );
+
+  static const appBaseUrl = String.fromEnvironment(
+    'APP_BASE_URL',
+    defaultValue: 'http://192.168.1.17:3000',
+  );
+}
+
+class ApiService {
   static const _tokenKey = 'hiraya_jwt';
 
   final Dio _dio;
 
-  ApiService()
-      : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 60),
-          sendTimeout: const Duration(seconds: 60),
-          headers: {'Content-Type': 'application/json'},
-          validateStatus: (status) => status != null && status < 500,
-        ));
+  ApiService() : _dio = Dio(BaseOptions(
+    baseUrl:        AppConfig.apiBaseUrl,
+    connectTimeout: const Duration(seconds: 10),
+    // Longer receive timeout to handle base64 KYC document uploads
+    receiveTimeout: const Duration(seconds: 60),
+    headers:        {'Content-Type': 'application/json'},
+    // Treat anything below 500 as a non-throwing response so callers
+    // can handle 4xx errors gracefully via res['error'] checks.
+    validateStatus: (status) => status != null && status < 500,
+  )) {
+    // ── Auto-clear token on 401 anywhere in the app ─────────────────────────
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onResponse: (response, handler) {
+          if (response.statusCode == 401) {
+            // Token expired or invalid — clear it so the router
+            // redirects to login on the next auth check.
+            clearToken();
+          }
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          handler.next(error);
+        },
+      ),
+    );
+  }
 
   // ── Token management (shared_preferences → localStorage on web) ─────────────
 
@@ -46,7 +80,7 @@ class ApiService {
     );
   }
 
-  // ── HTTP Methods ─────────────────────────────────────────────────────────────
+  // ── HTTP methods ──────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> get(
     String path, {
@@ -97,8 +131,12 @@ class ApiService {
     if (res.data is Map<String, dynamic>) {
       return res.data as Map<String, dynamic>;
     }
-    if (res.data is String) {
-      return jsonDecode(res.data as String) as Map<String, dynamic>;
+    if (res.data is String && (res.data as String).isNotEmpty) {
+      try {
+        return jsonDecode(res.data as String) as Map<String, dynamic>;
+      } catch (_) {
+        return {'error': 'Invalid server response'};
+      }
     }
     return {};
   }
