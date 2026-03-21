@@ -14,12 +14,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppConfig {
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.17/hiraya_api/api/v1/',
+    defaultValue: 'https://fqzjx5pz-80.asse.devtunnels.ms/hiraya_api/api/v1/',
   );
 
   static const appBaseUrl = String.fromEnvironment(
     'APP_BASE_URL',
-    defaultValue: 'http://192.168.1.17:3000',
+    defaultValue: 'https://fqzjx5pz-3000.asse.devtunnels.ms',
   );
 }
 
