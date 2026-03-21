@@ -1,0 +1,9 @@
+# Environment secrets — never commit
+.env
+
+# Composer dependencies
+vendor/
+
+# OS
+.DS_Store
+Thumbs.db

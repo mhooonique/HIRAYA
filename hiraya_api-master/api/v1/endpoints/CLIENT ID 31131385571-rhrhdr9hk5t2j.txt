@@ -1,0 +1,7 @@
+CLIENT ID: 31131385571-rhrhdr9hk5t2jsrah4gho23k8rj4ctlf.apps.googleusercontent.com 
+
+31131385571-cmu537hbggdr9t3dh7fa69ijbeqhcu7k.apps.googleusercontent.com
+
+command to get fingerprint: keytool -keystore path-to-debug-or-production-keystore -list -v
+
+eezz wggn yuwv ehul: APP PASSWORD

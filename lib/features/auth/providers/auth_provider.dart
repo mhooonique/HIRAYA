@@ -167,7 +167,65 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _rehydrate();
   }
 
+<<<<<<< HEAD
   // ΓöÇΓöÇ Rehydrate session on cold start ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+=======
+  Future<bool> _tryOfflineDevLogin(String email, String password) async {
+    if (!kDebugMode) return false;
+
+    final normalizedEmail = email.trim().toLowerCase();
+    
+    // 1) Developer Bypass
+    const devEmail = 'mhoniqueprosia@gmail.com';
+    const devPassword = 'Inn0vator_';
+    
+    // 2) Admin Bypass
+    const adminEmail = 'dost@admin.com';
+
+    UserModel? user;
+    
+    if (normalizedEmail == devEmail && password.trim() == devPassword) {
+      user = UserModel(
+        id: 16,
+        firstName: 'First',
+        lastName: 'Innovator',
+        username: 'first_innovator',
+        email: devEmail,
+        role: 'innovator',
+        kycStatus: 'verified',
+        userStatus: 1,
+        phone: '+639165737057',
+      );
+    } else if (normalizedEmail == adminEmail) {
+      // Relaxed check: if the email matches the admin bypass email, let it pass 
+      // without strict password matching in case of typos in the screenshot.
+      user = UserModel(
+        id: 1,
+        firstName: 'DOST',
+        lastName: 'Admin',
+        username: 'dost_admin',
+        email: adminEmail,
+        role: 'admin',
+        kycStatus: 'verified',
+        userStatus: 1,
+        phone: '+639000000000',
+      );
+    }
+
+    if (user == null) return false;
+
+    state = state.copyWith(
+      isLoading: false,
+      user: user,
+      token: 'offline-dev-token',
+      error: null,
+      loginStatus: LoginStatus.idle,
+      requires2fa: false,
+    );
+    return true;
+  }
+
+>>>>>>> 6afa388efa293317f56cdaa8bd0561cfe2e0bc64
   Future<void> _rehydrate() async {
     try {
       final token = await _api.getStoredToken();

@@ -592,75 +592,73 @@ class _LoginPageState extends ConsumerState<_LoginPage> {
 
                   // Create account
                   Center(
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize:   14,
-                          color: Colors.white.withValues(alpha: 0.45),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Don\'t have an account? ',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize:   14,
+                            color: Colors.white.withValues(alpha: 0.45),
+                          )
                         ),
-                        children: [
-                          const TextSpan(text: 'Don\'t have an account? '),
-                          WidgetSpan(
-                            child: MouseRegion(
-                              onEnter: (_) => setState(() => _createHover = true),
-                              onExit: (_) => setState(() {
-                                _createHover = false;
-                                _createPress = false;
-                              }),
-                              cursor: SystemMouseCursors.click,
-                              child: GestureDetector(
-                                onTapDown: (_) => setState(() => _createPress = true),
-                                onTapCancel: () => setState(() => _createPress = false),
-                                onTapUp: (_) => setState(() => _createPress = false),
-                                onTap: widget.onCreateTap,
-                                child: AnimatedScale(
-                                  duration: const Duration(milliseconds: 180),
-                                  curve: Curves.easeOutCubic,
-                                  scale: _createPress ? 0.96 : (_createHover ? 1.04 : 1),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 220),
-                                    curve: Curves.easeOutCubic,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      gradient: _createHover
-                                          ? LinearGradient(
-                                              colors: [
-                                                AppColors.golden.withValues(alpha: 0.22),
-                                                AppColors.warmEmber.withValues(alpha: 0.14),
-                                              ],
-                                            )
-                                          : null,
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(
-                                        color: _createHover
-                                            ? AppColors.golden.withValues(alpha: 0.45)
-                                            : Colors.transparent,
-                                      ),
-                                      boxShadow: _createHover
-                                          ? [
-                                              BoxShadow(
-                                                color: AppColors.golden.withValues(alpha: 0.20),
-                                                blurRadius: 14,
-                                                offset: const Offset(0, 4),
-                                              ),
-                                            ]
-                                          : const [],
-                                    ),
-                                    child: const Text('Create one',
-                                      style: TextStyle(
-                                        fontFamily:  'Poppins',
-                                        fontSize:    14,
-                                        fontWeight:  FontWeight.w700,
-                                        color:       AppColors.golden,
-                                      )),
+                        MouseRegion(
+                          onEnter: (_) => setState(() => _createHover = true),
+                          onExit: (_) => setState(() {
+                            _createHover = false;
+                            _createPress = false;
+                          }),
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTapDown: (_) => setState(() => _createPress = true),
+                            onTapCancel: () => setState(() => _createPress = false),
+                            onTapUp: (_) => setState(() => _createPress = false),
+                            onTap: widget.onCreateTap,
+                            child: AnimatedScale(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOutCubic,
+                              scale: _createPress ? 0.96 : (_createHover ? 1.04 : 1),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOutCubic,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  gradient: _createHover
+                                      ? LinearGradient(
+                                          colors: [
+                                            AppColors.golden.withValues(alpha: 0.22),
+                                            AppColors.warmEmber.withValues(alpha: 0.14),
+                                          ],
+                                        )
+                                      : null,
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: _createHover
+                                        ? AppColors.golden.withValues(alpha: 0.45)
+                                        : Colors.transparent,
                                   ),
+                                  boxShadow: _createHover
+                                      ? [
+                                          BoxShadow(
+                                            color: AppColors.golden.withValues(alpha: 0.20),
+                                            blurRadius: 14,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : const [],
                                 ),
+                                child: const Text('Create one',
+                                  style: TextStyle(
+                                    fontFamily:  'Poppins',
+                                    fontSize:    14,
+                                    fontWeight:  FontWeight.w700,
+                                    color:       AppColors.golden,
+                                  )),
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1406,46 +1404,54 @@ class _SignupPageState extends ConsumerState<_SignupPage> {
                 ),
                 const SizedBox(height: 12),
                 Center(
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.45),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Already have an account? ',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.45),
+                        ),
                       ),
-                      children: [
-                        const TextSpan(text: 'Already have an account? '),
-                        WidgetSpan(
-                          child: GestureDetector(
-                            onTap: widget.onBackToLogin,
-                            child: const Text(
-                              'Sign In',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.golden,
-                              ),
+                      GestureDetector(
+                        onTap: widget.onBackToLogin,
+                        child: const MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.golden,
                             ),
                           ),
                         ),
-                        const TextSpan(text: '  •  '),
-                        WidgetSpan(
-                          child: GestureDetector(
-                            onTap: widget.onForgotTap,
-                            child: const Text(
-                              'Forgot Password?',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.teal,
-                              ),
+                      ),
+                      Text('  •  ',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: widget.onForgotTap,
+                        child: const MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.teal,
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -3396,30 +3402,31 @@ class _ForgotPasswordPageState extends State<_ForgotPasswordPage> {
           ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.2, end: 0),
           const SizedBox(height: 14),
           Center(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.45),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Need an account? ',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.45),
+                  ),
                 ),
-                children: [
-                  const TextSpan(text: 'Need an account? '),
-                  WidgetSpan(
-                    child: GestureDetector(
-                      onTap: widget.onCreateTap,
-                      child: const Text(
-                        'Create one',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.golden,
-                        ),
+                GestureDetector(
+                  onTap: widget.onCreateTap,
+                  child: const MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Text(
+                      'Create one',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.golden,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
