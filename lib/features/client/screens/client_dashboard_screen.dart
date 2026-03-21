@@ -47,7 +47,6 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
 
   final _tabs = const [
     Tab(icon: Icon(Icons.explore_rounded, size: 18),   text: 'Discover'),
-    Tab(icon: Icon(Icons.favorite_rounded, size: 18),  text: 'Wishlist'),
     Tab(icon: Icon(Icons.bookmark_rounded, size: 18),  text: 'Bookmarks'),
     Tab(icon: Icon(Icons.handshake_rounded, size: 18), text: 'My Interests'),
     Tab(icon: Icon(Icons.person_rounded, size: 18),    text: 'Profile'),
@@ -56,11 +55,10 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     Future.microtask(() {
       ref.read(marketplaceProvider.notifier).loadProducts();
       ref.read(clientProvider.notifier).loadLikes();
-      ref.read(clientProvider.notifier).loadWishlist();
       ref.read(clientProvider.notifier).loadBookmarks();
     });
   }
@@ -75,7 +73,6 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
   Widget build(BuildContext context) {
     final user      = ref.watch(authProvider).user;
     final cState    = ref.watch(clientProvider);
-    final wishlist  = cState.wishlist;
     final bookmarks = cState.bookmarks;
     final interests = ref.watch(_interestsProvider);
 
@@ -90,28 +87,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
               // ── Tab 1: Discover ──────────────────────────────────────────
               const _DiscoverTab(),
 
-              // ── Tab 2: Wishlist (wishlist + liked products) ───────────────
-              _WishlistTab(
-                items: [
-                  ...wishlist,
-                  ...ref.watch(marketplaceProvider).products
-                      .where((p) =>
-                          cState.likedIds.contains(p.id) &&
-                          !cState.wishlistIds.contains(p.id))
-                      .toList(),
-                ],
-                onRemove: (p) {
-                  if (cState.wishlistIds.contains(p.id)) {
-                    ref.read(clientProvider.notifier).toggleWishlist(p);
-                  }
-                  if (cState.likedIds.contains(p.id)) {
-                    ref.read(clientProvider.notifier).toggleLike(p.id);
-                  }
-                  _showSnack('Removed from wishlist', AppColors.crimson);
-                },
-              ),
-
-              // ── Tab 3: Bookmarks ─────────────────────────────────────────
+              // ── Tab 2: Bookmarks ─────────────────────────────────────────
               _BookmarksTab(
                 items: bookmarks,
                 onRemove: (p) {
@@ -120,10 +96,10 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
                 },
               ),
 
-              // ── Tab 4: My Interests ──────────────────────────────────────
+              // ── Tab 3: My Interests ──────────────────────────────────────
               _InterestsTab(items: interests),
 
-              // ── Tab 5: Profile ───────────────────────────────────────────
+              // ── Tab 4: Profile ───────────────────────────────────────────
               _ClientProfile(user: user),
             ],
           ),
@@ -143,9 +119,6 @@ class _ClientDashboardState extends ConsumerState<ClientDashboardScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TOP APP BAR + TAB BAR
-// ─────────────────────────────────────────────────────────────────────────────
 class _ClientTopBar extends StatelessWidget {
   final dynamic user;
   final TabController tabController;
@@ -197,7 +170,7 @@ class _ClientTopBar extends StatelessWidget {
             Consumer(builder: (context, ref, _) {
               final u = ref.watch(authProvider).user;
               return GestureDetector(
-                onTap: () => tabController.animateTo(4),
+                onTap: () => tabController.animateTo(3),
                 child: UserAvatar(
                   name:         u?.firstName ?? 'C',
                   avatarBase64: u?.avatarBase64,
@@ -229,9 +202,6 @@ class _ClientTopBar extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TAB 1 — DISCOVER
-// ─────────────────────────────────────────────────────────────────────────────
 class _DiscoverTab extends ConsumerStatefulWidget {
   const _DiscoverTab();
 
@@ -278,12 +248,10 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
           ),
         ),
       ),
-
       CategoryFilterBar(
           selected: state.selectedCategory,
           onSelect: notifier.setCategory),
       const SizedBox(height: 8),
-
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(children: [
@@ -297,8 +265,7 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                   color: AppColors.navy.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(8)),
@@ -306,21 +273,20 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
                 Icon(Icons.sort_rounded, size: 16, color: AppColors.navy),
                 SizedBox(width: 6),
                 Text('Sort', style: TextStyle(
-                    fontFamily: 'Poppins', fontSize: 12,
-                    color: AppColors.navy)),
+                    fontFamily: 'Poppins', fontSize: 12, color: AppColors.navy)),
               ]),
             ),
-            itemBuilder: (_) => [
-              const PopupMenuItem(value: 'newest',
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'newest',
                   child: Text('Newest First',
                       style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
-              const PopupMenuItem(value: 'most_liked',
+              PopupMenuItem(value: 'most_liked',
                   child: Text('Most Liked',
                       style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
-              const PopupMenuItem(value: 'most_viewed',
+              PopupMenuItem(value: 'most_viewed',
                   child: Text('Most Viewed',
                       style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
-              const PopupMenuItem(value: 'most_interest',
+              PopupMenuItem(value: 'most_interest',
                   child: Text('Most Interest',
                       style: TextStyle(fontFamily: 'Poppins', fontSize: 13))),
             ],
@@ -328,7 +294,6 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
         ]),
       ),
       const SizedBox(height: 12),
-
       Expanded(
         child: state.isLoading
             ? const Center(
@@ -352,14 +317,11 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
                     color: AppColors.teal,
                     child: GridView.builder(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                      gridDelegate:
-                          SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount:
-                            MediaQuery.of(context).size.width > 1000
-                                ? 3
-                                : MediaQuery.of(context).size.width > 600
-                                    ? 2
-                                    : 1,
+                            MediaQuery.of(context).size.width > 1000 ? 3
+                            : MediaQuery.of(context).size.width > 600 ? 2
+                            : 1,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.72,
@@ -374,47 +336,6 @@ class _DiscoverTabState extends ConsumerState<_DiscoverTab> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TAB 2 — WISHLIST
-// ─────────────────────────────────────────────────────────────────────────────
-class _WishlistTab extends StatelessWidget {
-  final List<ProductModel> items;
-  final void Function(ProductModel) onRemove;
-  const _WishlistTab({required this.items, required this.onRemove});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(children: [
-      _TabHeader(
-          icon: Icons.favorite_rounded, iconColor: AppColors.crimson,
-          title: 'Wishlist',
-          subtitle: 'Like or save a product from Discover to add it here.',
-          count: items.length),
-      Expanded(
-        child: items.isEmpty
-            ? const _EmptyState(
-                icon: Icons.favorite_outline_rounded,
-                title: 'Your wishlist is empty',
-                subtitle: 'Like or save a product from Discover to add it here.')
-            : ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: items.length,
-                itemBuilder: (ctx, i) => _SavedProductRow(
-                  product: items[i], index: i,
-                  actionIcon: Icons.favorite_rounded,
-                  actionColor: AppColors.crimson,
-                  actionTooltip: 'Remove from wishlist',
-                  onAction: () => onRemove(items[i]),
-                ),
-              ),
-      ),
-    ]);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  TAB 3 — BOOKMARKS
-// ─────────────────────────────────────────────────────────────────────────────
 class _BookmarksTab extends StatelessWidget {
   final List<ProductModel> items;
   final void Function(ProductModel) onRemove;
@@ -450,9 +371,6 @@ class _BookmarksTab extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  SHARED — Saved product row
-// ─────────────────────────────────────────────────────────────────────────────
 class _SavedProductRow extends StatelessWidget {
   final ProductModel product;
   final int index;
@@ -540,9 +458,6 @@ class _SavedProductRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TAB 4 — MY INTERESTS
-// ─────────────────────────────────────────────────────────────────────────────
 class _InterestsTab extends StatelessWidget {
   final List<_InterestItem> items;
   const _InterestsTab({required this.items});
@@ -707,9 +622,6 @@ class _InterestRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TAB 5 — PROFILE
-// ─────────────────────────────────────────────────────────────────────────────
 class _ClientProfile extends ConsumerWidget {
   final dynamic user;
   const _ClientProfile({this.user});
@@ -833,9 +745,6 @@ class _ProfileRow extends StatelessWidget {
       );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  THEME TOGGLE CARD
-// ─────────────────────────────────────────────────────────────────────────────
 class _ThemeToggleCard extends ConsumerWidget {
   const _ThemeToggleCard();
 
@@ -882,9 +791,6 @@ class _ThemeToggleCard extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  SOCIAL LINKS CARD
-// ─────────────────────────────────────────────────────────────────────────────
 class _SocialLinksCard extends ConsumerStatefulWidget {
   final Map<String, String> socialLinks;
   const _SocialLinksCard({required this.socialLinks});
@@ -970,8 +876,9 @@ class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
                   labelText: f.$2,
                   labelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
                   prefixIcon: Icon(f.$3, size: 18, color: AppColors.navy),
-                  hintText: 'https://...', hintStyle: const TextStyle(
-                      fontFamily: 'Poppins', fontSize: 13, color: Colors.black38),
+                  hintText: 'https://...',
+                  hintStyle: const TextStyle(fontFamily: 'Poppins',
+                      fontSize: 13, color: Colors.black38),
                   filled: true, fillColor: AppColors.offWhite,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: AppColors.lightGray)),
@@ -1039,9 +946,6 @@ class _SocialLinksCardState extends ConsumerState<_SocialLinksCard> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  SHARED WIDGETS
-// ─────────────────────────────────────────────────────────────────────────────
 class _TabHeader extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
